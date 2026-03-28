@@ -1,0 +1,2431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="EIL Solar"/>
+<meta name="theme-color" content="#0f172a"/>
+<title>EIL Solar</title>
+<link rel="manifest" href="data:application/json;charset=utf-8,{
+  %22name%22:%22EIL Solar — Kaveri Power%22,
+  %22short_name%22:%22EIL Solar%22,
+  %22start_url%22:%22/%22,
+  %22id%22:%22eilsolar-kaveripower%22,
+  %22display%22:%22standalone%22,
+  %22background_color%22:%22%230f172a%22,
+  %22theme_color%22:%22%230f172a%22,
+  %22orientation%22:%22portrait%22
+}"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --amber:#f59e0b;--red:#cc0000;--green:#16a34a;--navy:#0f172a;--indigo:#4f46e5;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,8px);
+}
+html,body{min-height:100%;background:#f1f5f9;font-family:'DM Sans',sans-serif;
+  -webkit-font-smoothing:antialiased;color:#111827;}
+
+/* ── LAYOUT: Simple scroll, no absolute trickery ── */
+.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+.topbar{background:var(--navy);height:52px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 14px;flex-shrink:0;position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.brand{display:flex;align-items:center;gap:8px;}
+.brand-name{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;}
+.brand-name em{color:var(--amber);font-style:normal;}
+.nav-pill{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);
+  border-radius:20px;padding:4px 12px;font-size:12px;color:#e2e8f0;font-weight:700;cursor:pointer;}
+
+/* ── PAGES: Hidden via display:none, no transforms ── */
+.page{display:none;flex:1;}
+.page.active{display:block;}
+
+/* ── BOTTOM NAV ── */
+.bottomnav{background:#fff;border-top:1.5px solid #e2e8f0;display:flex;
+  padding-bottom:var(--safe-bot);position:sticky;bottom:0;z-index:100;
+  box-shadow:0 -2px 10px rgba(0,0,0,0.08);}
+.bnav{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:8px 0 4px;cursor:pointer;border:none;background:none;-webkit-appearance:none;}
+.bnav-icon{font-size:22px;line-height:1;}
+.bnav-lbl{font-size:11px;color:#94a3b8;font-weight:700;letter-spacing:0.3px;}
+.bnav.act .bnav-lbl{color:var(--amber);}
+.bnav.act .bnav-icon{filter:drop-shadow(0 0 4px rgba(245,158,11,0.5));}
+.bnav-fab{width:48px;height:48px;border-radius:50%;
+  background:linear-gradient(135deg,var(--amber),var(--red));
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:#fff;margin-top:-18px;
+  box-shadow:0 4px 16px rgba(245,158,11,0.6);border:3px solid #f1f5f9;cursor:pointer;}
+
+/* ── SECTION LABEL ── */
+.slbl{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#64748b;
+  font-weight:800;padding:12px 16px 4px;display:block;}
+
+/* ── CARDS ── */
+.card{background:#fff;border-radius:14px;margin:0 12px 10px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.07);}
+
+/* ── FIELDS ── */
+.field{padding:12px 16px;border-bottom:1px solid #f1f5f9;}
+.field:last-child{border-bottom:none;}
+.field-lbl{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:5px;}
+.field input,.field select{border:none;outline:none;width:100%;font-size:20px;font-weight:800;
+  color:#0f172a;background:transparent;font-family:'DM Sans',sans-serif;-webkit-appearance:none;}
+.field input::placeholder{color:#c0ccd8;font-weight:400;font-size:17px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;}
+
+/* ── VOICE ── */
+.vrow{display:flex;gap:8px;padding:10px 12px;border-bottom:1px solid #f1f5f9;}
+.vbtn{flex:1;border:2px dashed #cbd5e1;background:#f8fafc;border-radius:10px;
+  padding:10px;cursor:pointer;font-size:14px;font-weight:700;color:#475569;
+  display:flex;align-items:center;justify-content:center;gap:6px;-webkit-appearance:none;}
+.vbtn.on{border-color:var(--red);color:var(--red);background:#fff5f5;animation:pulse 1s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(204,0,0,0.2);}50%{box-shadow:0 0 0 6px transparent;}}
+
+/* ── MODEL CARDS ── */
+.mcards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 12px 10px;}
+.mcard{border:2.5px solid #e2e8f0;border-radius:14px;padding:14px 10px;
+  text-align:center;background:#fff;cursor:pointer;transition:all 0.15s;}
+.mcard.epc{border-color:var(--green);background:rgba(22,163,74,0.06);}
+.mcard.dev{border-color:var(--indigo);background:rgba(79,70,229,0.06);}
+.mcard-ico{font-size:28px;margin-bottom:6px;}
+.mcard-name{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;margin-bottom:4px;}
+.mcard-desc{font-size:12px;color:#374151;font-weight:600;line-height:1.5;margin-bottom:6px;}
+.mcard-price{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;}
+
+/* ── SLIDERS ── */
+.sfield{padding:12px 16px;border-bottom:1px solid #f1f5f9;}
+.sfield:last-child{border-bottom:none;}
+.stop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.slbl2{font-size:12px;color:#475569;text-transform:uppercase;letter-spacing:1px;font-weight:800;}
+.sval{font-family:'Rajdhani',sans-serif;font-size:24px;font-weight:700;color:var(--amber);}
+input[type=range]{width:100%;height:6px;-webkit-appearance:none;background:#e2e8f0;border-radius:3px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;
+  background:var(--amber);border:3px solid #fff;box-shadow:0 2px 6px rgba(245,158,11,0.5);}
+.slim{display:flex;justify-content:space-between;margin-top:3px;}
+.slim span{font-size:10px;color:#c0ccd8;font-weight:600;}
+.snote{font-size:11px;color:#64748b;padding:3px 0 0;font-weight:600;}
+
+/* ── STEPPER CONTROLS ── */
+.stepper{display:flex;align-items:center;gap:6px;margin:6px 0 8px;}
+.st-btn{width:52px;height:48px;border-radius:12px;border:2px solid #e2e8f0;background:#f8fafc;
+  font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#374151;
+  cursor:pointer;-webkit-appearance:none;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all 0.1s;user-select:none;-webkit-user-select:none;}
+.st-btn:active{background:var(--amber);color:#fff;border-color:var(--amber);transform:scale(0.95);}
+.st-val{flex:1;text-align:center;font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;
+  color:var(--amber);border:2px solid #e2e8f0;border-radius:12px;padding:6px 4px;
+  background:#fff;outline:none;-webkit-appearance:none;min-width:0;
+  -moz-appearance:textfield;}
+.st-val::-webkit-inner-spin-button,.st-val::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+.st-val:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,158,11,0.15);}
+
+/* ── QUICK PICK BUTTONS ── */
+.quick-picks{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px;}
+.qp{border:2px solid #e2e8f0;background:#fff;border-radius:10px;padding:8px 14px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#374151;
+  cursor:pointer;-webkit-appearance:none;transition:all 0.1s;}
+.qp:active,.qp.on{background:var(--amber);color:#fff;border-color:var(--amber);}
+.qp.on{box-shadow:0 2px 8px rgba(245,158,11,0.4);}
+
+/* ── LIVE ESTIMATE ── */
+.est{background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(204,0,0,0.04));
+  border:1.5px solid rgba(245,158,11,0.25);border-radius:12px;margin:0 12px 10px;padding:12px 14px;}
+.est-title{font-size:11px;color:var(--amber);font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;margin-bottom:8px;}
+.est-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.est-item{text-align:center;}
+.est-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;}
+.est-val{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;margin-top:2px;}
+
+/* ── BATTERY ── */
+.bat-toggle{display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;}
+.bat-lbl{font-size:16px;font-weight:800;color:#0f172a;}
+.bat-desc{font-size:12px;color:#64748b;font-weight:600;margin-top:2px;}
+.sw{width:46px;height:26px;background:#e2e8f0;border-radius:13px;position:relative;flex-shrink:0;transition:background 0.2s;}
+.sw.on{background:var(--green);}
+.sw::after{content:'';position:absolute;width:22px;height:22px;border-radius:50%;
+  background:#fff;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+.sw.on::after{left:22px;}
+.bat-type-row{display:grid;grid-template-columns:1.6fr 1fr 34px;padding:9px 16px;
+  border-bottom:1px solid #f1f5f9;align-items:center;}
+.bat-type-row:last-child{border-bottom:none;}
+.bat-type-row.head{background:#1a1a2e;}
+.bat-type-row.head>div{font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;}
+.bat-type-row>div{font-size:13px;color:#374151;font-weight:600;}
+.bat-radio{width:20px;height:20px;border-radius:50%;border:2px solid #e2e8f0;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;background:#fff;}
+.bat-radio.on{border-color:var(--green);background:var(--green);}
+.bat-radio.on::after{content:'✓';font-size:11px;color:#fff;font-weight:700;}
+
+/* ── GENERATE BTN ── */
+.genbtn{display:flex;align-items:center;justify-content:center;gap:8px;
+  margin:8px 12px 12px;padding:17px;border:none;border-radius:14px;width:calc(100%-24px);
+  background:linear-gradient(90deg,#1d4ed8,#1e40af);
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:20px;
+  letter-spacing:2px;color:#fff;cursor:pointer;
+  box-shadow:0 6px 20px rgba(29,78,216,0.4);border-bottom:3px solid #1e3a8a;}
+.genbtn:disabled{opacity:0.3;box-shadow:none;border-bottom:none;}
+.genbtn:active{transform:scale(0.98);}
+
+/* ── NEXT/BACK BTNS ── */
+.nav-btns{display:grid;grid-template-columns:1fr 2fr;gap:8px;padding:0 12px 14px;}
+.nav-btns.center{grid-template-columns:1fr;}
+.btn-back{border:2px solid #e2e8f0;background:#fff;border-radius:12px;padding:13px;
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#374151;cursor:pointer;}
+.btn-next{border:none;border-radius:12px;padding:13px;
+  background:linear-gradient(90deg,var(--amber),#d97706);
+  font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  box-shadow:0 4px 14px rgba(245,158,11,0.4);}
+
+/* ── PROPOSAL HERO ── */
+.phero{background:linear-gradient(155deg,#0f172a,#1a1a2e 60%,#1e3a5f);
+  padding:16px;border-radius:0 0 20px 20px;margin-bottom:12px;}
+.phero-ref{font-size:10px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+.phero-name{font-family:'Rajdhani',sans-serif;font-size:30px;font-weight:700;color:#fff;
+  margin-bottom:2px;line-height:1.1;}
+.phero-sub{font-size:13px;color:#94a3b8;margin-bottom:10px;}
+.phero-tag{display:inline-flex;align-items:center;gap:6px;border-radius:8px;
+  padding:5px 12px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:0.5px;margin-bottom:10px;}
+.phero-tag.epc{background:rgba(22,163,74,0.2);color:#86efac;border:1px solid rgba(22,163,74,0.3);}
+.phero-tag.dev{background:rgba(79,70,229,0.2);color:#a5b4fc;border:1px solid rgba(79,70,229,0.3);}
+.chips{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);
+  border-radius:16px;padding:4px 10px;font-size:12px;color:#e2e8f0;font-family:'Rajdhani',sans-serif;font-weight:600;}
+.chip.hi{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.3);color:var(--amber);}
+
+/* ── WITH/WITHOUT SOLAR ── */
+.sc-wrap{margin:0 12px 0;border-radius:14px 14px 0 0;
+  border:2px solid #e2e8f0;border-bottom:none;overflow:hidden;}
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;}
+.sc-side{padding:16px 12px;text-align:center;}
+.sc-side.wo{background:#fff5f5;}
+.sc-side.wi{background:#f0fdf4;}
+.sc-lbl{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.sc-side.wo .sc-lbl{color:#ef4444;}
+.sc-side.wi .sc-lbl{color:#16a34a;}
+.sc-amt{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;margin-bottom:2px;}
+.sc-side.wo .sc-amt{color:#ef4444;}
+.sc-side.wi .sc-amt{color:#16a34a;}
+.sc-mo{font-size:12px;color:#475569;font-weight:600;}
+.sc-divider{width:2px;background:#e2e8f0;align-self:stretch;}
+.sc-save{background:linear-gradient(90deg,#16a34a,#15803d);
+  margin:0 12px 12px;border-radius:0 0 14px 14px;
+  padding:11px 16px;display:flex;justify-content:space-between;align-items:center;}
+.sc-save-lbl{font-size:13px;color:rgba(255,255,255,0.8);font-weight:700;}
+.sc-save-val{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:#fff;}
+
+/* ── PCARD ── */
+.pcard{background:#fff;border-radius:14px;margin:0 12px 10px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.07);overflow:hidden;}
+.pcard-head{display:flex;align-items:center;gap:10px;padding:14px 16px 0;}
+.pcard-num{width:28px;height:28px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--amber),var(--red));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:#fff;}
+.pcard-title{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:#1a1a2e;}
+.pcard-div{height:2px;background:linear-gradient(90deg,var(--amber),transparent);margin:8px 16px 12px;}
+.narr{font-size:15px;color:#374151;line-height:1.8;padding:0 16px 14px;font-weight:500;}
+.tamil{background:rgba(245,158,11,0.05);border-left:3px solid var(--amber);
+  margin:0 12px 12px;border-radius:0 10px 10px 0;padding:12px 14px;}
+.tamil-lbl{font-size:10px;color:var(--amber);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:5px;font-weight:800;}
+.tamil-txt{font-size:16px;color:#374151;line-height:2.0;font-weight:500;}
+
+/* ── KPI GRID ── */
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px;}
+.kpi{border-radius:12px;padding:14px 12px;}
+.kpi.am{background:rgba(245,158,11,0.08);border:1.5px solid rgba(245,158,11,0.2);}
+.kpi.gr{background:rgba(22,163,74,0.08);border:1.5px solid rgba(22,163,74,0.2);}
+.kpi.bl{background:rgba(79,70,229,0.08);border:1.5px solid rgba(79,70,229,0.2);}
+.kpi.rd{background:rgba(204,0,0,0.06);border:1.5px solid rgba(204,0,0,0.15);}
+.kpi-lbl{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:5px;}
+.kpi-val{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;margin-bottom:2px;}
+.kpi-unit{font-size:11px;color:#64748b;font-weight:600;}
+
+/* ── TABLE ── */
+.tbl{margin:0 12px 10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0;}
+.th{display:grid;padding:8px 14px;background:#1a1a2e;}
+.th>div{font-size:10px;font-weight:700;color:#e2e8f0;letter-spacing:1px;text-transform:uppercase;}
+.tr{display:grid;padding:9px 14px;border-bottom:1px solid #f1f5f9;background:#fff;align-items:center;}
+.tr:last-child{border-bottom:none;}
+.tr:nth-child(even){background:#fafafa;}
+.tr>div{font-size:13px;color:#374151;font-weight:600;}
+.vr{font-weight:800;color:#ef4444;}
+.vg{font-weight:800;color:var(--green);}
+.yh{background:rgba(245,158,11,0.06)!important;border-left:3px solid var(--amber);}
+.yn{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;}
+
+/* ── BARS ── */
+.bars{padding:0 12px 12px;}
+.br{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.bl{font-size:13px;color:#64748b;width:44px;text-align:right;flex-shrink:0;font-weight:700;}
+.bt{flex:1;height:12px;background:#f1f5f9;border-radius:6px;overflow:hidden;}
+.bf{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--amber),var(--red));}
+.bv{font-size:13px;font-weight:800;color:#374151;width:42px;text-align:right;flex-shrink:0;}
+
+/* ── INFO LIST ── */
+.ilist{margin:0 12px 10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0;}
+.ir{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 14px;border-bottom:1px solid #f1f5f9;background:#fff;}
+.ir:last-child{border-bottom:none;}
+.ir:nth-child(even){background:#fafafa;}
+.ik{font-size:14px;color:#374151;font-weight:600;}
+.iv{font-size:14px;font-weight:800;}
+
+/* ── STEPS ── */
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 12px 12px;}
+.step{background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;
+  padding:12px 10px;display:flex;gap:8px;}
+.step-n{width:24px;height:24px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--amber),var(--red));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:#fff;}
+.step-t{font-size:13px;font-weight:800;color:#1a1a2e;margin-bottom:2px;}
+.step-d{font-size:11px;color:#64748b;font-weight:600;line-height:1.4;}
+
+/* ── FOOTER ── */
+.pfooter{background:#0f172a;margin:0 12px 10px;border-radius:14px;
+  padding:16px;text-align:center;}
+.pfooter-name{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:#fff;}
+.pfooter-name em{color:var(--amber);font-style:normal;}
+.pfooter-tag{font-size:10px;color:var(--amber);letter-spacing:2px;font-weight:700;}
+.pfooter-c{font-size:13px;color:#94a3b8;margin-top:3px;font-weight:600;}
+.pfooter-d{font-size:11px;color:#94a3b8;margin-top:8px;line-height:1.6;
+  border-top:1px solid #1f2937;padding-top:8px;}
+
+/* ── SHARE ── */
+.shr{background:#fff;border-radius:14px;margin:0 12px 14px;padding:14px;
+  box-shadow:0 1px 6px rgba(0,0,0,0.07);}
+.shr-title{font-size:11px;color:#475569;letter-spacing:1.5px;text-transform:uppercase;
+  text-align:center;margin-bottom:10px;font-weight:800;}
+.shr-g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.sbtn{border:none;border-radius:10px;padding:13px 10px;cursor:pointer;
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;letter-spacing:0.5px;
+  color:#fff;display:flex;align-items:center;justify-content:center;gap:6px;}
+.sbtn:active{transform:scale(0.97);}
+.sbtn.wa{background:linear-gradient(90deg,#25D366,#128C7E);}
+.sbtn.em{background:linear-gradient(90deg,var(--amber),var(--red));}
+.sbtn.xl{background:linear-gradient(90deg,var(--green),#15803d);}
+.sbtn.cl{background:linear-gradient(90deg,var(--indigo),#4338ca);}
+
+/* ── MODEL DETAIL ── */
+.mbox{border-radius:12px;padding:14px;margin:0 12px 10px;}
+.mbox.epc{background:rgba(22,163,74,0.05);border:1.5px solid rgba(22,163,74,0.2);}
+.mbox.dev{background:rgba(79,70,229,0.05);border:1.5px solid rgba(79,70,229,0.2);}
+.mbox-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;margin-bottom:8px;}
+.k3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.mk{border-radius:10px;padding:10px 8px;text-align:center;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.mk-lbl{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;font-weight:700;}
+.mk-val{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;}
+.mk-unit{font-size:10px;color:#64748b;margin-top:1px;font-weight:600;}
+.blist{background:rgba(22,163,74,0.04);border:1px solid rgba(22,163,74,0.15);
+  border-radius:10px;padding:12px;}
+.blist-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
+  color:var(--green);margin-bottom:6px;}
+.blist-item{font-size:13px;color:#374151;padding:4px 0;border-bottom:1px solid rgba(22,163,74,0.08);font-weight:600;}
+.blist-item:last-child{border-bottom:none;}
+
+/* ── SETTINGS ── */
+.sp-note{margin:8px 12px 10px;background:#fffbf0;border:1px solid rgba(245,158,11,0.25);
+  border-radius:10px;padding:10px 12px;font-size:13px;color:#92400e;line-height:1.6;font-weight:600;}
+.sp-install{margin:0 12px 10px;background:#0f172a;border-radius:12px;padding:14px;}
+.sp-install-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+  color:var(--amber);margin-bottom:8px;}
+.sp-install-body{font-size:13px;color:#94a3b8;line-height:2.0;font-weight:600;}
+.sp-sec-title{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  color:#1a1a2e;padding:10px 16px 4px;border-bottom:2px solid var(--amber);
+  margin:0 12px 6px;}
+.ef-row{display:flex;justify-content:space-between;align-items:center;
+  padding:11px 16px;border-bottom:1px solid #f1f5f9;background:#fff;}
+.ef-row:last-child{border-bottom:none;}
+.ef-lbl{font-size:13px;color:#374151;font-weight:700;}
+.ef-desc{font-size:11px;color:#94a3b8;margin-top:2px;font-weight:600;}
+.ef-inp{border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:15px;
+  font-weight:700;color:#0f172a;font-family:'DM Sans',sans-serif;width:100px;text-align:right;}
+.ef-inp:focus{outline:none;border-color:var(--amber);}
+.ef-unit{font-size:11px;color:#94a3b8;margin-left:3px;font-weight:700;}
+.savebtn{margin:12px;width:calc(100% - 24px);border:none;border-radius:12px;padding:14px;
+  background:linear-gradient(90deg,var(--green),#15803d);
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;letter-spacing:1.5px;
+  color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.dlbtn{margin:0 12px 8px;width:calc(100% - 24px);border:none;border-radius:12px;padding:12px;
+  background:linear-gradient(90deg,#1d4ed8,#1e40af);
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:7px;}
+
+/* ── LOADER ── */
+.loader{display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 30px;text-align:center;}
+.spinner{width:50px;height:50px;border:3px solid rgba(245,158,11,0.2);
+  border-top:3px solid var(--amber);border-radius:50%;animation:spin 0.9s linear infinite;margin-bottom:18px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loader-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#0f172a;margin-bottom:5px;}
+.loader-sub{font-size:14px;color:#64748b;margin-bottom:18px;font-weight:600;}
+.llist{width:100%;max-width:280px;text-align:left;}
+.li{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #e2e8f0;
+  font-size:14px;color:#94a3b8;font-weight:600;}
+.li:last-child{border-bottom:none;}
+.li.done{color:var(--green);}
+.li.on{color:var(--amber);font-weight:800;}
+.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* ── NETWORK BOX ── */
+.nbox{margin:0 12px 10px;background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:12px;padding:12px 14px;}
+.nbox-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:#0369a1;margin-bottom:8px;}
+.nrow{display:flex;justify-content:space-between;padding:4px 0;
+  border-bottom:1px solid #e0f2fe;font-size:13px;font-weight:600;}
+.nrow:last-child{border-bottom:none;}
+
+@media(min-width:600px){
+  .app{max-width:420px;margin:0 auto;box-shadow:0 0 60px rgba(0,0,0,0.3);}
+  body{background:#0f172a;}
+}
+
+/* ── VOICE INTERVIEW — CHAT STYLE ── */
+.vi-wrap{background:#0b141a;min-height:100vh;display:flex;flex-direction:column;}
+.vi-header{background:#202c33;padding:10px 14px;display:flex;align-items:center;gap:10px;
+  flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.vi-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#8b5cf6);
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.vi-av.sp{animation:avsp 1s ease infinite;}
+.vi-av.li{background:linear-gradient(135deg,#dc2626,#991b1b);animation:avli 0.6s ease infinite;}
+@keyframes avsp{0%,100%{box-shadow:0 0 0 0 rgba(236,72,153,0.5);}50%{box-shadow:0 0 0 12px rgba(236,72,153,0);}}
+@keyframes avli{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.6);}50%{box-shadow:0 0 0 14px rgba(220,38,38,0);}}
+.vi-hname{font-size:15px;font-weight:700;color:#e9edef;}
+.vi-hstat{font-size:12px;color:#8696a0;margin-top:1px;}
+.vi-hexit{background:none;border:none;color:#8696a0;font-size:22px;cursor:pointer;padding:4px 8px;margin-left:auto;}
+
+.vi-chat{flex:1;overflow-y:auto;padding:10px 10px 6px;display:flex;flex-direction:column;
+  gap:4px;-webkit-overflow-scrolling:touch;}
+.vi-chat::-webkit-scrollbar{display:none;}
+
+/* Bubbles */
+.bw{display:flex;margin-bottom:2px;}
+.bw.bot{justify-content:flex-start;}
+.bw.usr{justify-content:flex-end;}
+.bb{max-width:82%;border-radius:8px;padding:9px 12px;font-size:14px;
+  line-height:1.55;word-break:break-word;position:relative;}
+.bb.bot{background:#202c33;color:#e9edef;border-radius:0 8px 8px 8px;}
+.bb.usr{background:#005c4b;color:#e9edef;border-radius:8px 8px 0 8px;}
+.bb.sys{background:rgba(255,255,255,0.04);color:#8696a0;font-size:12px;
+  font-style:italic;text-align:center;max-width:90%;margin:2px auto;border-radius:8px;}
+.bt{font-size:10px;color:#8696a0;text-align:right;margin-top:3px;}
+
+/* Answer display in bot bubble */
+.ans-badge{display:inline-block;background:rgba(37,211,102,0.15);border:1px solid rgba(37,211,102,0.35);
+  border-radius:6px;padding:3px 10px;font-size:13px;font-weight:800;color:#25d366;
+  margin-top:5px;}
+.ans-badge.bad{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);color:#ef4444;}
+
+/* Typing dots */
+.tdots{display:flex;align-items:center;gap:4px;padding:3px 0;}
+.tdots span{width:7px;height:7px;border-radius:50%;background:#8696a0;
+  animation:td 1.2s ease infinite;}
+.tdots span:nth-child(2){animation-delay:0.2s;}
+.tdots span:nth-child(3){animation-delay:0.4s;}
+@keyframes td{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+
+/* Progress bar */
+.vi-prog{height:3px;background:rgba(255,255,255,0.08);flex-shrink:0;}
+.vi-prog-fill{height:3px;background:#25d366;transition:width 0.5s ease;}
+
+/* Bottom mic bar */
+.vi-bottom{background:#202c33;padding:10px 14px 20px;display:flex;align-items:center;
+  gap:10px;flex-shrink:0;border-top:2px solid #25d366;box-shadow:0 -4px 16px rgba(0,0,0,0.4);}
+.vi-heard{flex:1;background:#2a3942;border:none;border-radius:20px;padding:10px 14px;
+  font-size:14px;color:#e9edef;font-family:'DM Sans',sans-serif;outline:none;
+  min-height:42px;resize:none;pointer-events:none;}
+.vi-mic-btn{width:58px;height:58px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:28px;
+  flex-shrink:0;transition:transform 0.15s;
+  box-shadow:0 4px 16px rgba(0,0,0,0.4);}
+.vi-mic-btn.idle{background:#25d366;box-shadow:0 4px 16px rgba(37,211,102,0.5);animation:idleglow 2s ease infinite;}
+.vi-mic-btn.rec{background:#dc2626;animation:mbpulse 0.7s ease infinite;}
+.vi-mic-btn.wait{background:#374151;cursor:not-allowed;}
+@keyframes mbpulse{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+@keyframes idleglow{0%,100%{box-shadow:0 4px 16px rgba(37,211,102,0.4);}50%{box-shadow:0 4px 24px rgba(37,211,102,0.8);}}
+
+/* Summary card */
+.vi-sumcard{background:#1a2c35;border-radius:10px;overflow:hidden;margin-top:8px;}
+.vi-sumrow{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.vi-sumrow:last-child{border-bottom:none;}
+.vi-sumk{font-size:11px;color:#8696a0;font-weight:700;text-transform:uppercase;letter-spacing:0.7px;}
+.vi-sumv{font-size:13px;font-weight:800;color:#e9edef;text-align:right;}
+.vi-sumv.x{color:#ef4444;font-style:italic;font-size:12px;}
+
+/* Action buttons */
+.vi-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.vi-act{border:none;border-radius:16px;padding:8px 16px;font-size:13px;font-weight:700;
+  cursor:pointer;font-family:'DM Sans',sans-serif;}
+.vi-act.go{background:#25d366;color:#fff;}
+.vi-act.re{background:rgba(37,211,102,0.12);color:#25d366;border:1px solid rgba(37,211,102,0.3);}
+.vi-act.ed{background:rgba(255,255,255,0.07);color:#8696a0;border:1px solid rgba(255,255,255,0.1);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand" id="logo-wrap"></div>
+    <button class="nav-pill" onclick="goPage('settings')">⚙ Settings</button>
+  </div>
+
+
+  <!-- VOICE INTERVIEW PAGE -->
+  <div class="page" id="pg-voice">
+    <div class="vi-page" id="vi-body"></div>
+  </div>
+  <!-- FORM PAGE -->
+  <div class="page active" id="pg-form">
+    <div id="form-body"></div>
+  </div>
+
+  <!-- PROPOSAL PAGE -->
+  <div class="page" id="pg-proposal">
+    <div id="prop-body"></div>
+  </div>
+
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="pg-settings">
+    <div id="settings-body"></div>
+  </div>
+
+  <div class="bottomnav">
+    <button class="bnav act" id="bn-form" onclick="goPage('form')">
+      <span class="bnav-icon">📋</span>
+      <span class="bnav-lbl">New</span>
+    </button>
+    <button class="bnav" id="bn-proposal" onclick="goProposal()">
+      <span class="bnav-icon">☀</span>
+      <span class="bnav-lbl">Proposal</span>
+    </button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+      <div class="bnav-fab" onclick="doGenerate()">⚡</div>
+      <span class="bnav-lbl" style="color:var(--amber);font-size:11px;font-weight:700;">Generate</span>
+    </div>
+    <button class="bnav" id="bn-settings" onclick="goPage('settings')">
+      <span class="bnav-icon">⚙</span>
+      <span class="bnav-lbl">Settings</span>
+    </button>
+    <button class="bnav" onclick="sendWA()">
+      <span class="bnav-icon">💬</span>
+      <span class="bnav-lbl">Send</span>
+    </button>
+  </div>
+</div>
+
+<script>
+
+// ── COPY PROTECTION ───────────────────────────────────────────────────────────
+// Disables right-click, text selection, copy, print, developer tools shortcut
+
+(function(){
+  // Block right click
+  document.addEventListener("contextmenu", function(e){ e.preventDefault(); return false; });
+
+  // Block copy/cut
+  document.addEventListener("copy",  function(e){ e.preventDefault(); return false; });
+  document.addEventListener("cut",   function(e){ e.preventDefault(); return false; });
+
+  // Block select all
+  document.addEventListener("selectstart", function(e){ e.preventDefault(); return false; });
+
+  // Block keyboard shortcuts: Ctrl/Cmd + C, U, S, P, Shift+I, F12
+  document.addEventListener("keydown", function(e){
+    var k=e.key.toLowerCase(), ctrl=e.ctrlKey||e.metaKey;
+    if(ctrl && (k==="c"||k==="u"||k==="s"||k==="p"||k==="a")) { e.preventDefault(); return false; }
+    if(e.key==="F12"){ e.preventDefault(); return false; }
+    if(ctrl && e.shiftKey && (k==="i"||k==="j"||k==="c")){ e.preventDefault(); return false; }
+  });
+
+  // Disable text selection via CSS
+  document.body.style.webkitUserSelect="none";
+  document.body.style.userSelect="none";
+  document.body.style.webkitTouchCallout="none";
+
+  // Detect devtools open (width trick) — show warning
+  var devOpen=false;
+  setInterval(function(){
+    var w=window.outerWidth-window.innerWidth>100;
+    var h=window.outerHeight-window.innerHeight>100;
+    if((w||h)&&!devOpen){
+      devOpen=true;
+      try{console.clear();}catch(e){}
+      try{console.log("%cEIL Solar — Proprietary Software","color:red;font-size:20px;font-weight:bold;");}catch(e){}
+      try{console.log("%cThis application belongs to EIL Solar / Kaveri Power Solutions.","font-size:14px;");}catch(e){}
+      try{console.log("%cUnauthorised copying or redistribution is prohibited.","font-size:14px;");}catch(e){}
+    } else if(!w&&!h) devOpen=false;
+  },1000);
+
+  // Watermark overlay — appears on print
+  var style=document.createElement("style");
+  style.textContent="@media print{body::before{content:'CONFIDENTIAL — EIL SOLAR / KAVERI POWER SOLUTIONS';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:48px;color:rgba(204,0,0,0.18);font-weight:900;font-family:Arial,sans-serif;z-index:9999;pointer-events:none;white-space:nowrap;} .bottomnav,.topbar{display:none!important;}}";
+  document.head.appendChild(style);
+})();
+
+// ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
+var APP_VERSION = "20";
+// Force cache refresh on new deploy — iPhone Safari caches aggressively
+(function(){
+  var stored = localStorage.getItem("eil_version");
+  if(stored && stored !== APP_VERSION){
+    localStorage.setItem("eil_version", APP_VERSION);
+    // Clear caches and reload
+    if('caches' in window){
+      caches.keys().then(function(names){
+        names.forEach(function(n){caches.delete(n);});
+      });
+    }
+    window.location.reload(true);
+    return;
+  }
+  localStorage.setItem("eil_version", APP_VERSION);
+})();
+
+// ── DATA — ALL VALUES FROM Solar_v4_Universalmodel_23326_7new_inputs_dynamicmodel.xlsx ─
+// Source sheets: Tariff_Lookup (tariff rates), App_Config (costs/settings), Battery_Options (battery data)
+// Tariff_Lookup: Energy_Charge_Rate, Fixed_Charge_Rate, Network_Charge_Rate, Demand_Charge_Rate,
+//               Electricity_Tax_Rate, Export_Rate — all categories
+// App_Config: Default_Cost_Per_kW=60000, Default_Solar_Yield=4.3, Default_Degradation=0.005,
+//             Default_Escalation=0.05, Default_Self_Consumption=0.75, Subsidy rates
+// Battery_Options: LFP Standard 8000/kWh, LFP Premium 10000, NMC 7000, Lead Acid 4000, LTO 15000
+var TARIFFS = {
+  Residential:{
+    lbl:"Residential LT I-A",maxKwp:50,mechanism:"Net Metering",
+    ur:8.4,fp:0,net:0.318,demand:0,tax:0,ex:0,
+    typical:{kwp:3,bm:120,demand:0},
+    slabs:[{u:"0-100",r:0},{u:"101-200",r:2.35},{u:"201-400",r:4.70},{u:"401-500",r:6.30},{u:"501-600",r:8.40},{u:"601-800",r:9.45},{u:"801-1000",r:10.50},{u:"1000+",r:11.55}],
+    note:"Net Metering — surplus offsets import 1:1. No fixed charge. No electricity tax. No demand charge."
+  },
+  Commercial:{
+    lbl:"Commercial LM51",maxKwp:500,mechanism:"Feed-in Tariff",
+    ur:10.45,fp:110,net:1.75,demand:0,tax:0.05,ex:3.61,
+    typical:{kwp:10,bm:900,demand:20},
+    slabs:[{u:"All units",r:10.45}],
+    note:"Feed-in Tariff — export paid ₹3.61/kWh. Fixed ₹110/kW/mo. 5% electricity tax. No demand charge."
+  },
+  Industrial:{
+    lbl:"Industrial LT III-A",maxKwp:999,mechanism:"Feed-in Tariff",
+    ur:7.5,fp:200,net:1.75,demand:0,tax:0.05,ex:3.61,
+    typical:{kwp:30,bm:1800,demand:50},
+    slabs:[{u:"All units",r:7.5}],
+    note:"Feed-in Tariff — export paid ₹3.61/kWh. Fixed ₹200/kW/mo. 5% electricity tax. No demand charge."
+  },
+  HT:{
+    lbl:"High Tension HT",maxKwp:999,mechanism:"Feed-in Tariff",
+    ur:5.40,fp:450,net:1.75,demand:0,tax:0.05,ex:3.61,
+    typical:{kwp:50,bm:3000,demand:100},
+    slabs:[{u:"All units",r:5.40}],
+    note:"Feed-in Tariff — export paid ₹3.61/kWh. 5% electricity tax. Only HT has demand charges."
+  }
+};
+
+var S = {
+  costPerKw:60000,  // From Excel App_Config Default_Cost_Per_kW
+  yield:4.3, cuf:0.21, deg:0.005, esc:0.05, selfC:0.75,
+  irr:0.18, contractYrs:5, depRate:0.40, taxRate:0.30,
+  subT1:26000, subT2:18000, subCap:78000
+};
+
+var BATT = [
+  {name:"LFP Standard",cost:8000,eff:0.92,cycles:6000,war:10},
+  {name:"LFP Premium",cost:10000,eff:0.95,cycles:8000,war:12},
+  {name:"NMC",cost:7000,eff:0.90,cycles:3000,war:8},
+  {name:"Lead Acid",cost:4000,eff:0.80,cycles:1500,war:5},
+  {name:"LTO",cost:15000,eff:0.95,cycles:15000,war:20}
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var F = {
+  name:"",phone:"",location:"",email:"",
+  cat:"Commercial",kwp:10,bm:900,demand:20,
+  model:"epc",
+  bat:false,batT:0,batKwh:10
+};
+var proposal=null, loadStep=0, debTimer=null, activeRec=null, tempS={};
+
+// ── LOGO ──────────────────────────────────────────────────────────────────────
+function logo(sz){
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="'+sz+'" height="'+sz+'">'
+    +'<circle cx="100" cy="100" r="100" fill="#fff"/>'
+    +'<circle cx="100" cy="100" r="95" fill="none" stroke="#cc0000" stroke-width="6"/>'
+    +'<rect x="0" y="0" width="200" height="72" fill="#1a1a2e" clip-path="url(#lc)"/>'
+    +'<clipPath id="lc"><circle cx="100" cy="100" r="94"/></clipPath>'
+    +'<g transform="translate(100,42)" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round">'
+    +'<line x1="0" y1="-22" x2="0" y2="-16"/><line x1="15.6" y1="-15.6" x2="11.3" y2="-11.3"/>'
+    +'<line x1="22" y1="0" x2="16" y2="0"/><line x1="15.6" y1="15.6" x2="11.3" y2="11.3"/>'
+    +'<line x1="0" y1="22" x2="0" y2="16"/><line x1="-15.6" y1="15.6" x2="-11.3" y2="11.3"/>'
+    +'<line x1="-22" y1="0" x2="-16" y2="0"/><line x1="-15.6" y1="-15.6" x2="-11.3" y2="-11.3"/>'
+    +'</g><circle cx="100" cy="42" r="10" fill="#f59e0b"/>'
+    +'<text x="100" y="100" font-family="Arial" font-size="26" font-weight="900" fill="#cc0000" text-anchor="middle" letter-spacing="2">ELANGO</text>'
+    +'<text x="100" y="118" font-family="Arial" font-size="11" font-weight="600" fill="#333" text-anchor="middle" letter-spacing="3">INDUSTRIES</text>'
+    +'<line x1="50" y1="128" x2="150" y2="128" stroke="#cc0000" stroke-width="1.5"/>'
+    +'<text x="100" y="150" font-family="Arial" font-size="18" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="5">SOLAR</text></svg>';
+}
+document.getElementById("logo-wrap").innerHTML = logo(28)
+  +'<div class="brand-name"><em>EIL</em> Solar <span style="font-size:11px;color:#64748b;font-weight:600;">v'+APP_VERSION+'</span></div>';
+
+// ── FINANCIAL ENGINE ──────────────────────────────────────────────────────────
+function calc(kwp,bm,demand,cat){
+  var t=TARIFFS[cat]||TARIFFS.Commercial;
+  var isM=demand>=50;
+  var annC=isM?bm*12:bm*6;
+  // FIX: Use yield*365 for annual generation (matching Excel Calc Engine)
+  var ag=kwp*S.yield*365;
+  // Battery boosts self-consumption: for commercial/industrial with battery
+  var effSelfC=S.selfC;
+  if(F.bat&&t.tax>0){
+    // Battery captures excess solar, improves self-consumption to ~90%
+    var batBoost=Math.min(0.15,F.batKwh*BATT[F.batT].eff/(ag/365*60)*0.25);
+    effSelfC=Math.min(0.92,S.selfC+batBoost);
+  }
+  var selfU=Math.min(ag*effSelfC,annC);
+  var exp=Math.max(0,ag-selfU);
+  var grid=Math.max(0,annC-selfU);
+
+  // Network charge: Residential = CUF-normative (kW×24×0.21×365×₹0.318)
+  // Commercial/Industrial = generation-based (solar_gen × ₹1.75)
+  var isNetMeter=(t.mechanism==="Net Metering");
+  var normGen=kwp*24*S.cuf*365; // CUF-normative annual generation
+  var nChg=isNetMeter ? normGen*t.net : ag*t.net;
+  var eChg=annC*t.ur, fChg=kwp*t.fp*12, dChg=demand*t.demand*12;
+  // FIX: "Without solar" bill does NOT include network charge (per Excel)
+  // Network charge only applies WITH solar (on solar generation)
+  var baseW=eChg+fChg+dChg;
+  var taxW=baseW*t.tax;
+  var bw=Math.round(baseW+taxW);
+
+  var eChgS=grid*t.ur, expInc=exp*t.ex;
+  // FIX: "With solar" bill includes network charge on solar generation
+  var baseS=eChgS+fChg+dChg;
+  var taxS=baseS*t.tax;
+  var bs=Math.round(Math.max(0,baseS+taxS+nChg-expInc));
+
+  var y1=bw-bs;
+  var sys=kwp*S.costPerKw;
+  var sub=0;
+  if(t.tax===0){
+    if(kwp<=2)sub=kwp*S.subT1;
+    else if(kwp<=10)sub=2*S.subT1+(kwp-2)*S.subT2;
+    else sub=2*S.subT1+8*S.subT2;
+    sub=Math.min(sub,S.subCap);
+  }
+  var net=sys-sub;
+  var batC=F.bat?F.batKwh*BATT[F.batT].cost:0;
+  var total=net+batC;
+  var pb=y1>0?+(total/y1).toFixed(1):99;
+
+  var cum=0,cfs=[-total],rate=t.ur,yearly=[],yearlyFull=[];
+  for(var y=1;y<=25;y++){
+    var dg=Math.pow(1-S.deg,y-1),gen=ag*dg;
+    var su2=Math.min(gen*effSelfC,annC),ex2=Math.max(0,gen-su2),gr2=Math.max(0,annC-su2);
+    rate*=(1+S.esc);
+    var b2=gr2*rate+fChg+dChg;
+    // FIX: without solar bill does NOT include network charge
+    var bw2=(annC*rate+fChg+dChg)*(1+t.tax);
+    var normGen2=isNetMeter ? kwp*24*S.cuf*365*dg : gen; // CUF-normative with degradation for residential
+    var nChg2=normGen2*t.net;
+    var bs2=Math.max(0,b2*(1+t.tax)+nChg2-ex2*t.ex);
+    var sv=Math.round(bw2-bs2);
+    cum+=sv;cfs.push(sv);
+    yearly.push({y:y,sv:sv,cum:Math.round(cum)});
+    // Full yearly data for 25-year report
+    yearlyFull.push({y:y,gen:Math.round(gen),bw:Math.round(bw2),bs:Math.round(bs2),
+      sv:sv,cum:Math.round(cum),grid:Math.round(gr2),exp:Math.round(ex2),
+      nChg:Math.round(nChg2),rate:+rate.toFixed(2)});
+  }
+  var irr=0.12;
+  for(var i=0;i<200;i++){
+    var npv=0,dn=0;
+    cfs.forEach(function(c,j){npv+=c/Math.pow(1+irr,j);dn-=j*c/Math.pow(1+irr,j+1);});
+    if(Math.abs(dn)<1e-10)break;irr-=npv/dn;
+  }
+  var bmr=Math.pow(1+S.irr,1/6)-1;
+  var per=S.contractYrs*6;
+  var pmt=net*bmr*Math.pow(1+bmr,per)/(Math.pow(1+bmr,per)-1);
+
+  return{sys,sub,net,batC,total,y1:Math.max(0,y1),mo:Math.max(0,Math.round(y1/12)),
+    pb,cum25:Math.round(cum),irr:+(irr*100).toFixed(1),ag:Math.round(ag),yearly,yearlyFull,
+    bw,bs,eChg:Math.round(eChg),fChg:Math.round(fChg),nChg:Math.round(nChg),
+    dChg:Math.round(dChg),taxW:Math.round(taxW),expInc:Math.round(expInc),
+    pmt,bmr,per,annMarg:pmt*6,moCharge:Math.round(pmt),effSelfC:effSelfC,
+    selfU:Math.round(selfU),exp:Math.round(exp),grid:Math.round(grid)};
+}
+
+function L(n){
+  if(n===undefined||n===null||isNaN(n))return"₹—";
+  if(n>=100000)return"₹"+(n/100000).toFixed(1)+"L";
+  if(n>=1000)return"₹"+(n/1000).toFixed(0)+"K";
+  return"₹"+Math.round(n);
+}
+var today=new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+function esc(s){return String(s||"").replace(/"/g,"&quot;");}
+
+// ── PAGE NAVIGATION ───────────────────────────────────────────────────────────
+function goPage(p){
+  ["form","proposal","settings","voice"].forEach(function(id){
+    var el=document.getElementById("pg-"+id);
+    if(el) el.className="page"+(p===id?" active":"");
+    var bn=document.getElementById("bn-"+id);
+    if(bn)bn.className="bnav"+(p===id?" act":"");
+  });
+  if(p==="form") renderForm();
+  if(p==="settings") renderSettings();
+  window.scrollTo(0,0);
+}
+
+function goProposal(){
+  if(!proposal){
+    alert("Please fill in customer details and tap ⚡ Generate first.");
+    return;
+  }
+  goPage("proposal");
+}
+
+function doGenerate(){
+  if(!F.name.trim()||!F.phone.trim()){
+    alert("Please enter customer Name and Phone number first.");
+    goPage("form");
+    return;
+  }
+  generate();
+}
+
+// ── VOICE ─────────────────────────────────────────────────────────────────────
+function startVoice(field,btnId){
+  if(!("webkitSpeechRecognition" in window||"SpeechRecognition" in window)){
+    alert("Voice needs Chrome browser.");return;}
+  if(activeRec){try{activeRec.stop();}catch(e){}activeRec=null;}
+  var btn=document.getElementById(btnId);
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var rec=new SR();rec.lang="en-IN";rec.interimResults=true;
+  activeRec=rec;
+  if(btn){btn.classList.add("on");btn.textContent="🔴 Listening...";}
+  rec.onresult=function(e){
+    var txt="";for(var i=0;i<e.results.length;i++)txt=e.results[i][0].transcript;
+    var inp=document.getElementById("inp-"+field);if(inp)inp.value=txt;
+    if(e.results[e.results.length-1].isFinal){F[field]=txt;sched();rstV(btn,field);activeRec=null;}
+  };
+  rec.onspeechend=function(){rec.stop();};
+  rec.onerror=function(){rstV(btn,field);activeRec=null;};
+  rec.onend=function(){rstV(btn,field);activeRec=null;};
+  try{rec.start();}catch(e){rstV(btn,field);activeRec=null;}
+}
+function rstV(btn,field){
+  if(!btn)return;btn.classList.remove("on");
+  var lb={name:"🎤 Name",location:"🎤 Location"};
+  btn.textContent=lb[field]||"🎤 Speak";
+}
+
+// ── FORM ──────────────────────────────────────────────────────────────────────
+function renderForm(){
+  var t=TARIFFS[F.cat];
+  var maxK=t.maxKwp;
+  var safeK=Math.min(F.kwp,maxK);
+  var q=calc(safeK,F.bm,F.demand,F.cat);
+  var ok=F.name.trim()&&F.phone.trim();
+  var isM=F.demand>=50;
+  var h="";
+
+  // Header
+  h+='<div style="background:var(--navy);padding:14px 16px 16px;">'
+    +'<div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px;">New Proposal</div>'
+    +'<div style="font-size:12px;color:#64748b;font-weight:600;">Fill details · Choose model · Tap ⚡ Generate</div>'
+    +'<button onclick=\'startVoiceInterview()\' style=\'margin-top:10px;width:100%;border:none;border-radius:10px;padding:13px;background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(204,0,0,0.06));border:1.5px solid rgba(245,158,11,0.35);font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#f59e0b;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;\'>🎙 Voice Interview — Customer Speaks</button>'
+    +'</div>';
+
+  // Customer
+  h+='<span class="slbl">👤 Customer Details</span>';
+  h+='<div class="card">';
+  h+='<div class="vrow">'
+    +'<button class="vbtn" id="vb-name" onclick="startVoice(\'name\',\'vb-name\')">🎤 Name</button>'
+    +'<button class="vbtn" id="vb-loc" onclick="startVoice(\'location\',\'vb-loc\')">🎤 Location</button>'
+    +'</div>';
+  h+='<div class="field"><div class="field-lbl">Customer Name *</div>'
+    +'<input id="inp-name" value="'+esc(F.name)+'" placeholder="Mr. Rajan Kumar"'
+    +' style="font-size:22px;font-weight:800;" oninput="F.name=this.value;sched()"/></div>';
+  h+='<div class="field-row">'
+    +'<div class="field" style="border-right:1px solid #f1f5f9;">'
+    +'<div class="field-lbl">Mobile *</div>'
+    +'<input id="inp-phone" value="'+esc(F.phone)+'" placeholder="+91 98400 00000" type="tel"'
+    +' style="font-size:19px;font-weight:800;" oninput="F.phone=this.value;sched()"/></div>'
+    +'<div class="field"><div class="field-lbl">Email</div>'
+    +'<input id="inp-email" value="'+esc(F.email)+'" placeholder="optional" style="font-size:15px;"'
+    +' oninput="F.email=this.value"/></div></div>';
+  h+='<div class="field"><div class="field-lbl">Location / City</div>'
+    +'<input id="inp-location" value="'+esc(F.location)+'" placeholder="Chennai, Coimbatore..."'
+    +' style="font-size:19px;font-weight:800;" oninput="F.location=this.value;sched()"/></div>';
+  h+='</div>';
+
+  // Category
+  h+='<span class="slbl">⚡ TNEB Tariff Category</span>';
+  h+='<div class="card"><div class="field"><div class="field-lbl">Category</div>'
+    +'<select style="font-size:19px;font-weight:800;color:#0f172a;border:none;outline:none;'
+    +'width:100%;background:transparent;font-family:DM Sans,sans-serif;-webkit-appearance:none;padding:4px 0;"'
+    +' onchange="changeCat(this.value)">';
+  Object.keys(TARIFFS).forEach(function(k){
+    h+='<option value="'+k+'"'+(k===F.cat?" selected":"")+'>'+TARIFFS[k].lbl+'</option>';
+  });
+  h+='</select></div>';
+  // Compact tariff pill
+  h+='<div style="padding:8px 16px 10px;background:#f0f9ff;border-top:1px solid #bae6fd;">'
+    +'<div style="font-size:13px;font-weight:800;color:#0369a1;margin-bottom:3px;">'+t.lbl+'</div>'
+    +'<div style="font-size:12px;color:#374151;font-weight:700;">'
+    +'Energy ₹'+t.ur+'/kWh · Fixed ₹'+t.fp+'/kW · Tax: '+(t.tax>0?t.tax*100+"%":"Nil")
+    +(t.demand>0?' · Demand ₹'+t.demand+'/kVA':'')
+    +'</div>'
+    +'<div style="font-size:11px;color:#0369a1;font-weight:600;margin-top:3px;">'+t.note+'</div>'
+    +'<button onclick="goPage(\'settings\')" style="font-size:11px;color:#0369a1;background:none;border:none;'
+    +'cursor:pointer;font-weight:800;margin-top:4px;">⚙ Full tariff details in Settings →</button>'
+    +'</div></div>';
+
+  // Model choice
+  h+='<span class="slbl">🏗️ Offer Model — Choose One</span>';
+  h+='<div class="mcards">';
+  h+='<div class="mcard'+(F.model==="epc"?" epc":"")+'" id="mcard-epc" onclick="pickModel(\'epc\')">'
+    +'<div class="mcard-ico">🏠</div>'
+    +'<div class="mcard-name" style="color:var(--green)">EPC Model</div>'
+    +'<div class="mcard-desc">Own from Day 1. You claim 40% depreciation benefit.</div>'
+    +'<div class="mcard-price" id="epc-px" style="color:var(--green)">'+L(q.total)+' one-time</div>'
+    +'</div>';
+  h+='<div class="mcard'+(F.model==="dev"?" dev":"")+'" id="mcard-dev" onclick="pickModel(\'dev\')">'
+    +'<div class="mcard-ico">📈</div>'
+    +'<div class="mcard-name" style="color:var(--indigo)">Developer</div>'
+    +'<div class="mcard-desc">Zero upfront. Fixed monthly charge 5 yrs. Plant yours FREE.</div>'
+    +'<div class="mcard-price" id="dev-px" style="color:var(--indigo)">'+L(q.moCharge)+'/month</div>'
+    +'</div>';
+  h+='</div>';
+
+  // System sizing
+  h+='<span class="slbl">☀ System Sizing</span>';
+  h+='<div class="card">';
+  // Capacity — stepper with quick-pick buttons
+  h+='<div class="sfield"><div class="field-lbl">Solar Capacity (kWp)</div>'
+    +'<div class="stepper">'
+    +'<button class="st-btn" onclick="adjKwp(-1)">−</button>'
+    +'<input type="number" class="st-val" id="inp-kwp" value="'+safeK+'" min="1" max="'+maxK+'" '
+    +'oninput="var v=Math.max(1,Math.min('+maxK+',+this.value||1));F.kwp=v;sched()"/>'
+    +'<button class="st-btn" onclick="adjKwp(1)">+</button>'
+    +'</div>'
+    +'<div class="quick-picks">';
+  // Quick pick buttons based on category
+  var picks=(F.cat==="Residential")?[1,2,3,5,8,10]:(F.cat==="Commercial")?[5,10,15,20,30,50]:[10,20,30,50,75,100];
+  picks.forEach(function(p){
+    if(p<=maxK) h+='<button class="qp'+(safeK===p?' on':'')+'" onclick="setKwp('+p+')">'+p+'</button>';
+  });
+  h+='</div>'
+    +'<div class="snote">Max '+maxK+' kWp for '+t.lbl+'. Tap a size or type exact value.</div>'
+    +'</div>';
+
+  // Consumption — stepper with direct input
+  var bmMax=isM?50000:30000;
+  var safeBm=Math.min(F.bm,bmMax);
+  h+='<div class="sfield"><div class="field-lbl">'+(isM?"Monthly Consumption (Units)":"Bi-Monthly Consumption (Units)")+'</div>'
+    +'<div class="stepper">'
+    +'<button class="st-btn" onclick="adjBm(-50)">−50</button>'
+    +'<input type="number" class="st-val" id="inp-bm" value="'+safeBm+'" min="50" max="'+bmMax+'" '
+    +'oninput="var v=Math.max(50,Math.min('+bmMax+',+this.value||100));F.bm=v;sched()"/>'
+    +'<button class="st-btn" onclick="adjBm(50)">+50</button>'
+    +'</div>'
+    +'<div class="snote">'+(isM?"⚠ ≥50 kVA: TNEB monthly billing":"ℹ <50 kVA: TNEB bi-monthly billing")+'</div>'
+    +'</div>';
+
+  // Self-consumption ratio
+  h+='<div class="sfield"><div class="field-lbl">Self-Consumption Ratio</div>'
+    +'<div class="stepper">'
+    +'<button class="st-btn" onclick="adjSelf(-5)">−5%</button>'
+    +'<input type="number" class="st-val" id="inp-self" value="'+Math.round(S.selfC*100)+'" min="50" max="100" step="5" '
+    +'oninput="var v=Math.max(50,Math.min(100,+this.value||75));S.selfC=v/100;sched()"/> <span style="font-size:14px;color:#64748b;">%</span>'
+    +'<button class="st-btn" onclick="adjSelf(5)">+5%</button>'
+    +'</div>'
+    +'<div class="snote">75% typical. With battery: 85-95%.</div>'
+    +'</div>';
+
+  // Demand — only show if applicable
+  if(F.cat!=="Residential"){
+    h+='<div class="sfield"><div class="field-lbl">Contracted Demand (kVA)</div>'
+      +'<div class="stepper">'
+      +'<button class="st-btn" onclick="adjDem(-5)">−5</button>'
+      +'<input type="number" class="st-val" id="inp-dem" value="'+F.demand+'" min="1" max="500" '
+      +'oninput="var v=Math.max(1,Math.min(500,+this.value||5));F.demand=v;checkDemand();sched()"/>'
+      +'<button class="st-btn" onclick="adjDem(5)">+5</button>'
+      +'</div>'
+      +'<div class="snote">⚠ ≥50 kVA switches to monthly billing</div>'
+      +'</div>';
+  }
+  h+='</div>';
+
+  // Battery
+  h+='<span class="slbl">🔋 Battery Storage (Optional)</span>';
+  h+='<div class="card">';
+  h+='<div class="bat-toggle" onclick="togBat()">'
+    +'<div><div class="bat-lbl">Add Battery Storage</div>'
+    +'<div class="bat-desc">For commercial & industrial — backup power, peak shaving</div></div>'
+    +'<div class="sw'+(F.bat?" on":"")+'" id="bat-sw"></div>'
+    +'</div>';
+  if(F.bat){
+    h+='<div class="bat-type-row head"><div>Type</div><div>₹/kWh</div><div></div></div>';
+    BATT.forEach(function(b,i){
+      h+='<div class="bat-type-row">'
+        +'<div><div style="font-weight:800;font-size:13px;">'+b.name+'</div>'
+        +'<div style="font-size:11px;color:#64748b;">'+b.war+' yr · '+b.eff*100+'% eff</div></div>'
+        +'<div style="font-weight:800;">₹'+b.cost.toLocaleString("en-IN")+'</div>'
+        +'<div><div class="bat-radio'+(F.batT===i?" on":"")+'" onclick="pickBat('+i+')"></div></div>'
+        +'</div>';
+    });
+    h+='<div class="sfield" style="border-top:1px solid #f1f5f9;">'
+      +'<div class="stop"><span class="slbl2">Battery Capacity</span>'
+      +'<span class="sval" id="bkwh">'+F.batKwh+' kWh</span></div>'
+      +'<input type="range" min="5" max="200" step="5" value="'+F.batKwh+'"'
+      +' oninput="F.batKwh=+this.value;document.getElementById(\'bkwh\').textContent=this.value+\' kWh\';sched()"/>'
+      +'<div class="slim"><span>5 kWh</span><span>200 kWh</span></div></div>';
+    h+='<div style="padding:8px 16px 10px;font-size:13px;color:#d97706;font-weight:700;">'
+      +'🔋 Battery adds '+L(F.batKwh*BATT[F.batT].cost)+' · '+BATT[F.batT].name+'</div>';
+  }
+  h+='</div>';
+
+  // Live estimate
+  if(ok){
+    h+='<div class="est"><div class="est-title">✦ Live Estimate — '+(F.model==="epc"?"EPC Model":"Developer Model")+'</div>'
+      +'<div class="est-grid">';
+    if(F.model==="epc"){
+      h+='<div class="est-item"><div class="est-lbl">Net Cost</div><div class="est-val" style="color:#d97706">'+L(q.total)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Yr 1 Saving</div><div class="est-val" style="color:var(--green)">'+L(q.y1)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Payback</div><div class="est-val" style="color:var(--indigo)">'+q.pb+' Yrs</div></div>';
+    } else {
+      var ps=Math.round(q.bw*Math.pow(1.05,5)-q.bs);
+      h+='<div class="est-item"><div class="est-lbl">Upfront</div><div class="est-val" style="color:var(--indigo)">ZERO</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Monthly</div><div class="est-val" style="color:#d97706">'+L(q.moCharge)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Post-5yr/yr</div><div class="est-val" style="color:var(--green)">'+L(ps)+'</div></div>';
+    }
+    h+='</div></div>';
+  }
+
+  // Generate button
+  h+='<button class="genbtn" id="gen-btn" onclick="generate()"'+(ok?"":"disabled")+'>'
+    +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
+    +' GENERATE AI PROPOSAL</button>';
+
+  // Next button (goes to proposal if exists)
+  h+='<div class="nav-btns center">';
+  if(proposal){
+    h+='<button class="btn-next" onclick="goPage(\'proposal\')">'
+      +'View Last Proposal ›</button>';
+  }
+  h+='</div>';
+
+  h+='<div style="height:10px;"></div>';
+  document.getElementById("form-body").innerHTML=h;
+}
+
+function pickModel(m){
+  F.model=m;renderForm();
+}
+
+// ── STEPPER FUNCTIONS ─────────────────────────────────────────────────────────
+function setKwp(v){
+  var maxK=TARIFFS[F.cat].maxKwp;
+  F.kwp=Math.max(1,Math.min(maxK,v));
+  renderForm();
+}
+function adjKwp(d){
+  var maxK=TARIFFS[F.cat].maxKwp;
+  F.kwp=Math.max(1,Math.min(maxK,F.kwp+d));
+  renderForm();
+}
+function adjBm(d){
+  var isM=F.demand>=50;
+  var mx=isM?50000:30000;
+  F.bm=Math.max(50,Math.min(mx,F.bm+d));
+  renderForm();
+}
+function adjSelf(d){
+  var v=Math.round(S.selfC*100)+d;
+  S.selfC=Math.max(50,Math.min(100,v))/100;
+  renderForm();
+}
+function adjDem(d){
+  F.demand=Math.max(1,Math.min(500,F.demand+d));
+  checkDemand();
+  renderForm();
+}
+
+function changeCat(c){
+  F.cat=c;
+  var t=TARIFFS[c];
+  if(F.kwp>t.maxKwp)F.kwp=t.maxKwp;
+  F.bm=t.typical.bm;F.demand=t.typical.demand;
+  renderForm();
+}
+
+function checkDemand(){
+  // re-render if crossing 50kVA boundary (billing cycle changes)
+  var sl=document.getElementById("dv");
+  if(sl){
+    var d=F.demand;
+    var note=document.querySelector(".snote");
+    // Just update note
+  }
+}
+
+function togBat(){F.bat=!F.bat;renderForm();}
+function pickBat(i){F.batT=i;renderForm();}
+
+function sched(){clearTimeout(debTimer);debTimer=setTimeout(updateEst,400);}
+function updateEst(){
+  var ok=F.name.trim()&&F.phone.trim();
+  var btn=document.getElementById("gen-btn");if(btn)btn.disabled=!ok;
+  if(!ok)return;
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var q=calc(safeK,F.bm,F.demand,F.cat);
+  var ep=document.getElementById("epc-px");var dp=document.getElementById("dev-px");
+  if(ep)ep.textContent=L(q.total)+" one-time";
+  if(dp)dp.textContent=L(q.moCharge)+"/month";
+  var eg=document.querySelector(".est-grid");
+  if(eg){
+    if(F.model==="epc"){
+      eg.innerHTML='<div class="est-item"><div class="est-lbl">Net Cost</div><div class="est-val" style="color:#d97706">'+L(q.total)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Yr 1 Saving</div><div class="est-val" style="color:var(--green)">'+L(q.y1)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Payback</div><div class="est-val" style="color:var(--indigo)">'+q.pb+' Yrs</div></div>';
+    } else {
+      var ps=Math.round(q.bw*Math.pow(1.05,5)-q.bs);
+      eg.innerHTML='<div class="est-item"><div class="est-lbl">Upfront</div><div class="est-val" style="color:var(--indigo)">ZERO</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Monthly</div><div class="est-val" style="color:#d97706">'+L(q.moCharge)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Post-5yr/yr</div><div class="est-val" style="color:var(--green)">'+L(ps)+'</div></div>';
+    }
+  }
+  var tit=document.querySelector(".est-title");
+  if(tit)tit.textContent="✦ Live Estimate — "+(F.model==="epc"?"EPC Model":"Developer Model");
+}
+
+// ── LOADING ───────────────────────────────────────────────────────────────────
+function showLoading(){
+  var steps=["Reading TNEB tariff from Excel","Calculating savings & ROI",
+    "Building 25-year projection","Drafting AI narrative","Adding Tamil summary","Done"];
+  var h='<div class="loader"><div class="spinner"></div>'
+    +'<div class="loader-title">Claude AI generating...</div>'
+    +'<div class="loader-sub">About 15 seconds</div>'
+    +'<div class="llist">';
+  steps.forEach(function(s,i){
+    h+='<div class="li" id="ls'+i+'"><div class="ld" style="background:#e2e8f0"></div>'+s+'</div>';
+  });
+  h+='</div></div>';
+  document.getElementById("prop-body").innerHTML=h;
+  goPage("proposal");
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────────
+async function generate(){
+  if(!F.name.trim()||!F.phone.trim()){alert("Enter customer name and phone.");return;}
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var fin=calc(safeK,F.bm,F.demand,F.cat);
+  var t=TARIFFS[F.cat];
+  loadStep=0;showLoading();
+
+  var si=setInterval(function(){
+    if(loadStep<5){
+      var prev=document.getElementById("ls"+loadStep);if(prev)prev.className="li done";
+      loadStep++;
+      var cur=document.getElementById("ls"+loadStep);if(cur)cur.className="li on";
+    }else clearInterval(si);
+  },2500);
+
+  var isEpc=F.model==="epc";
+  var mDesc=isEpc
+    ?"EPC — customer pays "+L(fin.total)+" owns Day 1, claims 40% WDV depreciation."
+    :"Developer — EIL invests "+L(fin.net)+", customer pays "+L(fin.moCharge)+"/month for 5 years, plant FREE after.";
+  var batNote=F.bat?" Battery "+F.batKwh+"kWh "+BATT[F.batT].name+" adds "+L(fin.batC)+".":"";
+
+  var prompt="EIL Solar Tamil Nadu proposal writer.\n\n"
+    +"CUSTOMER: "+F.name+", "+(F.location||"Tamil Nadu")+"\n"
+    +"TARIFF: "+t.lbl+" ("+t.mechanism+") | ₹"+t.ur+"/kWh | Fixed "+(t.fp>0?"₹"+t.fp+"/kW/mo":"NIL")+" | Network ₹"+t.net+"/kWh | Tax: "+(t.tax===0?"NIL":"5%")+" | Export: "+(t.ex>0?"₹"+t.ex+" Feed-in":"Banked Net Metering")+"\n"
+    +"SYSTEM: "+safeK+" kWp | "+F.bm+" units "+(F.demand>=50?"monthly":"bi-monthly")+" | Gen: "+fin.ag+" kWh/yr"+(F.demand>0?" | Demand: "+F.demand+" kVA":"")+"\n"
+    +"MODEL: "+mDesc+batNote+"\n"
+    +"KEY: Bill without solar "+L(fin.bw)+"/yr → with solar "+L(fin.bs)+"/yr | Saving "+L(fin.y1)+"/yr | Payback "+fin.pb+" yrs | IRR "+fin.irr+"% | 25yr "+L(fin.cum25)+"\n\n"
+    +"Write 5 sections, warm Indian English, 2-3 sentences each:\n"
+    +"1.executive: for "+F.name+", mention chosen model, key saving\n"
+    +"2.tariffAnalysis: "+t.lbl+" ("+t.mechanism+"), network charge ₹"+t.net+"/kWh, "+(t.tax===0?"no electricity tax, no fixed charge (residential benefit)":"5% electricity tax reduced by solar, fixed charge ₹"+t.fp+"/kW/mo")+", "+(t.ex>0?"feed-in tariff pays ₹"+t.ex+"/kWh for export":"net metering banks surplus 1:1")+"\n"
+    +"3.yearByYear: savings growth, payback yr "+fin.pb+", 5% escalation advantage\n"
+    +"4.roiExplanation: "+fin.irr+"% IRR vs 7% FD, "+(isEpc?"40% depreciation benefit":"zero risk zero upfront advantage")+"\n"
+    +"5.tamilSummary: 3-4 sentences Tamil script, "+safeK+" kWp, "+(isEpc?L(fin.total)+" cost, "+L(fin.mo)+"/month saving, "+fin.pb+" yrs payback":"zero upfront, "+L(fin.moCharge)+"/month, plant free after 5 yrs")+"\n\n"
+    +'JSON only no markdown: {"executive":"","tariffAnalysis":"","yearByYear":"","roiExplanation":"","tamilSummary":""}';
+
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+        messages:[{role:"user",content:prompt}]})
+    });
+    var data=await res.json();clearInterval(si);
+    var txb=(data.content||[]).find(function(b){return b.type==="text";});
+    proposal=JSON.parse((txb?txb.text:"{}").replace(/```json|```/g,"").trim());
+  }catch(e){
+    clearInterval(si);
+    var f2=fin;
+    proposal={
+      executive:"Dear "+F.name+", we present this solar proposal under the "+(isEpc?"EPC ownership":"Developer")+" model for your "+t.lbl+" connection in "+(F.location||"Tamil Nadu")+". "+(isEpc?"Investing "+L(f2.total)+", you save "+L(f2.y1)+" in Year 1, recovering fully in "+f2.pb+" years.":"Zero upfront — EIL installs "+safeK+" kWp, you pay "+L(f2.moCharge)+"/month for 5 years, then the plant is yours FREE.")+" Over 25 years, savings reach "+L(f2.cum25)+".",
+      tariffAnalysis:"Under "+t.lbl+" tariff ("+t.mechanism+"), you pay ₹"+t.ur+" per unit. "+(t.tax===0?"As a residential customer, you pay zero electricity tax and zero fixed charge — a direct saving.":"A 5% electricity tax applies on your bill, which solar reduces proportionally.")+" Network charge ₹"+t.net+"/kWh applies on solar generation, and "+(t.ex>0?"under Feed-in Tariff, surplus exports earn ₹"+t.ex+"/kWh from TNEB.":"under Net Metering, your surplus units are banked and offset against imports 1:1."),
+      yearByYear:"Savings begin at "+L(f2.y1)+" in Year 1 and grow every year as TNEB tariffs escalate at ~5% annually. Full payback arrives in Year "+f2.pb+". By Year 25, cumulative savings reach "+L(f2.cum25)+".",
+      roiExplanation:"Solar delivers "+f2.irr+"% IRR — far exceeding bank FDs at ~7%. "+(isEpc?"You also claim 40% accelerated depreciation under IT Act Section 32, significantly reducing your effective cost.":"With zero upfront investment, all financial risk rests with EIL. You benefit from Day 1 with no capital outlay.")+" This is a guaranteed, sunlight-backed return.",
+      tamilSummary:"அன்புள்ள "+F.name+" அவர்களே, "+(isEpc?safeK+" kWp சோலார் EPC மாடலில் "+L(f2.total)+" முதலீட்டில் நிறுவப்படும். மாதாந்திர சேமிப்பு "+L(f2.mo)+". "+f2.pb+" ஆண்டுகளில் முதலீடு திரும்பும்.":"டெவலப்பர் மாடலில் முன்பணம் ஏதுமில்லை. மாதாந்திர கட்டணம் "+L(f2.moCharge)+". 5 ஆண்டுகளுக்கு பின் ஆலை உங்களுக்கே சொந்தமாகும்.")+" 25 ஆண்டுகளில் மொத்தம் "+L(f2.cum25)+" சேமிப்பு."
+    };
+  }
+  renderProposal();
+}
+
+// ── PROPOSAL RENDER ───────────────────────────────────────────────────────────
+function renderProposal(){
+  if(!proposal){goPage("form");return;}
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var fin=calc(safeK,F.bm,F.demand,F.cat);
+  var t=TARIFFS[F.cat];
+  var p=proposal;
+  var isEpc=F.model==="epc";
+  var postSave=Math.round(fin.bw*Math.pow(1.05,5)-fin.bs);
+  var kyrs=[1,2,3,4,5,6,7,8,9,10,15,20,25].map(function(y){return fin.yearly[y-1];}).filter(Boolean);
+  var maxS=Math.max.apply(null,fin.yearly.slice(0,10).map(function(y){return y.sv;}));
+  var ref="EIL-"+Date.now().toString().slice(-6);
+  var h="";
+
+  // HERO
+  h+='<div class="phero">'
+    +'<div class="phero-ref">'+today+' · '+ref+'</div>'
+    +'<div class="phero-name">'+F.name+'</div>'
+    +'<div class="phero-sub">'+t.lbl+' · '+(F.location||"Tamil Nadu")+'</div>'
+    +'<div class="phero-tag '+(isEpc?"epc":"dev")+'">'+(isEpc?"🏠 EPC Model — Own From Day 1":"📈 Developer Model — Zero Upfront")+'</div>'
+    +'<div class="chips">'
+    +'<div class="chip hi">☀ '+safeK+' kWp</div>'
+    +(isEpc
+      ?'<div class="chip">Cost: '+L(fin.total)+'</div><div class="chip">Payback: '+fin.pb+' Yrs</div>'
+      :'<div class="chip">Monthly: '+L(fin.moCharge)+'</div><div class="chip">Upfront: ZERO</div>')
+    +(F.bat?'<div class="chip">🔋 '+F.batKwh+'kWh</div>':'')
+    +'</div></div>';
+
+  // WITH / WITHOUT SOLAR — always shown first
+  h+='<span class="slbl">☀ Bill: With vs Without Solar</span>';
+  h+='<div class="sc-wrap"><div class="sc-grid">'
+    +'<div class="sc-side wo">'
+    +'<div class="sc-lbl">Without Solar</div>'
+    +'<div class="sc-amt">'+L(fin.bw)+'</div>'
+    +'<div class="sc-mo">per year</div>'
+    +'<div class="sc-mo" style="margin-top:3px;">'+L(Math.round(fin.bw/12))+' / month</div>'
+    +'</div>'
+    +'<div class="sc-side wi">'
+    +'<div class="sc-lbl">With Solar ☀</div>'
+    +'<div class="sc-amt">'+L(fin.bs)+'</div>'
+    +'<div class="sc-mo">per year</div>'
+    +'<div class="sc-mo" style="margin-top:3px;">'+L(Math.round(fin.bs/12))+' / month</div>'
+    +'</div>'
+    +'</div></div>';
+  h+='<div class="sc-save">'
+    +'<span class="sc-save-lbl">💰 Annual Saving</span>'
+    +'<span class="sc-save-val">'+L(fin.y1)+' / yr &nbsp;·&nbsp; '+L(fin.mo)+' / month</span>'
+    +'</div>';
+
+  // Bill breakdown (network charges etc)
+  h+='<div class="nbox"><div class="nbox-title">⚡ Bill Breakdown — '+t.lbl+' ('+t.mechanism+')</div>';
+  var bkItems=[
+    {k:"Energy charge (full consumption)",v:L(fin.eChg),c:"#374151"},
+  ];
+  if(t.fp>0)bkItems.push({k:"Fixed charge (₹"+t.fp+"/kW/mo × "+safeK+"kW)",v:L(fin.fChg),c:"#374151"});
+  else bkItems.push({k:"Fixed charge",v:"NIL — Residential",c:"#16a34a"});
+  bkItems.push({k:"Network charge (₹"+t.net+"/kWh on solar gen)",v:L(fin.nChg),c:"#374151"});
+  if(t.tax>0)bkItems.push({k:"Electricity tax ("+t.tax*100+"%)",v:L(fin.taxW),c:"#cc0000"});
+  else bkItems.push({k:"Electricity tax",v:"NIL — Residential",c:"#16a34a"});
+  if(fin.expInc>0)bkItems.push({k:"Feed-in export income (₹"+t.ex+"/kWh)",v:"-"+L(fin.expInc),c:"#16a34a"});
+  else if(t.ex===0)bkItems.push({k:"Export",v:"Banked (Net Metering 1:1)",c:"#16a34a"});
+  bkItems.forEach(function(r){
+    h+='<div class="nrow"><span style="color:#374151;">'+r.k+'</span>'
+      +'<span style="font-weight:800;color:'+r.c+';">'+r.v+'</span></div>';
+  });
+  h+='</div>';
+
+  // Sec 1 Executive
+  h+='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num">1</div><div class="pcard-title">EXECUTIVE SUMMARY</div>'
+    +'</div><div class="pcard-div"></div>'
+    +'<div class="narr">'+p.executive+'</div></div>';
+  h+='<div class="tamil"><div class="tamil-lbl">சுருக்கம் · Tamil Summary</div>'
+    +'<div class="tamil-txt">'+p.tamilSummary+'</div></div>';
+
+  // Sec 2 Key metrics
+  h+='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num">2</div><div class="pcard-title">KEY METRICS</div>'
+    +'</div><div class="pcard-div"></div></div>';
+  h+='<div class="kgrid">';
+  if(isEpc){
+    h+='<div class="kpi am"><div class="kpi-lbl">Net Cost</div><div class="kpi-val" style="color:#d97706">'+L(fin.total)+'</div><div class="kpi-unit">'+(fin.sub?"After "+L(fin.sub)+" subsidy":"Full cost")+'</div></div>'
+      +'<div class="kpi gr"><div class="kpi-lbl">Year 1 Saving</div><div class="kpi-val" style="color:var(--green)">'+L(fin.y1)+'</div><div class="kpi-unit">'+L(fin.mo)+' / month</div></div>'
+      +'<div class="kpi bl"><div class="kpi-lbl">Payback</div><div class="kpi-val" style="color:var(--indigo)">'+fin.pb+' Yrs</div><div class="kpi-unit">'+t.mechanism+'</div></div>'
+      +'<div class="kpi rd"><div class="kpi-lbl">25-Year Saving</div><div class="kpi-val" style="color:var(--red)">'+L(fin.cum25)+'</div><div class="kpi-unit">IRR '+fin.irr+'%</div></div>';
+  } else {
+    h+='<div class="kpi bl"><div class="kpi-lbl">Your Upfront Cost</div><div class="kpi-val" style="color:var(--indigo)">ZERO</div><div class="kpi-unit">No loan, no EMI</div></div>'
+      +'<div class="kpi am"><div class="kpi-lbl">Monthly Charge</div><div class="kpi-val" style="color:#d97706">'+L(fin.moCharge)+'</div><div class="kpi-unit">Fixed 5 years</div></div>'
+      +'<div class="kpi gr"><div class="kpi-lbl">Post-5yr Saving</div><div class="kpi-val" style="color:var(--green)">'+L(postSave)+'</div><div class="kpi-unit">Per year FREE</div></div>'
+      +'<div class="kpi rd"><div class="kpi-lbl">25-Year Saving</div><div class="kpi-val" style="color:var(--red)">'+L(fin.cum25)+'</div><div class="kpi-unit">Cumulative</div></div>';
+  }
+  h+='</div>';
+
+  // Sec 3 Tariff
+  h+='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num">3</div><div class="pcard-title">TARIFF ANALYSIS</div>'
+    +'</div><div class="pcard-div"></div>'
+    +'<div class="narr">'+p.tariffAnalysis+'</div></div>';
+
+  // Sec 4 Year by year
+  h+='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num">4</div><div class="pcard-title">YEAR-BY-YEAR SAVINGS</div>'
+    +'</div><div class="pcard-div"></div>'
+    +'<div class="narr">'+p.yearByYear+'</div></div>';
+  h+='<div class="bars">';
+  fin.yearly.slice(0,10).forEach(function(y){
+    h+='<div class="br"><div class="bl">Yr '+y.y+'</div>'
+      +'<div class="bt"><div class="bf" style="width:'+Math.min((y.sv/maxS)*100,100)+'%"></div></div>'
+      +'<div class="bv">'+L(y.sv)+'</div></div>';
+  });
+  h+='</div>';
+  h+='<div class="tbl"><div class="th" style="grid-template-columns:50px 1fr 1fr 70px">'
+    +'<div>Year</div><div>Annual</div><div>Cumulative</div><div>Status</div></div>';
+  kyrs.forEach(function(y){
+    var hi=y.cum>fin.total?" yh":"";
+    h+='<div class="tr'+hi+'" style="grid-template-columns:50px 1fr 1fr 70px">'
+      +'<div class="yn">'+y.y+'</div><div class="vg">'+L(y.sv)+'</div>'
+      +'<div style="font-weight:800;color:var(--indigo)">'+L(y.cum)+'</div>'
+      +'<div style="font-size:12px;color:'+(y.cum>fin.total?"var(--green)":"#94a3b8")+'">'+(y.cum>fin.total?"✓ Profit":"Investing")+'</div></div>';
+  });
+  h+='</div>';
+
+  // Sec 5 ROI
+  h+='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num">5</div><div class="pcard-title">ROI & IRR</div>'
+    +'</div><div class="pcard-div"></div>'
+    +'<div class="narr">'+p.roiExplanation+'</div></div>';
+
+  // Sec 6 Model Detail
+  h+=modelDetail(fin,isEpc,postSave,safeK);
+
+  // Sec 7 Battery
+  if(F.bat){
+    var bat=BATT[F.batT];
+    // Show battery self-consumption boost
+    var scPct=Math.round(fin.effSelfC*100);
+    h+='<div class="pcard"><div class="pcard-head">'
+      +'<div class="pcard-num">7</div><div class="pcard-title">BATTERY STORAGE</div>'
+      +'</div><div class="pcard-div"></div></div>';
+    h+='<div class="ilist">';
+    [{k:"Type",v:bat.name,c:"#374151"},{k:"Capacity",v:F.batKwh+" kWh",c:"#374151"},
+     {k:"Cost",v:L(fin.batC),c:"#d97706"},{k:"Efficiency",v:bat.eff*100+"%",c:"#374151"},
+     {k:"Cycle Life",v:bat.cycles.toLocaleString("en-IN"),c:"#374151"},{k:"Warranty",v:bat.war+" years",c:"var(--green)"}
+    ].forEach(function(r,i,a){
+      h+='<div class="ir" style="'+(i===a.length-1?"border-bottom:none":"")+'">'
+        +'<span class="ik">'+r.k+'</span><span class="iv" style="color:'+r.c+'">'+r.v+'</span></div>';
+    });
+    h+='</div>';
+  }
+
+  // Sec 8 Next Steps
+  var secN=F.bat?8:7;
+  h+='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num">'+secN+'</div><div class="pcard-title">NEXT STEPS</div>'
+    +'</div><div class="pcard-div"></div></div>';
+  h+='<div class="steps">';
+  [{n:1,t:"Site Survey",d:"Free roof & shadow check"},{n:2,t:"Design",d:"Layout & TNEB application"},
+   {n:3,t:"Installation",d:"2-3 working days"},{n:4,t:"Commissioning",d:"TNEB meter handover"},
+   {n:5,t:"Monitoring",d:"Remote + AMC support"},{n:6,t:"Handover",d:isEpc?"Yours Day 1":"FREE yr 6"}
+  ].forEach(function(s){
+    h+='<div class="step"><div class="step-n">'+s.n+'</div>'
+      +'<div><div class="step-t">'+s.t+'</div><div class="step-d">'+s.d+'</div></div></div>';
+  });
+  h+='</div>';
+
+  // Footer
+  h+='<div class="pfooter">'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:6px;">'
+    +logo(36)+'<div>'
+    +'<div class="pfooter-name">ELANGO <em>INDUSTRIES</em></div>'
+    +'<div class="pfooter-tag">☀ SOLAR DIVISION</div>'
+    +'</div></div>'
+    +'<div class="pfooter-c">admin@kaveripower.com · Tamil Nadu</div>'
+    +'<div class="pfooter-d">Tariff from TNERC 2024 · Cost ₹'+S.costPerKw.toLocaleString("en-IN")+'/kWp (Excel App_Config) · '
+    +(t.tax===0?"Residential: Zero electricity tax · ":"5% ET · ")
+    +'Network ₹'+t.net+'/kWh · 5% escalation · 0.5% degradation · Valid 30 days · '+ref+'</div></div>';
+
+  // Share
+  h+='<div class="shr"><div class="shr-title">✦ Send to '+F.name+'</div>'
+    +'<div class="shr-g">'
+    +'<button class="sbtn wa" onclick="sendWA()">💬 WhatsApp</button>'
+    +'<button class="sbtn em" onclick="sendEmail()">✉ Email</button>'
+    +'</div>'
+    +'<div class="shr-g">'
+    +'<button class="sbtn xl" onclick="downloadExcel()">⬇ Excel CSV</button>'
+    +'<button class="sbtn cl" onclick="window.location.href=\'tel:'+F.phone+'\'">📞 Call</button>'
+    +'</div></div>';
+
+  // Back to form button
+  h+='<div class="nav-btns">'
+    +'<button class="btn-back" onclick="goPage(\'form\')">‹ Edit</button>'
+    +'<button class="btn-next" onclick="sendWA()">Send WhatsApp ›</button>'
+    +'</div>';
+  h+='<div style="height:16px;"></div>';
+
+  document.getElementById("prop-body").innerHTML=h;
+  goPage("proposal");
+  window.scrollTo(0,0);
+}
+
+// ── MODEL DETAIL ──────────────────────────────────────────────────────────────
+function modelDetail(fin,isEpc,postSave,kwp){
+  var h='<div class="pcard"><div class="pcard-head">'
+    +'<div class="pcard-num" style="background:linear-gradient(135deg,'+(isEpc?"var(--green),#15803d":"var(--indigo),#4338ca")+')">6</div>'
+    +'<div class="pcard-title">'+(isEpc?"EPC — OWN FROM DAY 1":"DEVELOPER — ZERO UPFRONT")+'</div>'
+    +'</div><div class="pcard-div"></div></div>';
+
+  if(isEpc){
+    var d1=Math.round(fin.net*S.depRate),d2=Math.round((fin.net-d1)*S.depRate),d3=Math.round((fin.net-d1-d2)*S.depRate);
+    var tb1=Math.round(d1*S.taxRate),tb2=Math.round(d2*S.taxRate),tb3=Math.round(d3*S.taxRate);
+    h+='<div class="mbox epc">';
+    h+='<div class="mbox-title" style="color:var(--green)">🏠 Your Investment & Depreciation</div>';
+    h+='<div class="k3">'
+      +'<div class="mk"><div class="mk-lbl">Net Cost</div><div class="mk-val" style="color:#d97706">'+L(fin.total)+'</div><div class="mk-unit">'+(fin.batC?'Incl. battery':(fin.sub?"After subsidy":"Full"))+'</div></div>'
+      +'<div class="mk"><div class="mk-lbl">Yr 1 Saving</div><div class="mk-val" style="color:var(--green)">'+L(fin.y1)+'</div><div class="mk-unit">'+L(fin.mo)+' / month</div></div>'
+      +'<div class="mk"><div class="mk-lbl">Eff. Cost</div><div class="mk-val" style="color:#7c3aed">'+L(fin.total-tb1-tb2-tb3)+'</div><div class="mk-unit">After 3yr depr.</div></div>'
+      +'</div>';
+    h+='<div class="ilist">';
+    var rows=[{k:"System Cost",v:L(fin.sys),c:"#374151"}];
+    if(fin.sub)rows.push({k:"Subsidy",v:"-"+L(fin.sub),c:"var(--green)"});
+    rows.push({k:"Net Cost",v:L(fin.net),c:"#d97706"});
+    if(fin.batC)rows.push({k:"Battery",v:L(fin.batC),c:"#374151"},{k:"Total Investment",v:L(fin.total),c:"#d97706"});
+    rows.push(
+      {k:"Yr 1 Depr @40% → Tax save",v:L(d1)+" → "+L(tb1),c:"var(--green)"},
+      {k:"Yr 2 Depr @40% → Tax save",v:L(d2)+" → "+L(tb2),c:"var(--green)"},
+      {k:"Yr 3 Depr @40% → Tax save",v:L(d3)+" → "+L(tb3),c:"var(--green)"},
+      {k:"Effective Cost (post-tax)",v:L(fin.total-tb1-tb2-tb3),c:"#7c3aed"}
+    );
+    rows.forEach(function(r,i,a){
+      h+='<div class="ir" style="'+(i===a.length-1?"border-bottom:none":"")+'"><span class="ik">'+r.k+'</span><span class="iv" style="color:'+r.c+'">'+r.v+'</span></div>';
+    });
+    h+='</div>';
+    h+='<div class="blist" style="margin-top:10px;"><div class="blist-title">✓ EPC BENEFITS</div>';
+    ["🏠 "+kwp+" kWp — 100% yours from Day 1",
+     "📊 Claim 40% WDV depreciation — saves "+L(tb1+tb2+tb3)+" in 3 years",
+     "📈 "+fin.irr+"% IRR — 3× better than bank FD",
+     "✅ Full title — sell, lease or mortgage anytime"
+    ].forEach(function(b){h+='<div class="blist-item">'+b+'</div>';});
+    h+='</div></div>';
+  } else {
+    // ── DEVELOPER MODEL — sourced from EIL Return Analysis & Tenant Breakeven sheets ──
+    var bmr=fin.bmr, pmt=fin.pmt, annMarg=fin.annMarg;
+
+    // ── AMORTIZATION (from EIL Return Analysis Section 2) ─────────────────────
+    var balance=fin.net, amort=[];
+    for(var y=1;y<=5;y++){
+      var yi=0,yp=0,openBal=balance;
+      for(var pp=0;pp<6;pp++){
+        var ii=balance*bmr, pr=pmt-ii;
+        yi+=ii; yp+=pr; balance-=pr;
+      }
+      amort.push({y:y, open:Math.round(openBal), margin:Math.round(annMarg),
+        interest:Math.round(yi), principal:Math.round(yp),
+        close:Math.max(0,Math.round(balance))});
+    }
+
+    // ── CUSTOMER NET BENEFIT each year (Tenant Breakeven logic) ──────────────
+    // Excel: Tenant Net Saving = (Old EB bill rising 5%) - (New EB bill with solar + EIL margin)
+    // Energy saving + Tax saving + Export credit - EIL margin = net to customer
+    var custBen=[], cumCust=0;
+    for(var y2=1;y2<=5;y2++){
+      var oldBill = Math.round(fin.bw * Math.pow(1.05, y2-1));
+      var newBill = Math.round(fin.bs + annMarg);        // reduced EB + EIL charge
+      var netSav  = oldBill - newBill;                   // customer net (can be -ve)
+      cumCust += netSav;
+      custBen.push({y:y2, old:oldBill, new:newBill, net:netSav, cum:Math.round(cumCust)});
+    }
+
+    // ── POST-HANDOVER CUSTOMER BENEFIT ────────────────────────────────────────
+    // After Year 5: EIL margin = 0. Customer pays only reduced solar EB bill.
+    // Saving vs old bill (which kept rising 5%/yr)
+    var postBillWithout = Math.round(fin.bw * Math.pow(1.05, 5));  // old bill at Year 6
+    var postBillWith    = Math.round(fin.bs);                       // solar bill (no EIL)
+    var postAnnualSav   = postBillWithout - postBillWith;
+
+    // ── EXIT YEAR CALCULATION (from EIL Return Analysis B50: Period 23 of 30) ─
+    // Find the bi-monthly period when EIL fully recovers investment
+    var bal2=fin.net, exitPeriod=fin.per;
+    for(var pp2=1;pp2<=fin.per;pp2++){
+      bal2 -= (pmt - bal2*bmr);
+      if(bal2<=0){ exitPeriod=pp2; break; }
+    }
+    var exitYr  = Math.ceil(exitPeriod/6);
+    var exitMo  = exitPeriod % 6 === 0 ? 6 : exitPeriod % 6;
+    var exitDesc= "Year "+exitYr+", Billing Period "+exitPeriod+" of "+fin.per;
+
+    // ── DEPRECIATION AFTER HANDOVER ───────────────────────────────────────────
+    // IT Act S.32 — 40% WDV. EIL claims Yr1-5. Remaining WDV transfers to customer.
+    // WDV after 5 years = net × (1-0.40)^5
+    var wdvAfter5 = Math.round(fin.net * Math.pow(1-S.depRate, 5));
+    var custDepYr6 = Math.round(wdvAfter5 * S.depRate);
+    var custTaxSavYr6 = Math.round(custDepYr6 * S.taxRate);
+
+    // ── RENDER ────────────────────────────────────────────────────────────────
+    h+='<div class="mbox dev">';
+    h+='<div class="mbox-title" style="color:var(--indigo)">📈 Zero Upfront — Complete Customer Benefit Analysis</div>';
+
+    // 3 headline KPIs
+    h+='<div class="k3">'
+      +'<div class="mk"><div class="mk-lbl">Your Upfront</div>'
+        +'<div class="mk-val" style="color:var(--indigo)">ZERO</div>'
+        +'<div class="mk-unit">No loan · No EMI</div></div>'
+      +'<div class="mk"><div class="mk-lbl">Monthly Charge</div>'
+        +'<div class="mk-val" style="color:#d97706">'+L(fin.moCharge)+'</div>'
+        +'<div class="mk-unit">Fixed all 5 years</div></div>'
+      +'<div class="mk"><div class="mk-lbl">Post-5yr Saving</div>'
+        +'<div class="mk-val" style="color:var(--green)">'+L(postAnnualSav)+'</div>'
+        +'<div class="mk-unit">Per year — FREE solar</div></div>'
+      +'</div>';
+
+    // ── SECTION A: EIL RECOVERY (from EIL Return Analysis) ───────────────────
+    h+='<div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:800;color:#374151;'
+      +'margin:12px 0 6px;letter-spacing:0.5px;">A. EIL RECOVERY SCHEDULE (18% IRR — Excel: EIL Return Analysis)</div>';
+    h+='<div class="tbl" style="margin:0 0 12px;">'
+      +'<div class="th" style="grid-template-columns:40px 1fr 1fr 1fr 1fr">'
+      +'<div>Yr</div><div>Opening Bal</div><div>EIL Margin</div><div>Interest</div><div>Closing Bal</div></div>';
+    amort.forEach(function(a){
+      var done = a.close===0;
+      h+='<div class="tr" style="grid-template-columns:40px 1fr 1fr 1fr 1fr'+(done?';background:rgba(22,163,74,0.06)':'')+'">'
+        +'<div class="yn">'+a.y+'</div>'
+        +'<div style="font-size:13px;color:#374151;">'+L(a.open)+'</div>'
+        +'<div style="color:var(--indigo);font-weight:800;">'+L(a.margin)+'</div>'
+        +'<div style="color:#d97706;font-weight:700;">'+L(a.interest)+'</div>'
+        +'<div style="color:'+(done?'var(--green)':'#374151')+';font-weight:800;">'
+          +(done?'✓ RECOVERED':L(a.close))+'</div></div>';
+    });
+    h+='</div>';
+
+    // Exit year note
+    h+='<div style="background:rgba(22,163,74,0.08);border:1px solid rgba(22,163,74,0.2);'
+      +'border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;color:#374151;font-weight:600;">'
+      +'<span style="color:var(--green);font-weight:800;">✓ EIL EXIT: '+exitDesc+'</span>'
+      +' — Investment fully recovered. Plant ownership transfers to customer FREE.</div>';
+
+    // ── SECTION B: CUSTOMER NET BENEFIT each year ─────────────────────────────
+    h+='<div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:800;color:#374151;'
+      +'margin:0 0 6px;letter-spacing:0.5px;">B. WHAT CUSTOMER PAYS & SAVES EACH YEAR (Excel: Tenant Breakeven Analysis)</div>';
+    h+='<div class="tbl" style="margin:0 0 12px;">'
+      +'<div class="th" style="grid-template-columns:40px 1fr 1fr 1fr 80px">'
+      +'<div>Yr</div><div>Without Solar</div><div>With Solar+EIL</div><div>Net Save</div><div>Cumulative</div></div>';
+    custBen.forEach(function(r){
+      var pos = r.net>0, cumPos = r.cum>0;
+      h+='<div class="tr'+(cumPos?' yh':'')+'" style="grid-template-columns:40px 1fr 1fr 1fr 80px">'
+        +'<div class="yn">'+r.y+'</div>'
+        +'<div class="vr">'+L(r.old)+'</div>'
+        +'<div style="color:var(--indigo);font-weight:700;">'+L(r.new)+'</div>'
+        +'<div style="font-weight:800;color:'+(pos?'var(--green)':'#ef4444')+'">'
+          +(pos?'+':'')+L(r.net)+'</div>'
+        +'<div style="font-size:12px;color:'+(cumPos?'var(--green)':'#94a3b8')+'">'
+          +(cumPos?'✓ ':'') + L(r.cum)+'</div>'
+        +'</div>';
+    });
+    // Post-5yr row
+    h+='<div class="tr yh" style="grid-template-columns:40px 1fr 1fr 1fr 80px;border-top:2px solid var(--green);">'
+      +'<div style="font-size:11px;font-weight:800;color:var(--green);">Yr6+</div>'
+      +'<div style="font-size:12px;color:#374151;">Bill keeps rising</div>'
+      +'<div style="font-size:12px;color:var(--green);font-weight:800;">Only '+L(postBillWith)+' — No EIL charge</div>'
+      +'<div style="font-weight:800;color:var(--green);">+'+L(postAnnualSav)+'/yr</div>'
+      +'<div style="font-size:11px;color:var(--green);">FREE ☀</div>'
+      +'</div>'
+      +'</div>';
+
+    // ── SECTION C: DEPRECIATION BENEFIT ───────────────────────────────────────
+    h+='<div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:800;color:#374151;'
+      +'margin:12px 0 6px;letter-spacing:0.5px;">C. DEPRECIATION BENEFIT (IT Act Section 32 — 40% WDV)</div>';
+    // EIL claims during contract
+    var d1e=Math.round(fin.net*S.depRate);
+    var d2e=Math.round((fin.net-d1e)*S.depRate);
+    var d3e=Math.round((fin.net-d1e-d2e)*S.depRate);
+    var d4e=Math.round((fin.net-d1e-d2e-d3e)*S.depRate);
+    var d5e=Math.round((fin.net-d1e-d2e-d3e-d4e)*S.depRate);
+    h+='<div class="ilist" style="margin-bottom:10px;">';
+    var depRows=[
+      {k:"Plant Investment (WDV basis)",   v:L(fin.net),          c:"#374151", who:""},
+      {k:"Yr 1 — EIL claims @40%",         v:L(d1e),              c:"var(--indigo)", who:"EIL"},
+      {k:"Yr 2 — EIL claims @40%",         v:L(d2e),              c:"var(--indigo)", who:"EIL"},
+      {k:"Yr 3 — EIL claims @40%",         v:L(d3e),              c:"var(--indigo)", who:"EIL"},
+      {k:"Yr 4 — EIL claims @40%",         v:L(d4e),              c:"var(--indigo)", who:"EIL"},
+      {k:"Yr 5 — EIL claims @40%",         v:L(d5e),              c:"var(--indigo)", who:"EIL"},
+      {k:"WDV remaining at handover",       v:L(wdvAfter5),        c:"#d97706",        who:"→ Customer"},
+      {k:"Yr 6 — Customer claims @40%",     v:L(custDepYr6),       c:"var(--green)",   who:"Customer"},
+      {k:"Yr 6 Tax saving @30%",            v:L(custTaxSavYr6),    c:"var(--green)",   who:"Customer"},
+    ];
+    depRows.forEach(function(r,i,a){
+      h+='<div class="ir" style="'+(i===a.length-1?'border-bottom:none':'')+'">'
+        +'<span class="ik">'+r.k+'</span>'
+        +'<div style="display:flex;align-items:center;gap:6px;">'
+        +(r.who?'<span style="font-size:10px;font-weight:700;color:#94a3b8;background:#f1f5f9;'
+          +'border-radius:4px;padding:1px 5px;">'+r.who+'</span>':'')
+        +'<span class="iv" style="color:'+r.c+';">'+r.v+'</span>'
+        +'</div></div>';
+    });
+    h+='</div>';
+
+    // ── SECTION D: KEY FACTS ──────────────────────────────────────────────────
+    h+='<div class="blist"><div class="blist-title">✓ DEVELOPER MODEL — KEY FACTS FROM EXCEL</div>';
+    [
+      "☀ "+kwp+" kWp system installed — ZERO upfront from customer",
+      "📋 Fixed "+L(fin.moCharge)+"/month charge — never rises while EB bill increases 5%/yr",
+      "🔧 EIL covers all maintenance, cleaning & repairs for 5 years",
+      "⚡ EIL exits at "+exitDesc+" — plant transferred FREE",
+      "💰 Post-handover annual saving: "+L(postAnnualSav)+"/yr for 20+ more years",
+      "🏦 Customer inherits remaining WDV: "+L(wdvAfter5)+" → tax saving of "+L(custTaxSavYr6)+" in Year 6",
+      "📊 Depreciation Years 1-5: claimed by EIL (reduces EIL cost → keeps your charge lower)",
+    ].forEach(function(b){ h+='<div class="blist-item">'+b+'</div>'; });
+    h+='</div></div>';
+  }
+  return h;
+}
+
+// ── SETTINGS PAGE ─────────────────────────────────────────────────────────────
+function renderSettings(){
+  var t=TARIFFS[F.cat];
+  var h='<div style="background:var(--navy);padding:14px 16px 16px;">'
+    +'<div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:2px;">⚙ Settings & Assumptions</div>'
+    +'<div style="font-size:12px;color:#64748b;font-weight:600;">Sourced from Solar_v4_Universalmodel Excel</div></div>';
+
+  h+='<div class="sp-note">⚠ All values from <strong>Excel App_Config & Tariff_Lookup sheets</strong>. Edit and tap Save to update all calculations.</div>';
+
+  h+='<div class="sp-install">'
+    +'<div class="sp-install-title">📱 Install as Phone / Desktop App</div>'
+    +'<div class="sp-install-body">'
+    +'<strong style="color:#e2e8f0;">Step 1:</strong> Your app is live at <span style="color:var(--amber)">spontaneous-empanada-f35ae7.netlify.app</span><br/>'
+    +'<strong style="color:#e2e8f0;">iPhone Safari:</strong> Open URL → Share ↑ → Add to Home Screen → Add<br/>'
+    +'<strong style="color:#e2e8f0;">Android Chrome:</strong> Open URL → Menu ⋮ → Add to Home Screen<br/>'
+    +'<strong style="color:#e2e8f0;">Desktop Chrome:</strong> Address bar → Install icon on right → Install<br/>'
+    +'<span style="color:#64748b;font-size:11px;">Once installed — opens fullscreen, no browser bar, just like a real app.</span>'
+    +'</div></div>';
+
+  // TNEB Tariff
+  h+='<div class="sp-sec-title">⚡ TNEB Tariff — '+t.lbl+' (current selection)</div>';
+  h+='<div class="card">';
+  // Tariff slabs
+  h+='<div style="padding:10px 16px;border-bottom:1px solid #f1f5f9;">'
+    +'<div style="font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Energy Slabs</div>';
+  t.slabs.forEach(function(s){
+    h+='<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:14px;font-weight:700;border-bottom:1px solid #f9fafb;">'
+      +'<span style="color:#374151;">'+s.u+' units</span>'
+      +'<span style="color:var(--red);">₹'+s.r+'/kWh</span></div>';
+  });
+  h+='</div>';
+  h+=efRow("Energy Rate","ur_"+F.cat,"₹/kWh",t.ur);
+  h+=efRow("Fixed Charge","fp_"+F.cat,"₹/kW/month",t.fp);
+  h+=efRow("Network Charge","net_"+F.cat,"₹/kWh",t.net);
+  if(t.demand>0)h+=efRow("Demand Charge","demand_"+F.cat,"₹/kVA/month",t.demand);
+  h+=efRow("Export Rate","ex_"+F.cat,"₹/kWh",t.ex);
+  h+='<div class="ef-row"><div><div class="ef-lbl">Electricity Tax</div>'
+    +'<div style="font-size:11px;color:#94a3b8;">'+t.note+'</div></div>'
+    +'<div style="font-weight:800;color:'+(t.tax>0?"var(--red)":"var(--green)")+';font-size:15px;">'+(t.tax>0?t.tax*100+"%":"NIL")+'</div></div>';
+  h+='</div>';
+
+  // Costs & Financial
+  h+='<div class="sp-sec-title">💰 EIL Costs & Financial Parameters</div>';
+  h+='<div class="card">';
+  h+=efRow("Installation Cost (from App_Config)","costPerKw","₹/kWp",S.costPerKw);
+  h+=efRow("EIL Target IRR","irr","%",S.irr*100);
+  h+=efRow("Contract Period","contractYrs","years",S.contractYrs);
+  h+=efRow("Depreciation Rate (IT Act S.32)","depRate","%",S.depRate*100);
+  h+=efRow("Corporate Tax Rate","taxRate","%",S.taxRate*100);
+  h+='</div>';
+
+  // Technical
+  h+='<div class="sp-sec-title">⚙ Technical Assumptions</div>';
+  h+='<div class="card">';
+  h+=efRow("Solar Yield (TN average)","yield","kWh/kW/day",S.yield);
+  h+=efRow("CUF (Capacity Utilisation)","cuf","%",S.cuf*100);
+  h+=efRow("Panel Degradation","deg","%/yr",S.deg*100);
+  h+=efRow("Tariff Escalation (historical)","esc","%/yr",S.esc*100);
+  h+=efRow("Self Consumption Ratio","selfC","%",S.selfC*100);
+  h+='</div>';
+
+  // Subsidy
+  h+='<div class="sp-sec-title">🏛 PM Surya Ghar Subsidy (Residential only)</div>';
+  h+='<div class="card">';
+  h+=efRow("Tier 1 Rate (first 2 kW)","subT1","₹/kW",S.subT1);
+  h+=efRow("Tier 2 Rate (2-10 kW)","subT2","₹/kW",S.subT2);
+  h+=efRow("Maximum Subsidy Cap","subCap","₹",S.subCap);
+  h+='</div>';
+
+  // Future provisions
+  h+='<div class="sp-sec-title">📋 Future Provisions (currently inactive)</div>';
+  h+='<div class="card">';
+  [{k:"Residential Fixed Charge",v:"₹0 — TNERC not yet introduced",c:"var(--green)"},
+   {k:"Peak Hour / ToU Tariff",v:"Not active — TNEB pending",c:"var(--green)"},
+   {k:"Battery Subsidy",v:"Not announced — update when available",c:"var(--green)"}
+  ].forEach(function(r){
+    h+='<div class="ef-row"><div><div class="ef-lbl">'+r.k+'</div></div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+r.c+';">'+r.v+'</div></div>';
+  });
+  h+='</div>';
+
+  h+='<button class="savebtn" onclick="saveS()">💾 Save & Apply Settings</button>';
+  h+='<button class="dlbtn" onclick="dlSettings()">⬇ Download Settings Excel</button>';
+  h+='<div class="nav-btns center">'
+    +'<button class="btn-next" onclick="goPage(\'form\')">‹ Back to Form</button>'
+    +'</div>';
+  h+='<div style="height:16px;"></div>';
+  document.getElementById("settings-body").innerHTML=h;
+}
+
+function efRow(label,key,unit,def){
+  return '<div class="ef-row"><div><div class="ef-lbl">'+label+'</div>'
+    +'<div class="ef-desc">Default: '+def+' '+unit+'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:4px;">'
+    +'<input class="ef-inp" id="ef-'+key+'" type="number" step="any" value="'+getSVal(key)+'"'
+    +' onchange="tempS[\''+key+'\']=+this.value"/>'
+    +'<span class="ef-unit">'+unit+'</span></div></div>';
+}
+
+function getSVal(k){
+  if(k.startsWith("ur_"))return TARIFFS[k.slice(3)].ur;
+  if(k.startsWith("fp_"))return TARIFFS[k.slice(3)].fp;
+  if(k.startsWith("net_"))return TARIFFS[k.slice(4)].net;
+  if(k.startsWith("demand_"))return TARIFFS[k.slice(7)].demand;
+  if(k.startsWith("ex_"))return TARIFFS[k.slice(3)].ex;
+  var pct={irr:100,depRate:100,taxRate:100,cuf:100,deg:100,esc:100,selfC:100};
+  var v=S[k];
+  if(v===undefined)return"";
+  return pct[k]?+(v*pct[k]).toFixed(2):v;
+}
+
+function saveS(){
+  var pct={irr:100,depRate:100,taxRate:100,cuf:100,deg:100,esc:100,selfC:100};
+  Object.keys(tempS).forEach(function(k){
+    var v=+tempS[k];
+    if(k.startsWith("ur_"))TARIFFS[k.slice(3)].ur=v;
+    else if(k.startsWith("fp_"))TARIFFS[k.slice(3)].fp=v;
+    else if(k.startsWith("net_"))TARIFFS[k.slice(4)].net=v;
+    else if(k.startsWith("demand_"))TARIFFS[k.slice(7)].demand=v;
+    else if(k.startsWith("ex_"))TARIFFS[k.slice(3)].ex=v;
+    else if(S[k]!==undefined)S[k]=pct[k]?v/pct[k]:v;
+  });
+  tempS={};
+  alert("✅ Settings saved! All calculations updated.");
+  renderSettings();
+}
+
+// ── SHARE ─────────────────────────────────────────────────────────────────────
+function sendWA(){
+  if(!proposal){alert("Generate a proposal first.");return;}
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var fin=calc(safeK,F.bm,F.demand,F.cat);
+  var t=TARIFFS[F.cat];
+  var ref="EIL-"+Date.now().toString().slice(-6);
+  var isEpc=F.model==="epc";
+  var msg="━━━━━━━━━━━━━━━━━━━━\n☀ *EIL SOLAR PROPOSAL*\n━━━━━━━━━━━━━━━━━━━━\n"
+    +"Ref: "+ref+" | "+today+"\n\n"
+    +"👤 *"+F.name+"*\n"+(F.location?F.location+"\n":"")+F.phone+"\n"+t.lbl+"\n\n"
+    +"🔋 *SYSTEM*\n"
+    +"Capacity  : *"+safeK+" kWp*\nGen/yr    : "+fin.ag+" kWh\nConsump   : "+F.bm+" Units "+(F.demand>=50?"(monthly)":"(bi-monthly)")+"\n"
+    +(F.demand>0?"Demand    : "+F.demand+" kVA\n":"")
+    +(F.bat?"Battery   : "+F.batKwh+" kWh "+BATT[F.batT].name+"\n":"")+"\n"
+    +"⚡ *TNEB TARIFF — "+t.mechanism+"*\n"
+    +"Energy : ₹"+t.ur+"/kWh\n"+(t.fp>0?"Fixed  : ₹"+t.fp+"/kW/mo\n":"Fixed  : NIL (Residential)\n")+"Network: ₹"+t.net+"/kWh\n"
+    +"Tax    : "+(t.tax>0?t.tax*100+"%":"NIL (Residential)")+"\n"
+    +"Export : "+(t.ex>0?"₹"+t.ex+"/kWh (Feed-in)":"Banked (Net Metering 1:1)")+"\n\n"
+    +"🏗️ *BILL COMPARISON*\n"
+    +"*Without Solar : "+L(fin.bw)+"/yr ("+L(Math.round(fin.bw/12))+"/mo)*\n"
+    +"*With Solar    : "+L(fin.bs)+"/yr ("+L(Math.round(fin.bs/12))+"/mo)*\n"
+    +"*Annual Saving : "+L(fin.y1)+"/yr · "+L(fin.mo)+"/month*\n\n";
+
+  if(isEpc){
+    var d1=Math.round(fin.net*S.depRate),tb1=Math.round(d1*S.taxRate);
+    var d2=Math.round((fin.net-d1)*S.depRate),tb2=Math.round(d2*S.taxRate);
+    msg+="🏠 *EPC MODEL*\n"
+      +"━━━━━━━━━━━━━━━━━━━━\n"
+      +(fin.sub?"Subsidy    : -"+L(fin.sub)+"\n":"")
+      +"*Net Cost  : "+L(fin.net)+"*\n"
+      +(fin.batC?"Battery    : "+L(fin.batC)+"\n*Total     : "+L(fin.total)+"*\n":"")
+      +"*Yr 1 Save : "+L(fin.y1)+"*\nMonthly    : "+L(fin.mo)+"\n*Payback   : "+fin.pb+" years*\n25-Yr Save : *"+L(fin.cum25)+"*\nIRR        : *"+fin.irr+"%*\n\n"
+      +"🏦 *DEPRECIATION (IT Act S.32 — 40% WDV)*\n"
+      +"Yr 1: "+L(d1)+" → Tax save *"+L(tb1)+"*\n"
+      +"Yr 2: "+L(d2)+" → Tax save *"+L(tb2)+"*\n";
+  } else {
+    var ps=Math.round(fin.bw*Math.pow(1.05,5)-fin.bs);
+    msg+="📈 *DEVELOPER MODEL — ZERO UPFRONT*\n"
+      +"━━━━━━━━━━━━━━━━━━━━\n"
+      +"*Your Cost  : ZERO*\n*Monthly    : "+L(fin.moCharge)+"* (fixed 5 yrs)\nEIL Invests : "+L(fin.net)+"\n"
+      +"After 5 Yrs : *Plant YOURS FREE*\n*Post-5yr/yr: "+L(ps)+"*\n\n";
+    for(var yy=1;yy<=5;yy++){
+      var wo=Math.round(fin.bw*Math.pow(1.05,yy-1)),ws=Math.round(fin.bs+fin.annMarg);
+      msg+="Year "+yy+": EB "+L(wo)+" → Pay "+L(ws)+" (Diff "+L(ws-wo)+")\n";
+    }
+  }
+
+  msg+="\n📅 *25-YEAR SAVINGS (Complete)*\n";
+  msg+="Yr | Annual | Cumulative\n";
+  fin.yearlyFull.forEach(function(yd){
+    msg+=""+yd.y+" | "+L(yd.sv)+" | "+L(yd.cum)+"\n";
+  });
+
+  msg+="\n🚀 *NEXT STEPS*\n"
+    +"1. Free Site Survey\n2. Design + TNEB Application\n"
+    +"3. Installation (2-3 days)\n4. TNEB Commissioning\n\n"
+    +"━━━━━━━━━━━━━━━━━━━━\n"
+    +"✅ *EIL Solar · Kaveri Power*\nadmin@kaveripower.com\nTNEB Empanelled · Tamil Nadu\n"
+    +"━━━━━━━━━━━━━━━━━━━━";
+
+  window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+
+function sendEmail(){
+  if(!proposal){alert("Generate a proposal first.");return;}
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var fin=calc(safeK,F.bm,F.demand,F.cat);
+  var t=TARIFFS[F.cat];
+  var ref="EIL-"+Date.now().toString().slice(-6);
+  var isEpc=F.model==="epc";
+  var sub="EIL Solar — "+F.name+" — "+safeK+" kWp — "+(isEpc?"EPC":"Developer")+" — "+ref;
+  var body="Dear "+F.name+",\n\nGreetings from EIL Solar!\n\n"
+    +"Customer : "+F.name+" | "+(F.location||"Tamil Nadu")+" | "+F.phone+"\nCategory : "+t.lbl+"\nDate     : "+today+"\nRef      : "+ref+"\n\n"
+    +"SYSTEM\nCapacity : "+safeK+" kWp\nGen/yr   : "+fin.ag+" kWh\nConsump  : "+F.bm+" Units "+(F.demand>=50?"(monthly)":"(bi-monthly)")+"\n"
+    +(F.demand>0?"Demand   : "+F.demand+" kVA\n":"")
+    +(F.bat?"Battery  : "+F.batKwh+" kWh "+BATT[F.batT].name+"\n":"")+"\n"
+    +"TNEB TARIFF ("+t.mechanism+")\nEnergy : Rs "+t.ur+"/kWh | Fixed: "+(t.fp>0?"Rs "+t.fp+"/kW/mo":"NIL")+" | Network: Rs "+t.net+"/kWh\nTax: "+(t.tax>0?t.tax*100+"%":"NIL")+" | Export: "+(t.ex>0?"Rs "+t.ex+"/kWh (Feed-in)":"Banked (Net Metering 1:1)")+"\n\n"
+    +"BILL\nWithout Solar : "+L(fin.bw)+"/yr\nWith Solar    : "+L(fin.bs)+"/yr\nAnnual Saving : "+L(fin.y1)+"/yr\n\n"
+    +(isEpc
+      ?"EPC MODEL\nNet Cost : "+L(fin.total)+" | Yr1 Saving : "+L(fin.y1)+" | Payback : "+fin.pb+" yrs | IRR : "+fin.irr+"% | 25yr : "+L(fin.cum25)+"\nDepreciation: 40% WDV IT Act S.32\n"
+      :"DEVELOPER MODEL\nYour Cost : ZERO | Monthly : "+L(fin.moCharge)+" | After 5yr : Plant FREE\nPost-5yr/yr : "+L(Math.round(fin.bw*Math.pow(1.05,5)-fin.bs))+"\n")
+    +"\nEIL Solar · Kaveri Power · admin@kaveripower.com · Tamil Nadu\nValid 30 days.\n\n"
+    +"25-YEAR SAVINGS (Complete Working)\n"
+    +"Year | Solar(kWh) | Without(Rs) | With(Rs) | Saving(Rs) | Cumulative(Rs)\n";
+  fin.yearlyFull.forEach(function(yd){
+    body+=yd.y+" | "+yd.gen+" | "+yd.bw+" | "+yd.bs+" | "+yd.sv+" | "+yd.cum+"\n";
+  });
+  body+="\nAssumptions: "+S.esc*100+"% escalation, "+S.deg*100+"% degradation, "+S.yield+" kWh/kW/day yield";
+  window.location.href="mailto:"+(F.email||"")+"?subject="+encodeURIComponent(sub)+"&body="+encodeURIComponent(body);
+}
+
+function downloadExcel(){
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var fin=calc(safeK,F.bm,F.demand,F.cat);
+  var t=TARIFFS[F.cat];
+  var ref="EIL-"+Date.now().toString().slice(-6);
+  var isEpc=F.model==="epc";
+  var rows=[
+    ["EIL SOLAR PROPOSAL — "+F.name,""],["Ref",ref],["Date",today],
+    ["Source","Solar_v4_Universalmodel — Tariff_Lookup & App_Config"],[""],
+    ["CUSTOMER"],["Name",F.name],["Location",F.location||"Tamil Nadu"],["Mobile",F.phone],["Tariff",t.lbl],
+    ["Model",isEpc?"EPC — Own Day 1":"Developer — Zero Upfront"],[""],
+    ["SYSTEM"],["Capacity (kWp)",safeK],["Generation (kWh/yr)",fin.ag],
+    ["Consumption (Units)",F.bm],["Billing",(F.demand>=50?"Monthly":"Bi-monthly")+" (TNEB rule)"],
+    (F.demand>0?["Demand (kVA)",F.demand]:[]),
+    (F.bat?["Battery",F.batKwh+" kWh "+BATT[F.batT].name]:[]),([""],
+    ["TNEB TARIFF (Tariff_Lookup)"],["Energy (Rs/kWh)",t.ur],["Fixed (Rs/kW/mo)",t.fp],
+    ["Network (Rs/kWh)",t.net],
+    ["Tax",t.tax===0?"NIL":t.tax*100+"%"],["Export (Rs/kWh)",t.ex===0?"Banked (Net Metering)":t.ex+" (Feed-in)"],["Mechanism",t.mechanism]),[""],
+    ["BILL COMPARISON"],["Without Solar (Rs/yr)",fin.bw],["With Solar (Rs/yr)",fin.bs],
+    ["Annual Saving (Rs)",fin.y1],["Monthly Saving (Rs)",fin.mo],[""],
+    ["FINANCIAL SUMMARY"],
+    (isEpc
+      ?[["Gross Cost (Rs)",fin.sys],["Subsidy (Rs)",fin.sub],["Net Cost (Rs)",fin.net],
+        (fin.batC?[["Battery (Rs)",fin.batC],["Total (Rs)",fin.total]]:[]),
+        ["Year 1 Saving (Rs)",fin.y1],["Payback (Yrs)",fin.pb],["IRR (%)",fin.irr],["25-Yr Saving (Rs)",fin.cum25],
+        ["Depreciation","40% WDV IT Act S.32"]]
+      :[["Upfront","ZERO"],["Monthly EIL (Rs)",fin.moCharge],["EIL IRR (%)",S.irr*100],
+        ["Contract (yrs)",S.contractYrs],["Post-5yr saving (Rs/yr)",Math.round(fin.bw*Math.pow(1.05,5)-fin.bs)]]
+    ),[""],
+    ["YEAR-BY-YEAR"],["Year","Solar Gen (kWh)","Bill Without Solar (Rs)","Bill With Solar (Rs)","Annual Saving (Rs)","Cumulative (Rs)","Status"]
+  ].flat(2).filter(function(r){return Array.isArray(r);});
+
+  fin.yearlyFull.forEach(function(y){
+    rows.push([y.y,y.gen,y.bw,y.bs,y.sv,y.cum,y.cum>fin.total?"Recovered":"Investing"]);
+  });
+  rows.push([""]);
+  rows.push(["ASSUMPTIONS (App_Config)"],["Cost/kWp (Rs)",S.costPerKw],["CUF (%)",S.cuf*100],
+    ["Yield (kWh/kW/day)",S.yield],["Degradation (%/yr)",S.deg*100],["Escalation (%/yr)",S.esc*100]);
+
+  var csv=rows.map(function(r){
+    return r.map(function(c){
+      var s=String(c===null||c===undefined?"":c);
+      if(s.indexOf(",")>-1||s.indexOf('"')>-1)s='"'+s.replace(/"/g,'""')+'"';
+      return s;
+    }).join(",");
+  }).join("\n");
+  var blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;
+  a.download="EIL_"+F.name.replace(/\s+/g,"_")+"_"+ref+".csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function dlSettings(){
+  var rows=[["EIL SOLAR SETTINGS & ASSUMPTIONS"],["Source","Solar_v4_Universalmodel Excel"],["Date",today],[""],
+    ["TARIFF RATES"],["Category","Energy","Fixed","Network","Demand","Tax","Export","MaxKwp"]];
+  Object.keys(TARIFFS).forEach(function(k){
+    var t=TARIFFS[k];
+    rows.push([t.lbl,t.ur,t.fp,t.net,t.demand,t.tax===0?"NIL":t.tax*100+"%",t.ex===0?"Banked":t.ex,t.maxKwp]);
+  });
+  rows.push([""]);
+  rows.push(["TECHNICAL"]);
+  rows.push(["CUF (%)",S.cuf*100]);
+  rows.push(["Yield (kWh/kW/day)",S.yield]);
+  rows.push(["Degradation (%/yr)",S.deg*100]);
+  rows.push(["Escalation (%/yr)",S.esc*100]);
+  rows.push(["Cost/kWp (Rs)",S.costPerKw]);
+  rows.push([""]);
+  rows.push(["DEVELOPER MODEL"]);
+  rows.push(["IRR (%)",S.irr*100]);
+  rows.push(["Contract (yrs)",S.contractYrs]);
+  rows.push(["Depreciation","40% WDV S.32"]);
+  rows.push([""]);
+  rows.push(["FUTURE PROVISIONS"]);
+  rows.push(["Residential Fixed Charge","Rs0 - not yet introduced"]);
+  rows.push(["Peak Hour ToU","Not active"]);
+  rows.push(["Battery Subsidy","Not announced"]);
+  var csv=rows.map(function(r){
+    return r.map(function(c){var s=String(c||"");if(s.indexOf(",")>-1)s='"'+s+'"';return s;}).join(",");
+  }).join("\n");
+  var blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");a.href=url;
+  a.download="EIL_Settings_"+today.replace(/\s/g,"_")+".csv";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+
+// ── VOICE INTERVIEW — CONVERSATIONAL, ONE Q AT A TIME ────────────────────────
+// Like Claude Voice: assistant asks → customer speaks short answer → Claude confirms
+// → next question. Short recordings = high accuracy. Targeted follow-up for gaps.
+
+var VI_SYNTH = window.speechSynthesis || null;
+var VI_VOICE = null;
+var VI_REC   = null;
+var VI_DATA  = {}; // collected answers
+var VI_STEP  = 0;
+var VI_BUSY  = false;
+
+// ── QUESTIONS ─────────────────────────────────────────────────────────────────
+var VI_QS = [
+  { key:"name",     ask:"What is your full name please?",
+    confirm:function(v){return "Nice to meet you, "+v+"!";},
+    hint:"e.g. Rajan Kumar" },
+  { key:"phone",    ask:"What is your mobile number?",
+    confirm:function(v){return "Got it — "+v;},
+    hint:"Speak 10 digits" },
+  { key:"location", ask:"Which city or area is this for?",
+    confirm:function(v){return "Great, "+v;},
+    hint:"e.g. Chennai" },
+  { key:"category", ask:"Is this for your home, a shop or office, a factory, or a large industrial unit?",
+    confirm:function(v){
+      var m={Residential:"Residential home connection",Commercial:"Commercial shop or office",
+             Industrial:"Industrial or factory",HT:"High tension industrial"};
+      return m[v]||v;},
+    hint:"Say: Home, Shop, Factory or Industrial" },
+  { key:"bill",     ask:"What is your approximate monthly electricity bill in rupees?",
+    confirm:function(v){return "Monthly bill of rupees "+parseInt(v).toLocaleString("en-IN");},
+    hint:"e.g. five thousand" },
+  { key:"units",    ask:"How many units of electricity do you use per month? Check your TNEB bill.",
+    confirm:function(v){return v+" units per month";},
+    hint:"e.g. three hundred units" },
+  { key:"demand",   ask:"What is your sanctioned load or contracted demand in kilo volt ampere? You can say skip if you don't know.",
+    confirm:function(v){return v==="skip"?"I'll estimate that from your units.":v+" kVA";},
+    hint:"e.g. twenty kVA or say skip" },
+  { key:"model",    ask:"For payment — would you like to invest once and own the solar plant from day one? Or would you prefer zero upfront with a fixed monthly charge for five years after which the plant is yours free?",
+    confirm:function(v){
+      return v==="epc"?"EPC model — you own it from day one.":"Developer model — zero upfront, own it free after five years.";},
+    hint:"Say: Own it now, or Zero upfront" },
+  { key:"battery",  ask:"Last question — do you experience power cuts? Would you like battery storage for backup?",
+    confirm:function(v){return v==="yes"?"Battery backup included.":"Solar only, no battery.";},
+    hint:"Say: Yes or No" }
+];
+
+// ── VOICE SETUP ───────────────────────────────────────────────────────────────
+function viPickVoice(){
+  if(!VI_SYNTH) return;
+  var vs = VI_SYNTH.getVoices();
+  var prefer = ["Samantha","Karen","Veena","Victoria","Moira","Tessa","Zira",
+                "Google UK English Female","Google US English Female"];
+  var v = null;
+  prefer.forEach(function(n){ if(!v) v=vs.find(function(x){return x.name.indexOf(n)>-1;}); });
+  if(!v) v = vs.find(function(x){ return x.lang.indexOf("en")===0 && x.name.toLowerCase().indexOf("female")>-1; });
+  if(!v) v = vs.find(function(x){ return x.lang.indexOf("en")===0; });
+  VI_VOICE = v || null;
+}
+if(VI_SYNTH){ viPickVoice(); VI_SYNTH.onvoiceschanged = viPickVoice; }
+
+function viSpeak(text, onEnd){
+  if(!VI_SYNTH){ if(onEnd) setTimeout(onEnd,100); return; }
+  VI_SYNTH.cancel();
+  var utt = new SpeechSynthesisUtterance(text);
+  if(VI_VOICE) utt.voice = VI_VOICE;
+  utt.lang="en-IN"; utt.rate=0.90; utt.pitch=1.06; utt.volume=1.0;
+  utt.onstart = function(){
+    var av=document.getElementById("vi-av"); if(av) av.className="vi-av sp";
+    viSetStatus("Speaking...");
+  };
+  utt.onend = function(){
+    var av=document.getElementById("vi-av"); if(av) av.className="vi-av";
+    if(onEnd) onEnd();
+  };
+  utt.onerror = function(){ if(onEnd) onEnd(); };
+  VI_SYNTH.speak(utt);
+}
+
+// ── CHAT HELPERS ──────────────────────────────────────────────────────────────
+function viNow(){
+  var d=new Date(), h=d.getHours(), m=d.getMinutes();
+  return (h%12||12)+":"+(m<10?"0":"")+m+" "+(h<12?"AM":"PM");
+}
+
+function viAddMsg(role, html){
+  var chat = document.getElementById("vi-chat");
+  if(!chat) return;
+  var bw = document.createElement("div");
+  bw.className = "bw "+(role==="usr"?"usr":"bot");
+  var bb = document.createElement("div");
+  bb.className = "bb "+(role==="sys"?"sys":role);
+  bb.innerHTML = html+'<div class="bt">'+viNow()+'</div>';
+  bw.appendChild(bb);
+  chat.appendChild(bw);
+  chat.scrollTop = chat.scrollHeight;
+  return bb;
+}
+
+function viTyping(){
+  var chat = document.getElementById("vi-chat");
+  if(!chat) return null;
+  var bw = document.createElement("div");
+  bw.className="bw bot"; bw.id="vi-typing";
+  var bb = document.createElement("div");
+  bb.className="bb bot";
+  bb.innerHTML='<div class="tdots"><span></span><span></span><span></span></div>';
+  bw.appendChild(bb); chat.appendChild(bw);
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function viRemoveTyping(){
+  var el=document.getElementById("vi-typing"); if(el) el.remove();
+}
+
+function viSetStatus(txt){
+  var el=document.getElementById("vi-hstat"); if(el) el.textContent=txt;
+}
+
+function viSetProg(n){
+  var el=document.getElementById("vi-prog"); if(el) el.style.width=(n/VI_QS.length*100)+"%";
+}
+
+// ── ENTRY ─────────────────────────────────────────────────────────────────────
+function startVoiceInterview(){
+  if(VI_SYNTH) VI_SYNTH.cancel();
+  if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  VI_DATA={}; VI_STEP=0; VI_BUSY=false;
+  ["form","proposal","settings"].forEach(function(id){
+    var el=document.getElementById("pg-"+id);
+    if(el) el.className="page";
+    var bn=document.getElementById("bn-"+id); if(bn) bn.className="bnav";
+  });
+  document.getElementById("pg-voice").className="page active";
+
+  // Build shell
+  document.getElementById("vi-body").innerHTML =
+    '<div class="vi-wrap">'
+    +'<div class="vi-header">'
+      +'<div class="vi-av" id="vi-av">👩</div>'
+      +'<div style="flex:1;">'
+        +'<div class="vi-hname">EIL Solar Assistant</div>'
+        +'<div class="vi-hstat" id="vi-hstat">Online</div>'
+      +'</div>'
+      +'<button class="vi-hexit" onclick="exitVI()">✕</button>'
+    +'</div>'
+    +'<div class="vi-prog"><div class="vi-prog-fill" id="vi-prog" style="width:0%"></div></div>'
+    +'<div class="vi-chat" id="vi-chat"></div>'
+    +'<div style="background:#1a2c35;padding:4px 14px;text-align:right;flex-shrink:0;">'
+      +'<span style="font-size:11px;color:#25d366;font-weight:700;letter-spacing:1px;">TAP 🎤 TO SPEAK YOUR ANSWER</span>'
+      +'</div>'
+    +'<div class="vi-bottom">'
+      +'<textarea class="vi-heard" id="vi-heard" rows="1" '
+        +'placeholder="Your spoken words appear here..."></textarea>'
+      +'<button class="vi-mic-btn wait" id="vi-mic" onclick="viMicTap()">🎤</button>'
+    +'</div>'
+    +'</div>';
+
+  setTimeout(function(){
+    viAddMsg("bot","Hello! I'm your EIL Solar assistant. I'll ask you a few short questions one at a time. Just speak naturally after each one. Let's begin!");
+    viSpeak("Hello! I am your EIL Solar assistant. I will ask you a few short questions one at a time. Just speak naturally after each one. Let us begin!", function(){
+      viAskStep(0);
+    });
+  },400);
+}
+
+function exitVI(){
+  if(VI_SYNTH) VI_SYNTH.cancel();
+  if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  VI_BUSY=false;
+  // Hide voice page explicitly
+  var vp=document.getElementById("pg-voice");
+  if(vp) vp.className="page";
+  goPage("form");
+}
+
+// ── ASK ONE QUESTION ──────────────────────────────────────────────────────────
+function viAskStep(idx){
+  if(idx >= VI_QS.length){ viShowSummary(); return; }
+  VI_STEP = idx;
+  VI_BUSY = false;
+  var q = VI_QS[idx];
+  viSetProg(idx);
+
+  viTyping();
+  setTimeout(function(){
+    viRemoveTyping();
+    viAddMsg("bot", q.ask
+      +'<div style="font-size:11px;color:#8696a0;margin-top:5px;font-style:italic;">'+q.hint+'</div>');
+    viSpeak(q.ask, function(){
+      viEnableMic();
+    });
+  }, 600);
+}
+
+// ── MIC ───────────────────────────────────────────────────────────────────────
+function viEnableMic(){
+  var mic=document.getElementById("vi-mic");
+  if(mic){ mic.className="vi-mic-btn idle"; mic.textContent="🎤"; }
+  viSetStatus("Tap mic and speak your answer");
+}
+
+function viDisableMic(){
+  var mic=document.getElementById("vi-mic");
+  if(mic){ mic.className="vi-mic-btn wait"; mic.textContent="⏳"; }
+}
+
+function viMicTap(){
+  if(VI_BUSY) return;
+  var mic=document.getElementById("vi-mic");
+  if(!mic) return;
+  if(mic.className.indexOf("rec")>-1){
+    viStopRec();
+  } else if(mic.className.indexOf("idle")>-1){
+    viStartRec();
+  }
+}
+
+function viStartRec(){
+  if(!("webkitSpeechRecognition" in window||"SpeechRecognition" in window)){
+    viAddMsg("sys","Voice needs Chrome on desktop/Android, or Safari on iPhone.");
+    return;
+  }
+  if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  if(VI_SYNTH) VI_SYNTH.cancel();
+
+  var mic=document.getElementById("vi-mic");
+  var heard=document.getElementById("vi-heard");
+  var av=document.getElementById("vi-av");
+  if(mic){ mic.className="vi-mic-btn rec"; mic.textContent="⏹"; }
+  if(heard){ heard.value=""; heard.placeholder="Listening — speak now..."; }
+  if(av) av.className="vi-av li";
+  viSetStatus("🔴 Listening...");
+
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  var rec=new SR();
+  rec.lang="en-IN";
+  rec.continuous=false;      // single utterance — much more reliable
+  rec.interimResults=true;
+  rec.maxAlternatives=3;
+  VI_REC=rec;
+
+  var finalTxt="";
+  rec.onresult=function(e){
+    var interim="";
+    for(var i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalTxt=e.results[i][0].transcript;
+      else interim=e.results[i][0].transcript;
+    }
+    var heard2=document.getElementById("vi-heard");
+    if(heard2) heard2.value=finalTxt||interim;
+  };
+
+  rec.onspeechend=function(){ rec.stop(); };
+
+  rec.onend=function(){
+    VI_REC=null;
+    var av2=document.getElementById("vi-av"); if(av2) av2.className="vi-av";
+    var mic2=document.getElementById("vi-mic");
+    if(mic2){ mic2.className="vi-mic-btn wait"; mic2.textContent="⏳"; }
+    viSetStatus("Processing...");
+    if(finalTxt.trim().length>0){
+      viHandleAnswer(finalTxt.trim());
+    } else {
+      viAddMsg("sys","Didn't catch that. Tap the mic and try again.");
+      viEnableMic();
+      viSetStatus("Tap mic to try again");
+    }
+  };
+
+  rec.onerror=function(e){
+    VI_REC=null;
+    var av3=document.getElementById("vi-av"); if(av3) av3.className="vi-av";
+    viEnableMic();
+    if(e.error==="not-allowed"){
+      viAddMsg("sys","Microphone blocked. Allow mic access in browser settings, then try again.");
+    } else if(e.error==="no-speech"){
+      viAddMsg("sys","No speech heard. Tap mic and speak clearly.");
+    } else {
+      viAddMsg("sys","Mic issue: "+e.error+". Tap mic to retry.");
+    }
+    viSetStatus("Tap mic to retry");
+  };
+
+  try{ rec.start(); }
+  catch(e){ viEnableMic(); viSetStatus("Tap mic to try again"); }
+}
+
+function viStopRec(){
+  if(VI_REC){ try{VI_REC.stop();}catch(e){} }
+}
+
+// ── HANDLE ANSWER — Claude AI processes each short answer ─────────────────────
+async function viHandleAnswer(raw){
+  VI_BUSY=true;
+  var q=VI_QS[VI_STEP];
+  viDisableMic();
+
+  // Show user bubble
+  viAddMsg("usr", raw);
+  viTyping();
+
+  // Ask Claude to extract the specific field value from this short answer
+  var prompt="The user was asked: \""+q.ask+"\"\n"
+    +"They responded: \""+raw+"\"\n\n"
+    +"Extract the value for the field '"+q.key+"'.\n\n"
+    +"Rules per field:\n"
+    +"- name: return the person's name as spoken, title-cased\n"
+    +"- phone: return exactly 10 digits only (no spaces/symbols). If less than 10 digits heard, return null.\n"
+    +"- location: return the city/area name\n"
+    +"- category: return exactly one of: Residential, Commercial, Industrial, HT\n"
+    +"  home/house/domestic=Residential; shop/office/commercial/store=Commercial;\n"
+    +"  factory/industry/industrial/plant=Industrial; ht/high tension/large=HT\n"
+    +"- bill: return the number only (convert spoken like 'eight thousand'=8000)\n"
+    +"- units: return the number only (convert 'three hundred'=300)\n"
+    +"- demand: return the number only, OR 'skip' if user says skip/don't know/no idea\n"
+    +"- model: return 'epc' or 'dev'\n"
+    +"  own/buy/invest/purchase/epc/day one=epc;\n"
+    +"  zero/free/developer/monthly/no upfront/no payment=dev\n"
+    +"- battery: return 'yes' or 'no'\n\n"
+    +"If the answer is unclear or doesn't match the field, return null.\n"
+    +"Respond with JSON only: {\""+q.key+"\": value_or_null}";
+
+  var extracted=null;
+  try{
+    var res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:60,
+        messages:[{role:"user",content:prompt}]})
+    });
+    var data=await res.json();
+    var txb=(data.content||[]).find(function(b){return b.type==="text";});
+    if(txb){
+      var parsed=JSON.parse(txb.text.replace(/```json|```/g,"").trim());
+      extracted=parsed[q.key];
+    }
+  }catch(e){
+    // Fallback: basic extraction
+    extracted=viFallback(q.key, raw);
+  }
+
+  viRemoveTyping();
+
+  if(extracted!==null && extracted!==undefined && String(extracted).trim()!==""){
+    // ── Good answer — confirm and move on ──
+    VI_DATA[q.key]=extracted;
+    var confirmText=q.confirm(extracted);
+    viTyping();
+    setTimeout(function(){
+      viRemoveTyping();
+      viAddMsg("bot","<span class='ans-badge'>✓ "+confirmText+"</span>");
+      viSpeak(confirmText+". ", function(){
+        viAskStep(VI_STEP+1);
+      });
+    },400);
+  } else {
+    // ── Didn't understand — ask again simply ──
+    VI_BUSY=false;
+    viTyping();
+    setTimeout(function(){
+      viRemoveTyping();
+      var retry="Sorry, I didn't quite catch that. "+q.ask;
+      viAddMsg("bot","<span class='ans-badge bad'>Sorry, could you say that again?</span><br/>"
+        +"<span style='color:#8696a0;font-size:12px;'>"+q.hint+"</span>");
+      viSpeak("Sorry, I didn't catch that. "+q.ask, function(){
+        viEnableMic();
+      });
+    },400);
+  }
+}
+
+// ── FALLBACK PARSER ───────────────────────────────────────────────────────────
+function viFallback(key, raw){
+  var t=raw.toLowerCase().trim();
+  if(key==="phone"){
+    var d=raw.replace(/\D/g,""); return d.length>=10?d.slice(-10):null;
+  }
+  if(key==="bill"||key==="units"||key==="demand"){
+    if(t==="skip"||t.indexOf("don't know")>-1||t.indexOf("no idea")>-1) return key==="demand"?"skip":null;
+    var n=parseInt(raw.replace(/[^0-9]/g,"")); if(!isNaN(n)&&n>0) return String(n);
+    var NUMS={"zero":0,"one":1,"two":2,"three":3,"four":4,"five":5,"six":6,"seven":7,"eight":8,"nine":9,
+      "ten":10,"eleven":11,"twelve":12,"thirteen":13,"fourteen":14,"fifteen":15,"sixteen":16,
+      "seventeen":17,"eighteen":18,"nineteen":19,"twenty":20,"thirty":30,"forty":40,"fifty":50,
+      "sixty":60,"seventy":70,"eighty":80,"ninety":90,"hundred":100,"thousand":1000,"lakh":100000};
+    var words=t.replace(/\band\b/g," ").split(/[\s,]+/),tot=0,cur=0;
+    words.forEach(function(w){var nv=NUMS[w];if(nv!==undefined){
+      if(nv===100)cur=(cur||1)*100; else if(nv>=1000){tot+=(cur||1)*nv;cur=0;} else cur+=nv;}});
+    var r=tot+cur; return r>0?String(r):null;
+  }
+  if(key==="category"){
+    if(t.indexOf("home")>-1||t.indexOf("house")>-1||t.indexOf("residential")>-1||t.indexOf("domestic")>-1) return "Residential";
+    if(t.indexOf("shop")>-1||t.indexOf("office")>-1||t.indexOf("commercial")>-1||t.indexOf("store")>-1) return "Commercial";
+    if(t.indexOf("factory")>-1||t.indexOf("industri")>-1||t.indexOf("plant")>-1||t.indexOf("mill")>-1) return "Industrial";
+    if(t.indexOf("ht")>-1||t.indexOf("high tension")>-1||t.indexOf("large")>-1) return "HT";
+    return null;
+  }
+  if(key==="model"){
+    if(t.indexOf("own")>-1||t.indexOf("epc")>-1||t.indexOf("buy")>-1||t.indexOf("invest")>-1||t.indexOf("day one")>-1||t.indexOf("purchase")>-1) return "epc";
+    if(t.indexOf("zero")>-1||t.indexOf("free")>-1||t.indexOf("developer")>-1||t.indexOf("monthly")>-1||t.indexOf("no upfront")>-1) return "dev";
+    return null;
+  }
+  if(key==="battery"){
+    if(t.indexOf("yes")>-1||t.indexOf("need")>-1||t.indexOf("want")>-1||t.indexOf("backup")>-1||t.indexOf("cut")>-1) return "yes";
+    if(t.indexOf("no")>-1||t.indexOf("not")>-1||t.indexOf("don't")>-1||t.indexOf("without")>-1) return "no";
+    return null;
+  }
+  if(key==="name"||key==="location"){
+    return raw.trim().replace(/\b\w/g,function(c){return c.toUpperCase();});
+  }
+  return raw.trim()||null;
+}
+
+// ── SUMMARY ───────────────────────────────────────────────────────────────────
+function viShowSummary(){
+  VI_BUSY=false;
+  var p=VI_DATA;
+  var cat=p.category||"Commercial";
+  var t=TARIFFS[cat]||TARIFFS.Commercial;
+  var units=parseInt(p.units||"0")||0;
+  var sugKwp=5;
+  if(units>0) sugKwp=Math.max(1,Math.min(Math.round((units*12)*0.65/1840),t.maxKwp));
+  viSetProg(VI_QS.length);
+  viDisableMic();
+
+  var rows=[
+    {k:"Name",    v:p.name||"—",     ok:!!p.name},
+    {k:"Mobile",  v:p.phone||"—",    ok:!!p.phone},
+    {k:"Location",v:p.location||"—", ok:!!p.location},
+    {k:"Category",v:p.category?t.lbl:"—", ok:!!p.category},
+    {k:"Mth Bill",v:p.bill?"₹"+parseInt(p.bill).toLocaleString("en-IN"):"—", ok:!!p.bill},
+    {k:"Units/mo",v:p.units?p.units+" units":"—", ok:!!p.units},
+    {k:"Demand",  v:p.demand&&p.demand!=="skip"?p.demand+" kVA":"Auto-estimated", ok:true},
+    {k:"Model",   v:p.model==="epc"?"EPC — Own Day 1":p.model==="dev"?"Developer — Zero Upfront":"—", ok:!!p.model},
+    {k:"Battery", v:p.battery==="yes"?"Yes — backup needed":p.battery==="no"?"No":"—", ok:!!p.battery},
+    {k:"System",  v:sugKwp+" kWp (auto-calculated)", ok:true},
+  ];
+
+  var sumHtml='<div style="font-weight:700;margin-bottom:8px;color:#25d366;">✓ All done! Here\'s your summary:</div>'
+    +'<div class="vi-sumcard">';
+  rows.forEach(function(r){
+    sumHtml+='<div class="vi-sumrow">'
+      +'<span class="vi-sumk">'+r.k+'</span>'
+      +'<span class="vi-sumv'+(r.ok?'':' x')+'">'+r.v+'</span>'
+      +'</div>';
+  });
+  sumHtml+='</div>'
+    +'<div class="vi-acts">'
+    +'<button class="vi-act go" onclick="viConfirm('+sugKwp+')">✓ Generate Proposal</button>'
+    +'<button class="vi-act re" onclick="startVoiceInterview()">🔄 Start Over</button>'
+    +'<button class="vi-act ed" onclick="exitVI()">✎ Edit Manually</button>'
+    +'</div>';
+
+  viTyping();
+  setTimeout(function(){
+    viRemoveTyping();
+    viAddMsg("bot",sumHtml);
+    viSpeak("All done! I have captured all your details. The suggested system size is "+sugKwp+" kilowatt peak based on your consumption. Please review your summary and tap Generate Proposal when ready.", null);
+  },600);
+}
+
+// ── CONFIRM & GENERATE ────────────────────────────────────────────────────────
+function viConfirm(sugKwp){
+  var p=VI_DATA;
+  if(VI_SYNTH) VI_SYNTH.cancel();
+  if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  if(p.name)     F.name    =p.name;
+  if(p.phone)    F.phone   =String(p.phone);
+  if(p.location) F.location=p.location;
+  if(p.category&&TARIFFS[p.category]) F.cat=p.category;
+  if(p.model)    F.model   =p.model;
+  F.bat=(p.battery==="yes");
+  if(p.demand&&p.demand!=="skip"){ var d=parseInt(p.demand)||0; if(d>0) F.demand=Math.min(d,500); }
+  if(p.units){ var u=parseInt(p.units)||0; if(u>0) F.bm=Math.max(100,u); }
+  F.kwp=sugKwp;
+  goPage("form");
+  setTimeout(function(){
+    viSpeak("Generating your personalised solar proposal now. Please hold on.");
+    setTimeout(generate,1600);
+  },300);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+goPage("form");
+</script>
+
+<script>
+// ── PREVENT MULTIPLE TABS ON iPHONE ──────────────────────────────────────────
+// When installed as PWA, target="_blank" links open new Safari tabs.
+// This catches all link clicks and opens in same window instead.
+document.addEventListener("click", function(e){
+  var a = e.target.closest("a[href]");
+  if(a && a.href && !a.href.startsWith("tel:") && !a.href.startsWith("mailto:")){
+    // External links (WhatsApp, etc) are intentional — allow
+    if(a.href.indexOf("wa.me")>-1||a.href.indexOf("mailto:")>-1||a.href.indexOf("tel:")>-1) return;
+    // Internal navigation — prevent new tab
+    if(a.target==="_blank"){ a.removeAttribute("target"); }
+  }
+});
+// For PWA: if opened in standalone mode, ensure no address bar / tab switch
+if(window.navigator.standalone){
+  document.addEventListener("click", function(e){
+    var a=e.target.closest("a");
+    if(a&&a.href&&!a.href.startsWith("tel:")&&!a.href.startsWith("mailto:")){
+      if(a.href.indexOf(window.location.hostname)>-1||a.href.startsWith("/")){
+        e.preventDefault();
+        window.location.href=a.href;
+      }
+    }
+  });
+}
+</script>
+<script>
+// Register service worker for PWA update control
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    // Check for updates every time the page loads
+    reg.update();
+    reg.addEventListener('updatefound',function(){
+      var nw=reg.installing;
+      nw.addEventListener('statechange',function(){
+        if(nw.state==='activated'){
+          // New version installed — reload to apply
+          window.location.reload();
+        }
+      });
+    });
+  }).catch(function(){/* SW not supported or blocked */});
+}
+</script>
+</body>
+</html>
