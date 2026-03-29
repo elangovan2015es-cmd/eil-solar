@@ -435,7 +435,29 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .savecopy-btn:active{transform:scale(0.98);}
 .savecopy-btn.saved{border-color:rgba(22,163,74,0.4);color:var(--green);background:rgba(22,163,74,0.06);}
 
-/* ── VOICE INTERVIEW — CHAT STYLE ── */
+/* ── VIABILITY WARNING ── */
+.viab-warn{margin:0 12px 10px;border-radius:14px;overflow:hidden;border:2px solid #f97316;}
+.viab-warn.red{border-color:#cc0000;}
+.viab-warn.green{border-color:#16a34a;}
+.viab-head{display:flex;align-items:center;gap:10px;padding:12px 14px;}
+.viab-warn.red .viab-head{background:rgba(204,0,0,0.08);}
+.viab-warn.amber .viab-head{background:rgba(249,115,22,0.08);}
+.viab-warn.green .viab-head{background:rgba(22,163,74,0.08);}
+.viab-ico{font-size:26px;flex-shrink:0;}
+.viab-title{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;}
+.viab-warn.red .viab-title{color:#cc0000;}
+.viab-warn.amber .viab-title{color:#ea580c;}
+.viab-warn.green .viab-title{color:#16a34a;}
+.viab-sub{font-size:12px;color:#64748b;font-weight:600;margin-top:2px;}
+.viab-body{padding:0 14px 12px;background:#fff;}
+.viab-reason{display:flex;align-items:flex-start;gap:8px;padding:7px 0;
+  border-bottom:1px solid #f1f5f9;font-size:13px;color:#374151;font-weight:600;line-height:1.5;}
+.viab-reason:last-child{border-bottom:none;}
+.viab-reason-ico{flex-shrink:0;margin-top:1px;}
+.viab-min{background:#f0fdf4;border-top:1.5px solid #16a34a;
+  padding:10px 14px;font-size:13px;font-weight:700;color:#15803d;}
+
+/* ── VIABILITY WARNING ── */
 .vi-wrap{background:#0b141a;min-height:100vh;display:flex;flex-direction:column;}
 .vi-header{background:#202c33;padding:10px 14px;display:flex;align-items:center;gap:10px;
   flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
@@ -623,7 +645,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "22";
+var APP_VERSION = "23";
 // Force cache refresh on new deploy — iPhone Safari caches aggressively
 (function(){
   var stored = localStorage.getItem("eil_version");
@@ -1003,7 +1025,105 @@ function rstV(btn,field){
   btn.textContent=lb[field]||"🎤 Speak";
 }
 
-// ── FORM ──────────────────────────────────────────────────────────────────────
+// ── RESIDENTIAL VIABILITY CHECK ───────────────────────────────────────────────
+// Returns: {level:'red'|'amber'|'green', title, subtitle, reasons, minUnits, recUnits}
+function checkViability(kwp, bm, cat){
+  if(cat !== "Residential") return null; // only applies to residential
+
+  var nChg = kwp * 24 * S.cuf * 365 * 0.318; // fixed network charge/yr
+  var annC  = bm * 6;
+  var ag    = kwp * S.yield * 365;
+  var selfU = Math.min(ag * S.selfC, annC);
+  var grid  = Math.max(0, annC - selfU);
+
+  var bw    = calcResidentialBill(bm) * 6;
+  var eChgS = calcResidentialBill(grid/6) * 6;
+  var bs    = Math.max(0, eChgS + nChg);
+  var saving = bw - bs;
+
+  var sys = kwp * S.costPerKw;
+  var sub = kwp<=2 ? kwp*S.subT1 : Math.min(2*S.subT1+(kwp-2)*S.subT2, S.subCap);
+  var net = sys - sub;
+  var pb  = saving > 0 ? net/saving : 999;
+
+  // Find minimum units for any positive saving
+  var minUnits = 0;
+  for(var u=50; u<=1000; u+=10){
+    var aC=u*6, sU=Math.min(ag*S.selfC,aC), gr=Math.max(0,aC-sU);
+    var sv=calcResidentialBill(u)*6 - (calcResidentialBill(gr/6)*6 + nChg);
+    if(sv>0 && minUnits===0){ minUnits=u; break; }
+  }
+  // Find units for viable payback (≤15 years)
+  var recUnits = 0;
+  for(var u=50; u<=1200; u+=10){
+    var aC=u*6, sU=Math.min(ag*S.selfC,aC), gr=Math.max(0,aC-sU);
+    var sv=calcResidentialBill(u)*6 - (calcResidentialBill(gr/6)*6 + nChg);
+    if(sv>0 && net/sv<=15 && recUnits===0){ recUnits=u; break; }
+  }
+
+  var level, title, subtitle, reasons;
+
+  if(saving <= 0){
+    level = "red";
+    title = "⚠ Solar Not Recommended at Current Consumption";
+    subtitle = "Bill will be HIGHER with solar than without";
+    reasons = [
+      {ico:"🔌", txt:"TNEB charges a fixed network fee of "+L(Math.round(nChg))+"/yr on your solar system — this applies even if you draw zero units from the grid."},
+      {ico:"☀", txt:"Your "+kwp+" kWp solar system generates ~"+Math.round(ag)+" kWh/yr but your annual consumption is only "+annC+" kWh. Excess solar is exported but earns ₹0 under Net Metering."},
+      {ico:"📊", txt:"The network charge alone ("+L(Math.round(nChg))+"/yr) exceeds your current energy bill ("+L(bw)+"/yr), making solar counterproductive."},
+      {ico:"📋", txt:"TNEB's network charge was introduced in 2022 and applies on the normative solar generation — not your actual consumption."},
+    ];
+  } else if(pb > 20){
+    level = "amber";
+    title = "⚠ Financially Marginal — Long Payback";
+    subtitle = "Payback "+pb.toFixed(0)+" yrs · Saving only "+L(Math.round(saving))+"/yr";
+    reasons = [
+      {ico:"🔌", txt:"TNEB's fixed network charge of "+L(Math.round(nChg))+"/yr reduces your net annual saving significantly — this charge is unavoidable under Net Metering."},
+      {ico:"📊", txt:"At "+bm+" bi-monthly units, your energy bill ("+L(bw)+"/yr) is not high enough relative to the network charge to make solar financially strong."},
+      {ico:"☀", txt:"Solar generation far exceeds your consumption. Surplus exported units earn ₹0 under Net Metering — only units that replace grid draw create savings."},
+      {ico:"💡", txt:"Increasing system size will not help — it only increases the network charge without increasing savings at this consumption level."},
+    ];
+  } else if(pb <= 15){
+    level = "green";
+    title = "✓ Solar is Viable";
+    subtitle = "Payback "+pb.toFixed(1)+" yrs · Saving "+L(Math.round(saving))+"/yr";
+    reasons = null;
+  } else {
+    level = "amber";
+    title = "Solar is Borderline Viable";
+    subtitle = "Payback "+pb.toFixed(0)+" yrs · Consider increasing consumption first";
+    reasons = [
+      {ico:"🔌", txt:"TNEB's network charge of "+L(Math.round(nChg))+"/yr is significant relative to your bill savings at this consumption level."},
+      {ico:"💡", txt:"If consumption increases (AC, water heater, EV charging), payback improves substantially."},
+    ];
+  }
+
+  return {level, title, subtitle, reasons, minUnits, recUnits, saving:Math.round(saving), pb:pb.toFixed(1), nChg:Math.round(nChg)};
+}
+
+function renderViabilityWarning(v){
+  if(!v || v.level==="green") return "";
+  var h='<div class="viab-warn '+v.level+'">'
+    +'<div class="viab-head">'
+    +'<div class="viab-ico">'+(v.level==="red"?"🚫":"⚠️")+'</div>'
+    +'<div><div class="viab-title">'+v.title+'</div>'
+    +'<div class="viab-sub">'+v.subtitle+'</div></div>'
+    +'</div>';
+  if(v.reasons){
+    h+='<div class="viab-body">';
+    v.reasons.forEach(function(r){
+      h+='<div class="viab-reason"><span class="viab-reason-ico">'+r.ico+'</span><span>'+r.txt+'</span></div>';
+    });
+    h+='</div>';
+  }
+  if(v.recUnits>0){
+    h+='<div class="viab-min">✓ Minimum for viable solar (≤15 yr payback): <strong>'+v.recUnits+' bi-monthly units</strong></div>';
+  }
+  h+='</div>';
+  return h;
+}
+
+
 function renderForm(){
   var t=TARIFFS[F.cat];
   var maxK=t.maxKwp;
@@ -1173,6 +1293,15 @@ function renderForm(){
   }
   h+='</div>';
 
+  // Viability warning — residential only
+  h+='<div id="viab-container">';
+  if(F.cat==="Residential" && ok){
+    var safeKv=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+    var viab=checkViability(safeKv,F.bm,F.cat);
+    if(viab) h+=renderViabilityWarning(viab);
+  }
+  h+='</div>';
+
   // Live estimate
   if(ok){
     h+='<div class="est"><div class="est-title">✦ Live Estimate — '+(F.model==="epc"?"EPC Model":"Developer Model")+'</div>'
@@ -1267,6 +1396,17 @@ function updateEst(){
   if(!ok)return;
   var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
   var q=calc(safeK,F.bm,F.demand,F.cat);
+
+  // Refresh viability warning for residential
+  var viabContainer=document.getElementById("viab-container");
+  if(viabContainer){
+    if(F.cat==="Residential"){
+      var viab=checkViability(safeK,F.bm,F.cat);
+      viabContainer.innerHTML=viab?renderViabilityWarning(viab):"";
+    } else {
+      viabContainer.innerHTML="";
+    }
+  }
   var ep=document.getElementById("epc-px");var dp=document.getElementById("dev-px");
   if(ep)ep.textContent=L(q.total)+" one-time";
   if(dp)dp.textContent=L(q.moCharge)+"/month";
@@ -1405,6 +1545,12 @@ function renderProposal(){
       :'<div class="chip">Monthly: '+L(fin.moCharge)+'</div><div class="chip">Upfront: ZERO</div>')
     +(F.bat?'<div class="chip">🔋 '+F.batKwh+'kWh</div>':'')
     +'</div></div>';
+
+  // Viability warning in proposal — residential only
+  if(F.cat==="Residential"){
+    var viabP=checkViability(safeK,F.bm,F.cat);
+    if(viabP && viabP.level!=="green") h+=renderViabilityWarning(viabP);
+  }
 
   // WITH / WITHOUT SOLAR — always shown first
   h+='<span class="slbl">☀ Bill: With vs Without Solar</span>';
