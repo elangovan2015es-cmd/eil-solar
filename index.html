@@ -443,6 +443,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .usage-lbl{font-size:11px;color:#d97706;font-weight:700;}
 .usage-val{font-size:11px;color:#d97706;font-weight:800;}
 
+/* ── UPDATE BANNER ── */
+.update-bar{background:linear-gradient(90deg,#1e3a5f,#1d4ed8);
+  padding:8px 14px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:2px solid var(--amber);}
+.update-lbl{font-size:12px;color:#e2e8f0;font-weight:700;}
+.update-lbl em{color:var(--amber);font-style:normal;}
+.update-btn{border:none;border-radius:8px;padding:6px 14px;
+  background:var(--amber);font-family:'Rajdhani',sans-serif;font-weight:700;
+  font-size:13px;color:#fff;cursor:pointer;white-space:nowrap;}
+
 /* ── WELCOME PAGE ── */
 .welcome-wrap{min-height:100vh;min-height:100dvh;background:linear-gradient(160deg,#0f172a 0%,#1a1a2e 50%,#1e3a5f 100%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;}
@@ -608,6 +618,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     <span class="usage-lbl">📊 Today's Proposals</span>
     <span class="usage-val" id="usage-count">0 / 10 used</span>
   </div>
+  <!-- UPDATE BANNER — shown when new version available -->
+  <div id="update-bar" style="display:none;" class="update-bar">
+    <span class="update-lbl">🆕 New update available — <em>tap to get latest version</em></span>
+    <button class="update-btn" onclick="doAppUpdate()">Update Now</button>
+  </div>
 
 
   <!-- WELCOME PAGE -->
@@ -701,10 +716,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     } else if(!w&&!h) devOpen=false;
   },1000);
 
-  // Watermark overlay — appears on print
+  // Watermark overlay — updated dynamically when proposal is generated
   var style=document.createElement("style");
-  var wmContent="PREPARED FOR: "+(F.name||"RECIPIENT")+" · "+(F.phone||"")+" · KAVERI POWER · CONFIDENTIAL";
-  style.textContent="@media print{body::before{content:'"+wmContent+"';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:32px;color:rgba(204,0,0,0.15);font-weight:900;font-family:Arial,sans-serif;z-index:9999;pointer-events:none;white-space:nowrap;} .bottomnav,.topbar,.usage-bar{display:none!important;}}";
+  style.id="print-watermark-style";
+  style.textContent="@media print{body::before{content:'CONFIDENTIAL — KAVERI POWER SOLUTIONS';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:32px;color:rgba(204,0,0,0.15);font-weight:900;font-family:Arial,sans-serif;z-index:9999;pointer-events:none;white-space:nowrap;} .bottomnav,.topbar,.usage-bar{display:none!important;}}";
   document.head.appendChild(style);
 })();
 
@@ -1004,22 +1019,69 @@ document.getElementById("logo-wrap").innerHTML = logo(28)
   +'<div class="brand-name"><em>EIL</em> Solar <span style="font-size:11px;color:#64748b;font-weight:600;">v'+APP_VERSION+'</span></div>';
 initSecurity();
 
-// Force cache refresh on new deploy — iPhone Safari caches aggressively
+// ── APP UPDATE SYSTEM ────────────────────────────────────────────────────────
+// Checks GitHub Pages for a newer version by reading the deployed file's
+// version string. Shows an in-app banner if update is available.
+
+function checkForUpdate(){
+  // Fetch the live index.html and look for APP_VERSION string
+  fetch(window.location.href + "?nocache=" + Date.now(), {
+    cache: "no-store",
+    headers: {"Cache-Control": "no-cache"}
+  })
+  .then(function(r){ return r.text(); })
+  .then(function(html){
+    var match = html.match(/var APP_VERSION = "(\d+)"/);
+    if(!match) return;
+    var liveVersion = parseInt(match[1]);
+    var myVersion   = parseInt(APP_VERSION);
+    if(liveVersion > myVersion){
+      // Show update banner
+      var bar = document.getElementById("update-bar");
+      if(bar){
+        bar.style.display = "flex";
+        var lbl = bar.querySelector(".update-lbl");
+        if(lbl) lbl.innerHTML = '🆕 v'+liveVersion+' available (you have v'+myVersion+') — <em>tap to update</em>';
+      }
+    }
+  })
+  .catch(function(){}); // silently fail if offline
+}
+
+function doAppUpdate(){
+  // Clear all caches then hard reload
+  if('caches' in window){
+    caches.keys().then(function(names){
+      names.forEach(function(n){ caches.delete(n); });
+    });
+  }
+  // Clear service worker cache
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){ r.unregister(); });
+    });
+  }
+  window.location.reload(true);
+}
+
+// Force cache flush if version already changed (handles hard refresh case)
 (function(){
   var stored = localStorage.getItem("eil_version");
   if(stored && stored !== APP_VERSION){
     localStorage.setItem("eil_version", APP_VERSION);
-    // Clear caches and reload
     if('caches' in window){
       caches.keys().then(function(names){
-        names.forEach(function(n){caches.delete(n);});
+        names.forEach(function(n){ caches.delete(n); });
       });
     }
-    window.location.reload(true);
-    return;
   }
   localStorage.setItem("eil_version", APP_VERSION);
 })();
+
+// Check for update 3 seconds after load (non-blocking)
+setTimeout(checkForUpdate, 3000);
+
+
 
 // ── DATA — ALL VALUES FROM Solar_v4_Universalmodel_23326_7new_inputs_dynamicmodel.xlsx ─
 // Source sheets: Tariff_Lookup (tariff rates), App_Config (costs/settings), Battery_Options (battery data)
@@ -1901,6 +1963,13 @@ function renderProposal(){
       :'<div class="chip">Monthly: '+L(fin.moCharge)+'</div><div class="chip">Upfront: ZERO</div>')
     +(F.bat?'<div class="chip">🔋 '+F.batKwh+'kWh</div>':'')
     +'</div></div>';
+
+  // Update print watermark with customer name
+  var pwStyle=document.getElementById("print-watermark-style");
+  if(pwStyle){
+    var wmContent="PREPARED FOR: "+(F.name||"RECIPIENT")+" · "+(F.phone||"")+" · KAVERI POWER · CONFIDENTIAL";
+    pwStyle.textContent="@media print{body::before{content:'"+wmContent+"';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:32px;color:rgba(204,0,0,0.15);font-weight:900;font-family:Arial,sans-serif;z-index:9999;pointer-events:none;white-space:nowrap;} .bottomnav,.topbar,.usage-bar{display:none!important;}}";
+  }
 
   // PROPOSAL SECURITY STAMP — watermark + expiry
   stampProposal(ref);
@@ -3257,7 +3326,6 @@ function viConfirm(sugKwp){
     setTimeout(generate,1600);
   },300);
 }
- ──────────────────────────────────────────────────────
 function saveAppsScriptUrl(){
   var inp=document.getElementById("ef-appsscript");
   if(!inp||!inp.value.trim()){alert("Please paste the Apps Script Web App URL.");return;}
