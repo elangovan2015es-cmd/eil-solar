@@ -390,6 +390,59 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
   body{background:#0f172a;}
 }
 
+/* ── PIN / LOCK SCREEN ── */
+.pin-wrap{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;
+  background:linear-gradient(160deg,#0f172a 0%,#1a1a2e 60%,#1e3a5f 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:30px 24px;text-align:center;}
+.pin-logo{margin-bottom:20px;}
+.pin-title{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;
+  color:#fff;margin-bottom:4px;}
+.pin-title em{color:var(--amber);font-style:normal;}
+.pin-sub{font-size:13px;color:#64748b;font-weight:600;margin-bottom:28px;}
+.pin-box{background:rgba(255,255,255,0.05);border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:16px;padding:24px 20px;width:100%;max-width:320px;}
+.pin-lbl{font-size:11px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;
+  font-weight:700;margin-bottom:12px;}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:20px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,0.15);
+  border:2px solid rgba(255,255,255,0.2);transition:all 0.15s;}
+.pin-dot.filled{background:var(--amber);border-color:var(--amber);}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.pin-key{background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.1);
+  border-radius:12px;padding:16px 8px;font-family:'Rajdhani',sans-serif;
+  font-size:22px;font-weight:700;color:#fff;cursor:pointer;
+  transition:all 0.1s;-webkit-appearance:none;}
+.pin-key:active{background:var(--amber);border-color:var(--amber);transform:scale(0.94);}
+.pin-key.del{font-size:18px;color:#94a3b8;}
+.pin-key.empty{background:none;border:none;cursor:default;}
+.pin-err{font-size:13px;color:#ef4444;font-weight:700;margin-top:12px;min-height:20px;}
+.pin-hint{font-size:11px;color:#334155;margin-top:20px;font-weight:600;}
+/* ── LOCK SCREEN ── */
+.lock-wrap{position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;
+  background:rgba(15,23,42,0.97);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:30px;text-align:center;}
+.lock-ico{font-size:64px;margin-bottom:16px;}
+.lock-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;
+  color:#fff;margin-bottom:8px;}
+.lock-sub{font-size:14px;color:#64748b;font-weight:600;line-height:1.8;
+  margin-bottom:24px;max-width:280px;}
+.lock-btn{border:none;border-radius:12px;padding:14px 28px;
+  background:linear-gradient(90deg,var(--amber),#d97706);
+  font-family:'Rajdhani',sans-serif;font-weight:700;font-size:17px;color:#fff;cursor:pointer;}
+/* ── PROPOSAL STAMP ── */
+.prop-stamp{background:rgba(204,0,0,0.06);border:1.5px solid rgba(204,0,0,0.2);
+  border-radius:10px;margin:0 12px 10px;padding:9px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.prop-stamp-lbl{font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;}
+.prop-stamp-val{font-size:12px;color:#ef4444;font-weight:800;text-align:right;}
+.prop-stamp-exp{font-size:10px;color:#94a3b8;font-weight:600;text-align:right;margin-top:1px;}
+/* ── USAGE BAR ── */
+.usage-bar{background:rgba(245,158,11,0.1);border-bottom:1px solid rgba(245,158,11,0.2);
+  padding:5px 14px;display:flex;align-items:center;justify-content:space-between;}
+.usage-lbl{font-size:11px;color:#d97706;font-weight:700;}
+.usage-val{font-size:11px;color:#d97706;font-weight:800;}
+
 /* ── WELCOME PAGE ── */
 .welcome-wrap{min-height:100vh;min-height:100dvh;background:linear-gradient(160deg,#0f172a 0%,#1a1a2e 50%,#1e3a5f 100%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;}
@@ -540,10 +593,20 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 </style>
 </head>
 <body>
+<!-- PIN SCREEN — shown on first load -->
+<div id="pin-screen"></div>
+<!-- LOCK SCREEN — shown when expired or usage exceeded -->
+<div id="lock-screen"></div>
+
 <div class="app">
   <div class="topbar">
     <div class="brand" id="logo-wrap"></div>
     <button class="nav-pill" onclick="goPage('settings')">⚙ Settings</button>
+  </div>
+  <!-- USAGE BAR -->
+  <div class="usage-bar" id="usage-bar" style="display:none;">
+    <span class="usage-lbl">📊 Today's Proposals</span>
+    <span class="usage-val" id="usage-count">0 / 10 used</span>
   </div>
 
 
@@ -640,12 +703,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 
   // Watermark overlay — appears on print
   var style=document.createElement("style");
-  style.textContent="@media print{body::before{content:'CONFIDENTIAL — EIL SOLAR / KAVERI POWER SOLUTIONS';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:48px;color:rgba(204,0,0,0.18);font-weight:900;font-family:Arial,sans-serif;z-index:9999;pointer-events:none;white-space:nowrap;} .bottomnav,.topbar{display:none!important;}}";
+  var wmContent="PREPARED FOR: "+(F.name||"RECIPIENT")+" · "+(F.phone||"")+" · KAVERI POWER · CONFIDENTIAL";
+  style.textContent="@media print{body::before{content:'"+wmContent+"';position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:32px;color:rgba(204,0,0,0.15);font-weight:900;font-family:Arial,sans-serif;z-index:9999;pointer-events:none;white-space:nowrap;} .bottomnav,.topbar,.usage-bar{display:none!important;}}";
   document.head.appendChild(style);
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "23";
+var APP_VERSION = "24";
 // Force cache refresh on new deploy — iPhone Safari caches aggressively
 (function(){
   var stored = localStorage.getItem("eil_version");
@@ -808,8 +872,6 @@ function logo(sz){
     +'<line x1="50" y1="128" x2="150" y2="128" stroke="#cc0000" stroke-width="1.5"/>'
     +'<text x="100" y="150" font-family="Arial" font-size="18" font-weight="700" fill="#f59e0b" text-anchor="middle" letter-spacing="5">SOLAR</text></svg>';
 }
-document.getElementById("logo-wrap").innerHTML = logo(28)
-  +'<div class="brand-name"><em>EIL</em> Solar <span style="font-size:11px;color:#64748b;font-weight:600;">v'+APP_VERSION+'</span></div>';
 
 // ── FINANCIAL ENGINE ──────────────────────────────────────────────────────────
 function calc(kwp,bm,demand,cat){
@@ -1546,6 +1608,19 @@ function renderProposal(){
     +(F.bat?'<div class="chip">🔋 '+F.batKwh+'kWh</div>':'')
     +'</div></div>';
 
+  // PROPOSAL SECURITY STAMP — watermark + expiry
+  stampProposal(ref);
+  var expText=getExpiryText(ref);
+  var wmText=getWatermarkText();
+  h+='<div class="prop-stamp">'
+    +'<div><div class="prop-stamp-lbl">🔒 Confidential — Authorised Recipient Only</div>'
+    +'<div style="font-size:11px;color:#64748b;font-weight:600;margin-top:2px;">'+wmText+'</div>'
+    +'</div>'
+    +'<div><div class="prop-stamp-val">'+ref+'</div>'
+    +'<div class="prop-stamp-exp">'+expText+'</div>'
+    +'</div>'
+    +'</div>';
+
   // Viability warning in proposal — residential only
   if(F.cat==="Residential"){
     var viabP=checkViability(safeK,F.bm,F.cat);
@@ -2116,6 +2191,37 @@ function renderSettings(){
   h+='</div>';
 
   // Future provisions
+  h+='<div class="sp-sec-title">🔒 Security & Access Control</div>';
+  h+='<div class="card">';
+  // PIN change
+  h+='<div class="ef-row"><div><div class="ef-lbl">Access PIN</div>'
+    +'<div class="ef-desc">Current: ••••  (4 digits)</div></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;">'
+    +'<input class="ef-inp" id="ef-newpin" type="password" maxlength="4" placeholder="New PIN" style="width:80px;text-align:center;letter-spacing:4px;"/>'
+    +'<button onclick="changePin()" style="border:none;border-radius:8px;padding:7px 12px;background:var(--amber);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#fff;cursor:pointer;">Set</button>'
+    +'</div></div>';
+  // Daily limit
+  h+='<div class="ef-row"><div><div class="ef-lbl">Daily Proposal Limit</div>'
+    +'<div class="ef-desc">Current: '+SEC.maxPerDay+' per day · Used today: '+getUsageCount()+'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;">'
+    +'<input class="ef-inp" id="ef-maxday" type="number" min="1" max="50" value="'+SEC.maxPerDay+'" style="width:70px;"/>'
+    +'<button onclick="saveMaxPerDay()" style="border:none;border-radius:8px;padding:7px 12px;background:var(--green);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#fff;cursor:pointer;">Set</button>'
+    +'</div></div>';
+  // Expiry
+  h+='<div class="ef-row"><div><div class="ef-lbl">Proposal Expiry</div>'
+    +'<div class="ef-desc">Current: '+SEC.expiryHrs+' hours after generation</div></div>'
+    +'<div style="display:flex;align-items:center;gap:6px;">'
+    +'<input class="ef-inp" id="ef-expiry" type="number" min="1" max="168" value="'+SEC.expiryHrs+'" style="width:70px;"/>'
+    +'<span class="ef-unit">hrs</span>'
+    +'<button onclick="saveExpiry()" style="border:none;border-radius:8px;padding:7px 12px;background:var(--indigo);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#fff;cursor:pointer;">Set</button>'
+    +'</div></div>';
+  // Reset usage
+  h+='<div class="ef-row"><div><div class="ef-lbl">Reset Today\'s Usage</div>'
+    +'<div class="ef-desc">Used '+getUsageCount()+' of '+SEC.maxPerDay+' proposals today</div></div>'
+    +'<button onclick="resetTodayUsage()" style="border:none;border-radius:8px;padding:8px 14px;background:#fee2e2;font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#cc0000;cursor:pointer;">Reset</button>'
+    +'</div>';
+  h+='</div>';
+
   h+='<div class="sp-sec-title">📋 Future Provisions (currently inactive)</div>';
   h+='<div class="card">';
   [{k:"Residential Fixed Charge",v:"₹0 — TNERC not yet introduced",c:"var(--green)"},
@@ -2858,6 +2964,49 @@ function viConfirm(sugKwp){
   },300);
 }
 
+// ── SECURITY SETTINGS HELPERS ────────────────────────────────────────────────
+function changePin(){
+  var inp=document.getElementById("ef-newpin");
+  if(!inp) return;
+  var np=inp.value.trim();
+  if(!/^\d{4}$/.test(np)){alert("PIN must be exactly 4 digits.");return;}
+  if(np===SEC.adminPin){alert("Cannot use admin PIN as access PIN.");return;}
+  SEC.pin=np;
+  secSet("pin",np);
+  inp.value="";
+  alert("✅ PIN updated successfully.");
+}
+function saveMaxPerDay(){
+  var inp=document.getElementById("ef-maxday");
+  if(!inp) return;
+  var v=parseInt(inp.value)||10;
+  SEC.maxPerDay=Math.max(1,Math.min(50,v));
+  secSet("maxPerDay",SEC.maxPerDay);
+  updateUsageBar();
+  alert("✅ Daily limit set to "+SEC.maxPerDay+" proposals.");
+}
+function saveExpiry(){
+  var inp=document.getElementById("ef-expiry");
+  if(!inp) return;
+  var v=parseInt(inp.value)||48;
+  SEC.expiryHrs=Math.max(1,Math.min(168,v));
+  secSet("expiryHrs",SEC.expiryHrs);
+  alert("✅ Expiry set to "+SEC.expiryHrs+" hours.");
+}
+function resetTodayUsage(){
+  secSet("usage_"+getTodayKey(),"0");
+  updateUsageBar();
+  renderSettings();
+  alert("✅ Today's usage reset to 0.");
+}
+
+// Load saved security settings on startup
+(function(){
+  var savedPin=secGet("pin");           if(savedPin) SEC.pin=savedPin;
+  var savedMax=secGet("maxPerDay");     if(savedMax) SEC.maxPerDay=parseInt(savedMax);
+  var savedExp=secGet("expiryHrs");     if(savedExp) SEC.expiryHrs=parseInt(savedExp);
+})();
+
 // ── APPS SCRIPT URL SAVE ──────────────────────────────────────────────────────
 function saveAppsScriptUrl(){
   var inp=document.getElementById("ef-appsscript");
@@ -2944,8 +3093,255 @@ function doGet(e) {
   document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// SECURITY SYSTEM v24
+// 1. PIN gate       — 4-digit PIN required to open app
+// 2. Usage limit    — max proposals per day (configurable)
+// 3. Proposal expiry— each proposal timestamped; locks after 48hrs
+// 4. Watermark      — customer name+phone stamped on every proposal
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── CONFIG (change these values as needed) ────────────────────────────────────
+var SEC = {
+  pin:        "7413",     // 4-digit PIN — change this to your own
+  maxPerDay:  10,         // max proposals per day before asking for PIN again
+  expiryHrs:  48,         // hours before a shared proposal locks
+  adminPin:   "9999",     // admin override PIN (to reset usage / view settings)
+};
+
+// ── STORAGE HELPERS ───────────────────────────────────────────────────────────
+function secGet(k){ try{return localStorage.getItem("eil_sec_"+k);}catch(e){return null;} }
+function secSet(k,v){ try{localStorage.setItem("eil_sec_"+k,v);}catch(e){} }
+
+// ── USAGE TRACKER ─────────────────────────────────────────────────────────────
+function getTodayKey(){ return new Date().toISOString().slice(0,10); }
+function getUsageCount(){
+  var key=getTodayKey();
+  var stored=secGet("usage_"+key);
+  return stored?parseInt(stored):0;
+}
+function incrementUsage(){
+  var key=getTodayKey();
+  var count=getUsageCount()+1;
+  secSet("usage_"+key,count);
+  updateUsageBar();
+  return count;
+}
+function updateUsageBar(){
+  var bar=document.getElementById("usage-bar");
+  var cnt=document.getElementById("usage-count");
+  if(!bar||!cnt) return;
+  var used=getUsageCount();
+  var remaining=Math.max(0,SEC.maxPerDay-used);
+  bar.style.display="flex";
+  cnt.textContent=used+" / "+SEC.maxPerDay+" used today · "+remaining+" remaining";
+  bar.style.background=remaining<=2?"rgba(204,0,0,0.1)":"rgba(245,158,11,0.1)";
+  bar.style.borderBottomColor=remaining<=2?"rgba(204,0,0,0.3)":"rgba(245,158,11,0.2)";
+  var lbl=bar.querySelector(".usage-lbl");
+  if(lbl) lbl.style.color=remaining<=2?"#cc0000":"#d97706";
+  if(cnt) cnt.style.color=remaining<=2?"#cc0000":"#d97706";
+}
+
+// ── PROPOSAL EXPIRY ───────────────────────────────────────────────────────────
+function stampProposal(ref){
+  // Store timestamp for this proposal ref
+  secSet("prop_"+ref, Date.now().toString());
+}
+function isProposalExpired(ref){
+  var ts=secGet("prop_"+ref);
+  if(!ts) return false; // no record = not expired
+  var age=(Date.now()-parseInt(ts))/(1000*3600);
+  return age > SEC.expiryHrs;
+}
+function getProposalAge(ref){
+  var ts=secGet("prop_"+ref);
+  if(!ts) return 0;
+  return (Date.now()-parseInt(ts))/(1000*3600);
+}
+function getExpiryText(ref){
+  var ts=secGet("prop_"+ref);
+  if(!ts) return "";
+  var remaining=SEC.expiryHrs - (Date.now()-parseInt(ts))/(1000*3600);
+  if(remaining<=0) return "EXPIRED";
+  if(remaining<1) return "Expires in "+Math.round(remaining*60)+" min";
+  return "Expires in "+remaining.toFixed(0)+" hrs";
+}
+
+// ── PIN SCREEN ────────────────────────────────────────────────────────────────
+var pinBuffer="";
+var pinMode="unlock"; // 'unlock' | 'usage_reset'
+var pinCallback=null;
+
+function showPinScreen(mode, onSuccess){
+  pinBuffer="";
+  pinMode=mode||"unlock";
+  pinCallback=onSuccess||null;
+  var el=document.getElementById("pin-screen");
+  if(!el) return;
+
+  var subtitle = mode==="usage_reset"
+    ? "Daily limit reached. Enter admin PIN to continue."
+    : "Enter your access PIN to open EIL Solar";
+
+  el.innerHTML='<div class="pin-wrap">'
+    +'<div class="pin-logo">'+logo(64)+'</div>'
+    +'<div class="pin-title"><em>EIL</em> SOLAR</div>'
+    +'<div class="pin-sub">'+subtitle+'</div>'
+    +'<div class="pin-box">'
+    +'<div class="pin-lbl">Enter 4-Digit PIN</div>'
+    +'<div class="pin-dots" id="pin-dots">'
+    +'<div class="pin-dot" id="pd0"></div>'
+    +'<div class="pin-dot" id="pd1"></div>'
+    +'<div class="pin-dot" id="pd2"></div>'
+    +'<div class="pin-dot" id="pd3"></div>'
+    +'</div>'
+    +'<div class="pin-pad">'
+    +[1,2,3,4,5,6,7,8,9].map(function(n){
+      return '<button class="pin-key" onclick="pinKey(\''+n+'\')">'+n+'</button>';
+    }).join('')
+    +'<button class="pin-key empty"></button>'
+    +'<button class="pin-key" onclick="pinKey(\'0\')">0</button>'
+    +'<button class="pin-key del" onclick="pinDel()">⌫</button>'
+    +'</div>'
+    +'<div class="pin-err" id="pin-err"></div>'
+    +'</div>'
+    +'<div class="pin-hint">Kaveri Power Solutions · Authorised Use Only</div>'
+    +'</div>';
+  el.style.display="block";
+}
+
+function pinKey(n){
+  if(pinBuffer.length>=4) return;
+  pinBuffer+=n;
+  // Update dots
+  for(var i=0;i<4;i++){
+    var d=document.getElementById("pd"+i);
+    if(d) d.className="pin-dot"+(i<pinBuffer.length?" filled":"");
+  }
+  if(pinBuffer.length===4) setTimeout(checkPin,200);
+}
+
+function pinDel(){
+  if(pinBuffer.length===0) return;
+  pinBuffer=pinBuffer.slice(0,-1);
+  for(var i=0;i<4;i++){
+    var d=document.getElementById("pd"+i);
+    if(d) d.className="pin-dot"+(i<pinBuffer.length?" filled":"");
+  }
+  var err=document.getElementById("pin-err");
+  if(err) err.textContent="";
+}
+
+function checkPin(){
+  var entered=pinBuffer;
+  pinBuffer="";
+  for(var i=0;i<4;i++){
+    var d=document.getElementById("pd"+i);
+    if(d) d.className="pin-dot";
+  }
+
+  var correct = (entered===SEC.pin) || (entered===SEC.adminPin);
+  if(correct){
+    // Store session unlock
+    secSet("unlocked_"+getTodayKey(),"1");
+    if(entered===SEC.adminPin && pinMode==="usage_reset"){
+      // Admin override — reset today's usage
+      secSet("usage_"+getTodayKey(),"0");
+    }
+    var el=document.getElementById("pin-screen");
+    if(el){ el.style.display="none"; el.innerHTML=""; }
+    if(pinCallback) pinCallback();
+    else { updateUsageBar(); goPage("welcome"); }
+  } else {
+    var err=document.getElementById("pin-err");
+    if(err){
+      err.textContent="Incorrect PIN. Try again.";
+      setTimeout(function(){ if(err) err.textContent=""; },2000);
+    }
+  }
+}
+
+// ── LOCK SCREEN ───────────────────────────────────────────────────────────────
+function showLockScreen(reason, ref){
+  var el=document.getElementById("lock-screen");
+  if(!el) return;
+
+  var ico, title, sub, btnTxt, btnFn;
+  if(reason==="expired"){
+    ico="⏰";
+    title="Proposal Expired";
+    sub="This proposal was valid for "+SEC.expiryHrs+" hours and has now expired.\n\nPlease contact Kaveri Power Solutions for a fresh proposal.";
+    btnTxt="Contact Us";
+    btnFn="window.location.href='tel:+91'";
+  } else if(reason==="usage"){
+    ico="📊";
+    title="Daily Limit Reached";
+    sub="Maximum "+SEC.maxPerDay+" proposals have been generated today.\n\nEnter admin PIN to continue or wait until tomorrow.";
+    btnTxt="Enter Admin PIN";
+    btnFn="showPinScreen('usage_reset',function(){document.getElementById('lock-screen').style.display='none';})";
+  } else {
+    ico="🔒";
+    title="Access Required";
+    sub="This app is for authorised use by Kaveri Power Solutions only.";
+    btnTxt="Enter PIN";
+    btnFn="document.getElementById('lock-screen').style.display='none';showPinScreen('unlock',null)";
+  }
+
+  el.innerHTML='<div class="lock-wrap">'
+    +'<div class="lock-ico">'+ico+'</div>'
+    +'<div class="lock-title">'+title+'</div>'
+    +'<div class="lock-sub" style="white-space:pre-line;">'+sub+'</div>'
+    +'<button class="lock-btn" onclick="'+btnFn+'">'+btnTxt+'</button>'
+    +'<div style="margin-top:16px;font-size:11px;color:#334155;">EIL Solar v'+APP_VERSION+' · Kaveri Power Solutions</div>'
+    +'</div>';
+  el.style.display="block";
+}
+
+// ── WATERMARK HELPER ──────────────────────────────────────────────────────────
+function getWatermarkText(){
+  if(!F.name && !F.phone) return "";
+  return "PREPARED FOR: "+(F.name||"")+" · "+(F.phone||"")+" · KAVERI POWER · CONFIDENTIAL";
+}
+
+// ── SECURITY GATE — called before generate() ─────────────────────────────────
+function securityGate(onPass){
+  // Check usage limit
+  if(getUsageCount()>=SEC.maxPerDay){
+    showLockScreen("usage");
+    return;
+  }
+  onPass();
+}
+
+// ── CHECK SESSION ON LOAD ──────────────────────────────────────────────────────
+function initSecurity(){
+  // Check if already unlocked today
+  var unlocked=secGet("unlocked_"+getTodayKey());
+  if(unlocked==="1"){
+    updateUsageBar();
+    goPage("welcome");
+  } else {
+    showPinScreen("unlock", function(){
+      updateUsageBar();
+      goPage("welcome");
+    });
+  }
+}
+
+// ── WRAP generate() WITH SECURITY ────────────────────────────────────────────
+var _originalGenerate = generate;
+generate = function(){
+  securityGate(function(){
+    incrementUsage();
+    _originalGenerate();
+  });
+};
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
-goPage("welcome");
+// Logo must be set before initSecurity since PIN screen uses logo()
+document.getElementById("logo-wrap").innerHTML = logo(28)
+  +'<div class="brand-name"><em>EIL</em> Solar <span style="font-size:11px;color:#64748b;font-weight:600;">v'+APP_VERSION+'</span></div>';
+initSecurity();
 </script>
 
 <script>
