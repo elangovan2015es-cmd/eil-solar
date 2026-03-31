@@ -763,7 +763,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "26";
+var APP_VERSION = "29";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1072,10 +1072,9 @@ initSecurity();
 // version string. Shows an in-app banner if update is available.
 
 function checkForUpdate(){
-  // Fetch the live index.html and look for APP_VERSION string
   fetch(window.location.href + "?nocache=" + Date.now(), {
     cache: "no-store",
-    headers: {"Cache-Control": "no-cache"}
+    headers: {"Cache-Control":"no-cache","Pragma":"no-cache"}
   })
   .then(function(r){ return r.text(); })
   .then(function(html){
@@ -1084,33 +1083,88 @@ function checkForUpdate(){
     var liveVersion = parseInt(match[1]);
     var myVersion   = parseInt(APP_VERSION);
     if(liveVersion > myVersion){
-      // Show update banner
+      // Store the new HTML for instant update
+      try{ sessionStorage.setItem("eil_new_html", html); }catch(e){}
       var bar = document.getElementById("update-bar");
       if(bar){
         bar.style.display = "flex";
         var lbl = bar.querySelector(".update-lbl");
-        if(lbl) lbl.innerHTML = '🆕 v'+liveVersion+' available (you have v'+myVersion+') — <em>tap to update</em>';
+        if(lbl) lbl.innerHTML = '🆕 v'+liveVersion+' available — <em>tap Update Now (no reinstall needed)</em>';
       }
     }
   })
-  .catch(function(){}); // silently fail if offline
+  .catch(function(){});
 }
 
 function doAppUpdate(){
-  // Clear all caches then hard reload
-  if('caches' in window){
-    caches.keys().then(function(names){
-      names.forEach(function(n){ caches.delete(n); });
-    });
-  }
-  // Clear service worker cache
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations().then(function(regs){
-      regs.forEach(function(r){ r.unregister(); });
-    });
-  }
-  window.location.reload(true);
+  var btn = document.querySelector(".update-btn");
+  if(btn){ btn.textContent="⏳ Updating..."; btn.disabled=true; }
+
+  // Step 1: Clear all caches
+  var clearCaches = ('caches' in window)
+    ? caches.keys().then(function(names){ return Promise.all(names.map(function(n){return caches.delete(n);})); })
+    : Promise.resolve();
+
+  // Step 2: Unregister service workers
+  var clearSW = ('serviceWorker' in navigator)
+    ? navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(r){return r.unregister();}));
+      })
+    : Promise.resolve();
+
+  Promise.all([clearCaches, clearSW]).then(function(){
+    // Step 3: Try to use stored HTML for instant update (works in PWA)
+    var newHtml = null;
+    try{ newHtml = sessionStorage.getItem("eil_new_html"); }catch(e){}
+
+    if(newHtml){
+      // Replace page content directly — no reload needed
+      // Works inside iOS PWA without reinstall
+      try{
+        sessionStorage.removeItem("eil_new_html");
+        document.open();
+        document.write(newHtml);
+        document.close();
+        return;
+      }catch(e){}
+    }
+
+    // Fallback: hard reload with cache-busting URL
+    var sep = window.location.href.indexOf("?") > -1 ? "&" : "?";
+    window.location.href = window.location.href.split("?")[0] + sep + "v=" + Date.now();
+  });
 }
+
+// Also add update option in Settings for manual check
+function manualCheckUpdate(){
+  var btn = document.getElementById("manual-update-btn");
+  if(btn){ btn.textContent="⏳ Checking..."; btn.disabled=true; }
+  fetch(window.location.href + "?nocache=" + Date.now(), {
+    cache:"no-store", headers:{"Cache-Control":"no-cache"}
+  })
+  .then(function(r){ return r.text(); })
+  .then(function(html){
+    var match = html.match(/var APP_VERSION = "(\d+)"/);
+    if(btn){ btn.textContent="🔄 Check for Updates"; btn.disabled=false; }
+    if(!match){ alert("Could not check for updates. Check your internet connection."); return; }
+    var live = parseInt(match[1]);
+    var mine = parseInt(APP_VERSION);
+    if(live > mine){
+      try{ sessionStorage.setItem("eil_new_html", html); }catch(e){}
+      if(confirm("✅ Update available!\n\nv"+mine+" → v"+live+"\n\nTap OK to update now — no reinstall needed.")){
+        doAppUpdate();
+      }
+    } else {
+      alert("✅ You have the latest version (v"+mine+").");
+    }
+  })
+  .catch(function(){
+    if(btn){ btn.textContent="🔄 Check for Updates"; btn.disabled=false; }
+    alert("Could not check for updates. Please check your internet connection.");
+  });
+}
+
+
 
 // Force cache flush if version already changed (handles hard refresh case)
 (function(){
@@ -2941,6 +2995,19 @@ function renderSettings(){
     +'</div></div>';
 
   h+='<div class="sp-install">'
+    +'<div class="sp-install-title">🔄 App Updates — No Reinstall Needed</div>'
+    +'<div class="sp-install-body">'
+    +'<strong style="color:#e2e8f0;">Current version:</strong> <span style="color:var(--amber)">v'+APP_VERSION+'</span><br/>'
+    +'<strong style="color:#e2e8f0;">How to update:</strong> When a new version is deployed, a blue banner appears at the top. Tap <em>Update Now</em> — app updates instantly without reinstalling.<br/>'
+    +'<span style="color:#64748b;font-size:11px;">Or tap the button below to check manually.</span>'
+    +'</div>'
+    +'<button id="manual-update-btn" onclick="manualCheckUpdate()" '
+    +'style="margin:10px 0 4px;width:100%;border:none;border-radius:8px;padding:11px;'
+    +'background:linear-gradient(90deg,#1d4ed8,#1e40af);font-family:Rajdhani,sans-serif;'
+    +'font-weight:700;font-size:15px;color:#fff;cursor:pointer;">🔄 Check for Updates</button>'
+    +'</div>';
+
+  h+='<div class="sp-install">'
     +'<div class="sp-install-title">📱 Install as Phone / Desktop App</div>'
     +'<div class="sp-install-body">'
     +'<strong style="color:#e2e8f0;">Your app:</strong> Deploy <span style="color:var(--amber)">index.html</span> to GitHub Pages<br/>'
@@ -3615,7 +3682,7 @@ async function viHandleAnswer(raw){
     +"- model: return 'epc' or 'dev'\n"
     +"  own/buy/invest/purchase/epc/day one=epc;\n"
     +"  zero/free/developer/monthly/no upfront/no payment=dev\n"
-    +"- battery: return 'yes' or 'no'\n\n"
+    +"- battery: return 'yes' or 'no'. CRITICAL: 'no power cut' or 'no cut' or 'no problem' = 'no'. Only return 'yes' if customer wants battery or confirms cuts exist.\n\n"
     +"If the answer is unclear or doesn't match the field, return null.\n"
     +"Respond with JSON only: {\""+q.key+"\": value_or_null}";
 
@@ -3698,8 +3765,18 @@ function viFallback(key, raw){
     return null;
   }
   if(key==="battery"){
-    if(t.indexOf("yes")>-1||t.indexOf("need")>-1||t.indexOf("want")>-1||t.indexOf("backup")>-1||t.indexOf("cut")>-1) return "yes";
-    if(t.indexOf("no")>-1||t.indexOf("not")>-1||t.indexOf("don't")>-1||t.indexOf("without")>-1) return "no";
+    // Check negative phrases FIRST before checking individual words
+    // "no power cut", "no backup needed", "don't need" etc.
+    if(t.indexOf("no power cut")>-1||t.indexOf("no cut")>-1||t.indexOf("no backup")>-1||
+       t.indexOf("not needed")>-1||t.indexOf("don't need")>-1||t.indexOf("dont need")>-1||
+       t.indexOf("no problem")>-1||t.indexOf("no issue")>-1||t.indexOf("not required")>-1||
+       t.indexOf("no power problem")>-1) return "no";
+    // Now check positive phrases
+    if(t.indexOf("yes")>-1||t.indexOf("need")>-1||t.indexOf("want")>-1||
+       t.indexOf("backup")>-1||t.indexOf("power cut")>-1||t.indexOf("frequent")>-1||
+       t.indexOf("outage")>-1) return "yes";
+    // Generic no
+    if(t.indexOf(" no ")>-1||t===("no")||t.indexOf("not")>-1||t.indexOf("without")>-1) return "no";
     return null;
   }
   if(key==="name"||key==="location"){
@@ -3745,7 +3822,7 @@ function viShowSummary(){
     +'<div class="vi-acts">'
     +'<button class="vi-act go" onclick="viConfirm('+sugKwp+')">✓ Generate Proposal</button>'
     +'<button class="vi-act re" onclick="startVoiceInterview()">🔄 Start Over</button>'
-    +'<button class="vi-act ed" onclick="exitVI()">✎ Edit Manually</button>'
+    +'<button class="vi-act ed" onclick="viEditManually('+sugKwp+')">✎ Edit in Form</button>'
     +'</div>';
 
   viTyping();
@@ -3776,8 +3853,26 @@ function viConfirm(sugKwp){
     setTimeout(generate,1600);
   },300);
 }
+// Edit in form — copies all voice data to form then opens form for manual editing
+function viEditManually(sugKwp){
+  var p=VI_DATA;
+  if(VI_SYNTH) VI_SYNTH.cancel();
+  if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  // Pre-fill F with whatever was captured
+  if(p.name)     F.name    =p.name;
+  if(p.phone)    F.phone   =String(p.phone);
+  if(p.location) F.location=p.location;
+  if(p.category&&TARIFFS[p.category]) F.cat=p.category;
+  if(p.model)    F.model   =p.model;
+  F.bat=(p.battery==="yes");
+  if(p.demand&&p.demand!=="skip"){ var d=parseInt(p.demand)||0; if(d>0) F.demand=Math.min(d,500); }
+  if(p.units){ var u=parseInt(p.units)||0; if(u>0) F.bm=Math.max(100,u); }
+  if(sugKwp) F.kwp=sugKwp;
+  // Go to form — all fields pre-filled, customer can edit anything
+  goPage("form");
+}
+
 function saveAppsScriptUrl(){
-  var inp=document.getElementById("ef-appsscript");
   if(!inp||!inp.value.trim()){alert("Please paste the Apps Script Web App URL.");return;}
   APPS_SCRIPT_URL=inp.value.trim();
   localStorage.setItem("eil_apps_script_url",APPS_SCRIPT_URL);
