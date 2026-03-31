@@ -645,12 +645,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 <div class="app">
   <div class="topbar">
     <div class="brand" id="logo-wrap"></div>
-    <button class="nav-pill" onclick="goPage('settings')">⚙ Settings</button>
+    <button class="nav-pill" onclick="goPage('settings')" style="opacity:0.4;font-size:10px;padding:3px 8px;">⚙</button>
   </div>
-  <!-- USAGE BAR -->
-  <div class="usage-bar" id="usage-bar" style="display:none;">
+  <!-- USAGE BAR — hidden, tracked silently -->
+  <div id="usage-bar" style="display:none;">
     <span class="usage-lbl">📊 Today's Proposals</span>
-    <span class="usage-val" id="usage-count">0 / 10 used</span>
+    <span class="usage-val" id="usage-count">0 / 20 used</span>
   </div>
   <!-- UPDATE BANNER — shown when new version available -->
   <div id="update-bar" style="display:none;" class="update-bar">
@@ -763,7 +763,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "25";
+var APP_VERSION = "26";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -773,12 +773,15 @@ var APP_VERSION = "25";
 // 4. Watermark      — customer name+phone stamped on every proposal
 // ══════════════════════════════════════════════════════════════════════════════
 
-// ── CONFIG (change these values as needed) ────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+// App opens freely — no entry PIN for customer
+// adminPin protects Settings page ONLY — only you know this
+// Usage limit, expiry, watermark work silently in background
 var SEC = {
-  pin:        "7413",     // 4-digit PIN — change this to your own
-  maxPerDay:  10,         // max proposals per day before asking for PIN again
-  expiryHrs:  48,         // hours before a shared proposal locks
-  adminPin:   "9999",     // admin override PIN (to reset usage / view settings)
+  pin:       "0000",   // unused — kept for compatibility only
+  adminPin:  "7413",   // YOUR private PIN — only for Settings access
+  maxPerDay: 20,       // max proposals per device per day
+  expiryHrs: 48,       // customer proposal link expiry hours
 };
 
 // ── STORAGE HELPERS ───────────────────────────────────────────────────────────
@@ -853,7 +856,7 @@ function showPinScreen(mode, onSuccess){
 
   var subtitle = mode==="usage_reset"
     ? "Daily limit reached. Enter admin PIN to continue."
-    : "Enter your access PIN to open EIL Solar";
+    : "Admin access required. Enter your PIN.";
 
   el.innerHTML='<div class="pin-wrap">'
     +'<div class="pin-logo">'+logo(64)+'</div>'
@@ -912,12 +915,10 @@ function checkPin(){
     if(d) d.className="pin-dot";
   }
 
-  var correct = (entered===SEC.pin) || (entered===SEC.adminPin);
+  var correct = (entered===SEC.adminPin);
   if(correct){
-    // Store session unlock
-    secSet("unlocked_"+getTodayKey(),"1");
-    if(entered===SEC.adminPin && pinMode==="usage_reset"){
-      // Admin override — reset today's usage
+    setAdminUnlocked();
+    if(pinMode==="usage_reset"){
       secSet("usage_"+getTodayKey(),"0");
     }
     var el=document.getElementById("pin-screen");
@@ -948,9 +949,9 @@ function showLockScreen(reason, ref){
   } else if(reason==="usage"){
     ico="📊";
     title="Daily Limit Reached";
-    sub="Maximum "+SEC.maxPerDay+" proposals have been generated today.\n\nEnter admin PIN to continue or wait until tomorrow.";
-    btnTxt="Enter Admin PIN";
-    btnFn="showPinScreen('usage_reset',function(){document.getElementById('lock-screen').style.display='none';})";
+    sub="You have reached today\'s proposal limit.\n\nPlease try again tomorrow or contact Kaveri Power Solutions.";
+    btnTxt="📞 Contact Us";
+    btnFn="window.location.href=\'tel:"+COMPANY_PHONE+"\'"
   } else {
     ico="🔒";
     title="Access Required";
@@ -985,32 +986,37 @@ function securityGate(onPass){
   onPass();
 }
 
-// ── CHECK SESSION ON LOAD ──────────────────────────────────────────────────────
-function initSecurity(){
-  // First check if this is a customer proposal link (?p= in URL)
-  // If yes — show customer view directly, no PIN needed
-  if(checkForCustomerLink()) return;
-
-  // Normal salesperson flow — require PIN
-  var unlocked=secGet("unlocked_"+getTodayKey());
-  if(unlocked==="1"){
-    updateUsageBar();
-    goPage("welcome");
-  } else {
-    showPinScreen("unlock", function(){
-      updateUsageBar();
-      goPage("welcome");
-    });
-  }
+// Admin session — unlocked for 4 hours per device
+function isAdminUnlocked(){
+  var ts = secGet("admin_ts");
+  if(!ts) return false;
+  var age = (Date.now() - parseInt(ts)) / (1000*3600);
+  return age < 4; // admin session lasts 4 hours
+}
+function setAdminUnlocked(){
+  secSet("admin_ts", Date.now().toString());
 }
 
-// ── WRAP generate() WITH SECURITY ────────────────────────────────────────────
+
+function initSecurity(){
+  // Check if this is a customer proposal link (?ref= or ?p= in URL)
+  if(checkForCustomerLink()) return;
+  // App opens freely — no entry PIN
+  updateUsageBar();
+  goPage("welcome");
+}
+
+// ── WRAP generate() WITH SILENT USAGE TRACKING ───────────────────────────────
 var _originalGenerate = generate;
 generate = function(){
-  securityGate(function(){
-    incrementUsage();
-    _originalGenerate();
-  });
+  var used = getUsageCount();
+  if(used >= SEC.maxPerDay){
+    // Show friendly message — not a security lock screen
+    alert("You have generated "+SEC.maxPerDay+" proposals today. Please try again tomorrow or contact Kaveri Power Solutions directly.\n\n📞 "+COMPANY_PHONE);
+    return;
+  }
+  incrementUsage();
+  _originalGenerate();
 };
 
 // ── SECURITY SETTINGS HELPERS ────────────────────────────────────────────────
@@ -1019,11 +1025,10 @@ function changePin(){
   if(!inp) return;
   var np=inp.value.trim();
   if(!/^\d{4}$/.test(np)){alert("PIN must be exactly 4 digits.");return;}
-  if(np===SEC.adminPin){alert("Cannot use admin PIN as access PIN.");return;}
-  SEC.pin=np;
-  secSet("pin",np);
+  SEC.adminPin=np;
+  secSet("adminPin",np);
   inp.value="";
-  alert("✅ PIN updated successfully.");
+  alert("✅ Admin PIN updated. Next time you open Settings you will use the new PIN.");
 }
 function saveMaxPerDay(){
   var inp=document.getElementById("ef-maxday");
@@ -1051,7 +1056,7 @@ function resetTodayUsage(){
 
 // Load saved security settings on startup
 (function(){
-  var savedPin=secGet("pin");           if(savedPin) SEC.pin=savedPin;
+  var savedAdmin=secGet("adminPin");    if(savedAdmin) SEC.adminPin=savedAdmin;
   var savedMax=secGet("maxPerDay");     if(savedMax) SEC.maxPerDay=parseInt(savedMax);
   var savedExp=secGet("expiryHrs");     if(savedExp) SEC.expiryHrs=parseInt(savedExp);
 })();
@@ -1398,6 +1403,11 @@ function esc(s){return String(s||"").replace(/"/g,"&quot;");}
 
 // ── PAGE NAVIGATION ───────────────────────────────────────────────────────────
 function goPage(p){
+  // Settings requires admin PIN
+  if(p==="settings" && !isAdminUnlocked()){
+    showPinScreen("admin", function(){ goPage("settings"); });
+    return;
+  }
   ["welcome","form","proposal","settings","voice","customer"].forEach(function(id){
     var el=document.getElementById("pg-"+id);
     if(el) el.className="page"+(p===id?" active":"");
@@ -2977,34 +2987,37 @@ function renderSettings(){
   h+=efRow("Maximum Subsidy Cap","subCap","₹",S.subCap);
   h+='</div>';
 
-  // Future provisions
-  h+='<div class="sp-sec-title">🔒 Security & Access Control</div>';
+  // Admin controls — only visible because PIN was entered
+  h+='<div class="sp-sec-title">🔒 Admin Controls — Kaveri Power</div>';
+  h+='<div style="margin:0 12px 8px;background:rgba(22,163,74,0.08);border:1.5px solid rgba(22,163,74,0.3);'
+    +'border-radius:10px;padding:10px 14px;font-size:12px;color:#15803d;font-weight:700;">'
+    +'✓ Admin session active · Settings visible only to you · Expires in 4 hours</div>';
   h+='<div class="card">';
-  // PIN change
-  h+='<div class="ef-row"><div><div class="ef-lbl">Access PIN</div>'
-    +'<div class="ef-desc">Current: ••••  (4 digits)</div></div>'
+  // Admin PIN change
+  h+='<div class="ef-row"><div><div class="ef-lbl">Admin PIN (for Settings access)</div>'
+    +'<div class="ef-desc">Current: ••••  Change to your preferred 4 digits</div></div>'
     +'<div style="display:flex;align-items:center;gap:6px;">'
     +'<input class="ef-inp" id="ef-newpin" type="password" maxlength="4" placeholder="New PIN" style="width:80px;text-align:center;letter-spacing:4px;"/>'
     +'<button onclick="changePin()" style="border:none;border-radius:8px;padding:7px 12px;background:var(--amber);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#fff;cursor:pointer;">Set</button>'
     +'</div></div>';
   // Daily limit
-  h+='<div class="ef-row"><div><div class="ef-lbl">Daily Proposal Limit</div>'
-    +'<div class="ef-desc">Current: '+SEC.maxPerDay+' per day · Used today: '+getUsageCount()+'</div></div>'
+  h+='<div class="ef-row"><div><div class="ef-lbl">Daily Proposal Limit (per device)</div>'
+    +'<div class="ef-desc">Used today: <strong>'+getUsageCount()+'</strong> of '+SEC.maxPerDay+' · Resets at midnight</div></div>'
     +'<div style="display:flex;align-items:center;gap:6px;">'
-    +'<input class="ef-inp" id="ef-maxday" type="number" min="1" max="50" value="'+SEC.maxPerDay+'" style="width:70px;"/>'
+    +'<input class="ef-inp" id="ef-maxday" type="number" min="1" max="100" value="'+SEC.maxPerDay+'" style="width:70px;"/>'
     +'<button onclick="saveMaxPerDay()" style="border:none;border-radius:8px;padding:7px 12px;background:var(--green);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#fff;cursor:pointer;">Set</button>'
     +'</div></div>';
   // Expiry
-  h+='<div class="ef-row"><div><div class="ef-lbl">Proposal Expiry</div>'
-    +'<div class="ef-desc">Current: '+SEC.expiryHrs+' hours after generation</div></div>'
+  h+='<div class="ef-row"><div><div class="ef-lbl">Customer Link Expiry</div>'
+    +'<div class="ef-desc">Current: '+SEC.expiryHrs+' hours · Customer link locks after this</div></div>'
     +'<div style="display:flex;align-items:center;gap:6px;">'
     +'<input class="ef-inp" id="ef-expiry" type="number" min="1" max="168" value="'+SEC.expiryHrs+'" style="width:70px;"/>'
     +'<span class="ef-unit">hrs</span>'
     +'<button onclick="saveExpiry()" style="border:none;border-radius:8px;padding:7px 12px;background:var(--indigo);font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#fff;cursor:pointer;">Set</button>'
     +'</div></div>';
-  // Reset usage
-  h+='<div class="ef-row"><div><div class="ef-lbl">Reset Today\'s Usage</div>'
-    +'<div class="ef-desc">Used '+getUsageCount()+' of '+SEC.maxPerDay+' proposals today</div></div>'
+  // Reset today usage
+  h+='<div class="ef-row"><div><div class="ef-lbl">Reset Today\'s Proposal Count</div>'
+    +'<div class="ef-desc">Resets the daily counter for this device back to 0</div></div>'
     +'<button onclick="resetTodayUsage()" style="border:none;border-radius:8px;padding:8px 14px;background:#fee2e2;font-family:Rajdhani,sans-serif;font-weight:700;font-size:13px;color:#cc0000;cursor:pointer;">Reset</button>'
     +'</div>';
   h+='</div>';
