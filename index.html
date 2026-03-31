@@ -2557,12 +2557,11 @@ function renderProposal(){
     +'</button>';
 
   // Share with Customer — unique viewable link
-  var custLink=buildProposalLink(fin,ref);
   h+='<div class="shr"><div class="shr-title">📤 Share Proposal with '+F.name+'</div>'
     +'<button style="width:100%;border:none;border-radius:12px;padding:15px;margin-bottom:8px;'
     +'background:linear-gradient(90deg,#25D366,#128C7E);font-family:Rajdhani,sans-serif;'
     +'font-weight:700;font-size:17px;color:#fff;cursor:pointer;display:flex;align-items:center;'
-    +'justify-content:center;gap:8px;" onclick="shareCustomerLink(\''+encodeURIComponent(custLink)+'\',\''+F.name+'\',\''+F.phone+'\')">'
+    +'justify-content:center;gap:8px;" onclick="sendCustomerLink()">'
     +'💬 Send Customer View Link (WhatsApp)</button>'
     +'<div style="font-size:11px;color:#94a3b8;text-align:center;margin-bottom:10px;font-weight:600;">'
     +'Customer gets a read-only proposal page · No PIN · Expires in 48 hours</div>'
@@ -2586,6 +2585,20 @@ function renderProposal(){
   document.getElementById("prop-body").innerHTML=h;
   goPage("proposal");
   window.scrollTo(0,0);
+}
+
+// ── SEND CUSTOMER LINK — builds link on demand when button tapped ─────────────
+async function sendCustomerLink(){
+  if(!proposal){ alert("Generate a proposal first."); return; }
+  var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
+  var fin=calc(safeK,F.bm,F.demand,F.cat);
+  var ref="EIL-"+Date.now().toString().slice(-6);
+  var btn=document.querySelector('button[onclick="sendCustomerLink()"]');
+  if(btn){ btn.textContent="⏳ Saving & sending..."; btn.disabled=true; }
+  var link = await buildProposalLink(fin,ref);
+  if(btn){ btn.innerHTML="💬 Send Customer View Link (WhatsApp)"; btn.disabled=false; }
+  if(!link) return;
+  shareCustomerLink(encodeURIComponent(link), F.name, F.phone);
 }
 
 // ── SHARE CUSTOMER LINK ───────────────────────────────────────────────────────
