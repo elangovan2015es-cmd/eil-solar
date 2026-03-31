@@ -1504,17 +1504,32 @@ var COMPANY_WA    = "919876543210";  // WhatsApp format (no +)
 
 // Save full proposal to Google Sheets and return the customer link
 async function buildProposalLink(fin, ref){
-  if(APPS_SCRIPT_URL==="YOUR_APPS_SCRIPT_URL_HERE"){
-    alert("⚠ Apps Script URL not set.\n\nGo to ⚙ Settings → Google Sheets section → paste your Apps Script URL first.");
-    return null;
-  }
-
   var safeK = Math.min(F.kwp, TARIFFS[F.cat].maxKwp);
   var t = TARIFFS[F.cat];
   var isEpc = F.model === "epc";
 
-  // Full proposal payload — everything needed for customer view
-  var payload = {
+  // Always build the fallback URL-encoded link (works without Apps Script)
+  var mini = {
+    ref:ref, ts:Date.now(), exh:48,
+    name:F.name, phone:F.phone, loc:F.location||"Tamil Nadu",
+    cat:F.cat, catLbl:t.lbl, mech:t.mechanism,
+    kwp:safeK, model:F.model, bat:F.bat, batKwh:F.batKwh,
+    batName:F.bat?BATT[F.batT].name:"",
+    bw:fin.bw, bs:fin.bs, y1:fin.y1, mo:fin.mo,
+    pb:fin.pb, irr:fin.irr, cum25:fin.cum25,
+    sys:fin.sys, sub:fin.sub, net:fin.net,
+    total:fin.total, moCharge:fin.moCharge,
+    exec:   proposal?(proposal.executive||""):"",
+    tariffNarr: proposal?(proposal.tariffAnalysis||""):"",
+    yearByYear: proposal?(proposal.yearByYear||""):"",
+    roiNarr:proposal?(proposal.roiExplanation||""):"",
+    yearly: JSON.stringify((fin.yearlyFull||[]).slice(0,25)),
+    date:today, fallback:true
+  };
+
+  // If Apps Script is configured — try to save to Sheets first
+  if(APPS_SCRIPT_URL!=="YOUR_APPS_SCRIPT_URL_HERE"){
+    var payload = {
     action:   "save_proposal",
     ref:      ref,
     ts:       Date.now(),
@@ -1536,55 +1551,40 @@ async function buildProposalLink(fin, ref){
     batKwh:   F.batKwh,
     batName:  F.bat?BATT[F.batT].name:"",
     // Financials
-    bw:       fin.bw,    bs:    fin.bs,
-    y1:       fin.y1,    mo:    fin.mo,
-    pb:       fin.pb,    irr:   fin.irr,
-    cum25:    fin.cum25, ag:    fin.ag,
-    sys:      fin.sys,   sub:   fin.sub,
-    net:      fin.net,   total: fin.total,
-    moCharge: fin.moCharge,
-    nChg:     fin.nChg,  expInc:fin.expInc,
-    dispRate: fin.dispRate||t.ur,
-    // 25-year table
-    yearly:   JSON.stringify(fin.yearlyFull||[]),
-    // AI narrative
-    exec:     proposal?(proposal.executive||""):"",
-    tariffNarr: proposal?(proposal.tariffAnalysis||""):"",
-    yearByYear: proposal?(proposal.yearByYear||""):"",
-    roiNarr:  proposal?(proposal.roiExplanation||""):"",
-    // Meta
-    date:     today,
-    status:   "Sent to Customer"
-  };
+    bw:fin.bw, bs:fin.bs, y1:fin.y1, mo:fin.mo,
+    pb:fin.pb, irr:fin.irr, cum25:fin.cum25, ag:fin.ag,
+    sys:fin.sys, sub:fin.sub, net:fin.net, total:fin.total,
+    moCharge:fin.moCharge, nChg:fin.nChg||0, expInc:fin.expInc||0,
+    dispRate:fin.dispRate||t.ur,
+    yearly:JSON.stringify(fin.yearlyFull||[]),
+    exec:    proposal?(proposal.executive||""):"",
+    tariffNarr:proposal?(proposal.tariffAnalysis||""):"",
+    yearByYear:proposal?(proposal.yearByYear||""):"",
+    roiNarr: proposal?(proposal.roiExplanation||""):"",
+    date:today, status:"Sent to Customer"
+    };
 
-  try{
-    var res = await fetch(APPS_SCRIPT_URL, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-    var data = await res.json();
-    if(data.result === "success"){
-      var base = window.location.origin + window.location.pathname;
-      return base + "?ref=" + encodeURIComponent(ref);
-    } else {
-      throw new Error(data.error||"Save failed");
-    }
-  } catch(e){
-    console.error("Save proposal error:", e);
-    // Fallback — encode key data in URL so customer still gets something
-    var mini = {ref,ts:Date.now(),exh:48,name:F.name,phone:F.phone,
-      loc:F.location||"Tamil Nadu",cat:F.cat,catLbl:t.lbl,mech:t.mechanism,
-      kwp:safeK,model:F.model,bat:F.bat,
-      bw:fin.bw,bs:fin.bs,y1:fin.y1,mo:fin.mo,pb:fin.pb,
-      irr:fin.irr,cum25:fin.cum25,sys:fin.sys,sub:fin.sub,
-      net:fin.net,total:fin.total,moCharge:fin.moCharge,
-      exec:payload.exec,roiNarr:payload.roiNarr,date:today,
-      fallback:true};
-    var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(mini))));
-    var base = window.location.origin + window.location.pathname;
-    return base + "?p=" + encoded;
+    try{
+      var res = await fetch(APPS_SCRIPT_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      var data = await res.json();
+      if(data.result==="success"){
+        var base=window.location.origin+window.location.pathname;
+        return base+"?ref="+encodeURIComponent(ref);
+      }
+    }catch(e){ console.error("Sheets save error:",e); }
+    // Sheets failed — fall through to URL encoding below
   }
+
+  // URL-encoded fallback — always works, no server needed
+  try{
+    var encoded=btoa(unescape(encodeURIComponent(JSON.stringify(mini))));
+    var base=window.location.origin+window.location.pathname;
+    return base+"?p="+encoded;
+  }catch(e){ return null; }
 }
 
 // Fetch proposal data from Google Sheets by ref
@@ -2392,6 +2392,7 @@ async function generate(){
 // ── PROPOSAL RENDER ───────────────────────────────────────────────────────────
 function renderProposal(){
   if(!proposal){goPage("form");return;}
+  try{
   var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
   var fin=calc(safeK,F.bm,F.demand,F.cat);
   var t=TARIFFS[F.cat];
@@ -2399,7 +2400,9 @@ function renderProposal(){
   var isEpc=F.model==="epc";
   var postSave=Math.round(fin.bw*Math.pow(1.05,5)-fin.bs);
   var kyrs=[1,2,3,4,5,6,7,8,9,10,15,20,25].map(function(y){return fin.yearly[y-1];}).filter(Boolean);
-  var maxS=Math.max.apply(null,fin.yearly.slice(0,10).map(function(y){return y.sv;}));
+  var yearlySlice=fin.yearly&&fin.yearly.length>0?fin.yearly.slice(0,10):[];
+  var maxS=yearlySlice.length>0?Math.max.apply(null,yearlySlice.map(function(y){return y.sv||0;})):1;
+  if(maxS<=0) maxS=1;
   var ref="EIL-"+Date.now().toString().slice(-6);
   var h="";
 
@@ -2523,9 +2526,9 @@ function renderProposal(){
     +'</div><div class="pcard-div"></div>'
     +'<div class="narr">'+p.yearByYear+'</div></div>';
   h+='<div class="bars">';
-  fin.yearly.slice(0,10).forEach(function(y){
+  yearlySlice.forEach(function(y){
     h+='<div class="br"><div class="bl">Yr '+y.y+'</div>'
-      +'<div class="bt"><div class="bf" style="width:'+Math.min((y.sv/maxS)*100,100)+'%"></div></div>'
+      +'<div class="bt"><div class="bf" style="width:'+Math.min(((y.sv||0)/maxS)*100,100)+'%"></div></div>'
       +'<div class="bv">'+L(y.sv)+'</div></div>';
   });
   h+='</div>';
@@ -2639,6 +2642,21 @@ function renderProposal(){
   document.getElementById("prop-body").innerHTML=h;
   goPage("proposal");
   window.scrollTo(0,0);
+  }catch(err){
+    // Show error message instead of blank screen
+    console.error("renderProposal error:",err);
+    document.getElementById("prop-body").innerHTML=
+      '<div style="padding:40px 20px;text-align:center;">'
+      +'<div style="font-size:48px;margin-bottom:16px;">⚠️</div>'
+      +'<div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:#374151;margin-bottom:8px;">Proposal Display Error</div>'
+      +'<div style="font-size:14px;color:#64748b;margin-bottom:24px;">The numbers are calculated. Tap below to retry.</div>'
+      +'<button onclick="renderProposal()" style="border:none;border-radius:12px;padding:14px 28px;'
+      +'background:var(--amber);font-family:Rajdhani,sans-serif;font-weight:700;font-size:16px;color:#fff;cursor:pointer;">🔄 Retry</button>'
+      +'<button onclick="goPage(\'form\')" style="margin-left:10px;border:2px solid #e2e8f0;border-radius:12px;padding:14px 28px;'
+      +'background:#fff;font-family:Rajdhani,sans-serif;font-weight:700;font-size:16px;color:#374151;cursor:pointer;">‹ Edit</button>'
+      +'</div>';
+    goPage("proposal");
+  }
 }
 
 // ── SEND CUSTOMER LINK — builds link on demand when button tapped ─────────────
