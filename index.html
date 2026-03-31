@@ -1491,8 +1491,8 @@ function goPage(p){
 // Data is base64-encoded JSON embedded in ?p= URL parameter.
 // Expiry timestamp is embedded in the data — checked on load.
 
-var COMPANY_PHONE = "+919876543210"; // update this to your actual number
-var COMPANY_WA    = "919876543210";  // WhatsApp format (no +)
+var COMPANY_PHONE = "+919789855222"; // update this to your actual number
+var COMPANY_WA    = "919789855222";  // WhatsApp format (no +)
 
 // ── CUSTOMER PROPOSAL SYSTEM — Google Sheets Backend ─────────────────────────
 // Flow:
@@ -1509,6 +1509,11 @@ async function buildProposalLink(fin, ref){
   var isEpc = F.model === "epc";
 
   // Always build the fallback URL-encoded link (works without Apps Script)
+  // URL-encoded fallback — keep SMALL (under 1000 chars encoded)
+  // Strip yearly table and long narratives — they make URL too long for WhatsApp
+  // Shorten narrative to first sentence only
+  var execShort  = proposal?(proposal.executive||"").split(".")[0]+".":"";
+  var roiShort   = proposal?(proposal.roiExplanation||"").split(".")[0]+".":"";
   var mini = {
     ref:ref, ts:Date.now(), exh:48,
     name:F.name, phone:F.phone, loc:F.location||"Tamil Nadu",
@@ -1519,11 +1524,9 @@ async function buildProposalLink(fin, ref){
     pb:fin.pb, irr:fin.irr, cum25:fin.cum25,
     sys:fin.sys, sub:fin.sub, net:fin.net,
     total:fin.total, moCharge:fin.moCharge,
-    exec:   proposal?(proposal.executive||""):"",
-    tariffNarr: proposal?(proposal.tariffAnalysis||""):"",
-    yearByYear: proposal?(proposal.yearByYear||""):"",
-    roiNarr:proposal?(proposal.roiExplanation||""):"",
-    yearly: JSON.stringify((fin.yearlyFull||[]).slice(0,25)),
+    exec:execShort,
+    roiNarr:roiShort,
+    // NO yearly table, NO long narratives — keeps URL short
     date:today, fallback:true
   };
 
@@ -3298,56 +3301,99 @@ function sendEmail(){
 }
 
 function downloadExcel(){
+  if(!proposal){ alert("Generate a proposal first."); return; }
   var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
   var fin=calc(safeK,F.bm,F.demand,F.cat);
   var t=TARIFFS[F.cat];
   var ref="EIL-"+Date.now().toString().slice(-6);
   var isEpc=F.model==="epc";
-  var rows=[
-    ["EIL SOLAR PROPOSAL — "+F.name,""],["Ref",ref],["Date",today],
-    ["Source","Solar_v4_Universalmodel — Tariff_Lookup & App_Config"],[""],
-    ["CUSTOMER"],["Name",F.name],["Location",F.location||"Tamil Nadu"],["Mobile",F.phone],["Tariff",t.lbl],
-    ["Model",isEpc?"EPC — Own Day 1":"Developer — Zero Upfront"],[""],
-    ["SYSTEM"],["Capacity (kWp)",safeK],["Generation (kWh/yr)",fin.ag],
-    ["Consumption (Units)",F.bm],["Billing",(F.demand>=50?"Monthly":"Bi-monthly")+" (TNEB rule)"],
-    (F.demand>0?["Demand (kVA)",F.demand]:[]),
-    (F.bat?["Battery",F.batKwh+" kWh "+BATT[F.batT].name]:[]),([""],
-    ["TNEB TARIFF (Tariff_Lookup)"],["Energy (Rs/kWh)",t.ur],["Fixed (Rs/kW/mo)",t.fp],
-    ["Network (Rs/kWh)",t.net],
-    ["Tax",t.tax===0?"NIL":t.tax*100+"%"],["Export (Rs/kWh)",t.ex===0?"Banked (Net Metering)":t.ex+" (Feed-in)"],["Mechanism",t.mechanism]),[""],
-    ["BILL COMPARISON"],["Without Solar (Rs/yr)",fin.bw],["With Solar (Rs/yr)",fin.bs],
-    ["Annual Saving (Rs)",fin.y1],["Monthly Saving (Rs)",fin.mo],[""],
-    ["FINANCIAL SUMMARY"],
-    (isEpc
-      ?[["Gross Cost (Rs)",fin.sys],["Subsidy (Rs)",fin.sub],["Net Cost (Rs)",fin.net],
-        (fin.batC?[["Battery (Rs)",fin.batC],["Total (Rs)",fin.total]]:[]),
-        ["Year 1 Saving (Rs)",fin.y1],["Payback (Yrs)",fin.pb],["IRR (%)",fin.irr],["25-Yr Saving (Rs)",fin.cum25],
-        ["Depreciation","40% WDV IT Act S.32"]]
-      :[["Upfront","ZERO"],["Monthly EIL (Rs)",fin.moCharge],["EIL IRR (%)",S.irr*100],
-        ["Contract (yrs)",S.contractYrs],["Post-5yr saving (Rs/yr)",Math.round(fin.bw*Math.pow(1.05,5)-fin.bs)]]
-    ),[""],
-    ["YEAR-BY-YEAR"],["Year","Solar Gen (kWh)","Bill Without Solar (Rs)","Bill With Solar (Rs)","Annual Saving (Rs)","Cumulative (Rs)","Status"]
-  ].flat(2).filter(function(r){return Array.isArray(r);});
 
-  fin.yearlyFull.forEach(function(y){
-    rows.push([y.y,y.gen,y.bw,y.bs,y.sv,y.cum,y.cum>fin.total?"Recovered":"Investing"]);
-  });
+  // Build rows cleanly — no nested arrays
+  var rows=[];
+  rows.push(["EIL SOLAR PROPOSAL — "+F.name,""]);
+  rows.push(["Ref",ref]);
+  rows.push(["Date",today]);
+  rows.push(["Source","Kaveri Power Solutions — EIL Solar"]);
   rows.push([""]);
-  rows.push(["ASSUMPTIONS (App_Config)"],["Cost/kWp (Rs)",S.costPerKw],["CUF (%)",S.cuf*100],
-    ["Yield (kWh/kW/day)",S.yield],["Degradation (%/yr)",S.deg*100],["Escalation (%/yr)",S.esc*100]);
+  rows.push(["CUSTOMER"]);
+  rows.push(["Name",F.name]);
+  rows.push(["Mobile",F.phone]);
+  rows.push(["Location",F.location||"Tamil Nadu"]);
+  rows.push(["Tariff",t.lbl]);
+  rows.push(["Model",isEpc?"EPC — Own Day 1":"Developer — Zero Upfront"]);
+  rows.push([""]);
+  rows.push(["SYSTEM"]);
+  rows.push(["Capacity (kWp)",safeK]);
+  rows.push(["Generation (kWh/yr)",fin.ag]);
+  rows.push(["Consumption (Units)",F.bm]);
+  rows.push(["Billing",(F.demand>=50?"Monthly":"Bi-monthly")+" (TNEB rule)"]);
+  if(F.demand>0) rows.push(["Demand (kVA)",F.demand]);
+  if(F.bat) rows.push(["Battery",F.batKwh+" kWh "+BATT[F.batT].name]);
+  rows.push([""]);
+  rows.push(["TNEB TARIFF"]);
+  rows.push(["Energy (Rs/kWh)",t.ur]);
+  rows.push(["Fixed (Rs/kW/mo)",t.fp]);
+  rows.push(["Network (Rs/kWh)",t.net]);
+  rows.push(["Tax",t.tax===0?"NIL":t.tax*100+"%"]);
+  rows.push(["Export",t.ex===0?"Banked Net Metering":t.ex+" Rs/kWh Feed-in"]);
+  rows.push(["Mechanism",t.mechanism]);
+  rows.push([""]);
+  rows.push(["BILL COMPARISON"]);
+  rows.push(["Without Solar (Rs/yr)",fin.bw]);
+  rows.push(["With Solar (Rs/yr)",fin.bs]);
+  rows.push(["Annual Saving (Rs)",fin.y1]);
+  rows.push(["Monthly Saving (Rs)",fin.mo]);
+  rows.push([""]);
+  rows.push(["FINANCIAL SUMMARY"]);
+  if(isEpc){
+    rows.push(["Gross Cost (Rs)",fin.sys]);
+    rows.push(["Subsidy (Rs)",fin.sub]);
+    rows.push(["Net Cost (Rs)",fin.net]);
+    if(fin.batC){ rows.push(["Battery (Rs)",fin.batC]); rows.push(["Total (Rs)",fin.total]); }
+    rows.push(["Year 1 Saving (Rs)",fin.y1]);
+    rows.push(["Payback (Yrs)",fin.pb]);
+    rows.push(["IRR (%)",fin.irr]);
+    rows.push(["25-Yr Saving (Rs)",fin.cum25]);
+    rows.push(["Depreciation","40% WDV IT Act S.32"]);
+  } else {
+    rows.push(["Upfront","ZERO"]);
+    rows.push(["Monthly EIL (Rs)",fin.moCharge]);
+    rows.push(["EIL IRR (%)",S.irr*100]);
+    rows.push(["Contract (yrs)",S.contractYrs]);
+    rows.push(["Post-5yr saving (Rs/yr)",Math.round(fin.bw*Math.pow(1.05,5)-fin.bs)]);
+  }
+  rows.push([""]);
+  rows.push(["YEAR-BY-YEAR SAVINGS"]);
+  rows.push(["Year","Solar Gen (kWh)","Bill Without Solar (Rs)","Bill With Solar (Rs)","Annual Saving (Rs)","Cumulative (Rs)","Status"]);
+
+  var yearlyData = fin.yearlyFull||fin.yearly||[];
+  yearlyData.forEach(function(y){
+    rows.push([y.y,y.gen||0,y.bw||0,y.bs||0,y.sv||0,y.cum||0,y.cum>fin.total?"Recovered":"Investing"]);
+  });
+
+  rows.push([""]);
+  rows.push(["ASSUMPTIONS"]);
+  rows.push(["Cost/kWp (Rs)",S.costPerKw]);
+  rows.push(["CUF (%)",S.cuf*100]);
+  rows.push(["Yield (kWh/kW/day)",S.yield]);
+  rows.push(["Degradation (%/yr)",S.deg*100]);
+  rows.push(["Escalation (%/yr)",S.esc*100]);
 
   var csv=rows.map(function(r){
     return r.map(function(c){
       var s=String(c===null||c===undefined?"":c);
-      if(s.indexOf(",")>-1||s.indexOf('"')>-1)s='"'+s.replace(/"/g,'""')+'"';
+      if(s.indexOf(",")>-1||s.indexOf('"')>-1) s='"'+s.replace(/"/g,'""')+'"';
       return s;
     }).join(",");
   }).join("\n");
+
   var blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
   var url=URL.createObjectURL(blob);
-  var a=document.createElement("a");a.href=url;
+  var a=document.createElement("a");
+  a.href=url;
   a.download="EIL_"+F.name.replace(/\s+/g,"_")+"_"+ref+".csv";
-  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
 }
 
 function dlSettings(){
