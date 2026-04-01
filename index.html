@@ -3746,15 +3746,17 @@ async function viHandleAnswer(raw){
     +"- model: return 'epc' or 'dev'\n"
     +"  own/buy/invest/purchase/epc/day one=epc;\n"
     +"  zero/free/developer/monthly/no upfront/no payment=dev\n"
-    +"- battery: return 'yes' or 'no'. CRITICAL: 'no power cut' or 'no cut' or 'no problem' = 'no'. Only return 'yes' if customer wants battery or confirms cuts exist.\n\n"
+    +"- battery: return ONLY the string 'yes' or the string 'no'. 'yes'=customer wants battery/has power cuts. 'no'=no power cut/no problem/don't need/without battery/only solar. Any negative phrasing = 'no'.\n\n"
     +"If the answer is unclear or doesn't match the field, return null.\n"
     +"Respond with JSON only: {\""+q.key+"\": value_or_null}";
 
   var extracted=null;
   try{
     var res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
+      method:"POST",
+      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01"},
       body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:60,
+        system:"You are a field extraction assistant. Always respond with valid JSON only. No preamble, no explanation.",
         messages:[{role:"user",content:prompt}]})
     });
     var data=await res.json();
@@ -3762,6 +3764,14 @@ async function viHandleAnswer(raw){
     if(txb){
       var parsed=JSON.parse(txb.text.replace(/```json|```/g,"").trim());
       extracted=parsed[q.key];
+      // ── Strict validation for battery: must be exactly "yes" or "no" ──
+      if(q.key==="battery"){
+        var bv=String(extracted||"").toLowerCase().trim();
+        if(bv==="yes"||bv==="true"||bv==="1") extracted="yes";
+        else if(bv==="no"||bv==="false"||bv==="0"||bv==="none") extracted="no";
+        else extracted=null; // unclear — use fallback
+        if(extracted===null) extracted=viFallback("battery", raw);
+      }
     }
   }catch(e){
     // Fallback: basic extraction
