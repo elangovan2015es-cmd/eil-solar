@@ -47,6 +47,8 @@ html,body{min-height:100%;background:#f1f5f9;font-family:'DM Sans',sans-serif;
 /* Voice page — full-screen overlay so bottom nav / topbar don't bleed through */
 #pg-voice{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;overflow:hidden;}
 #pg-voice.active{display:flex;flex-direction:column;}
+/* vi-body fills the entire overlay */
+#vi-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
 
 /* ── BOTTOM NAV ── */
 .bottomnav{background:#fff;border-top:1.5px solid #e2e8f0;display:flex;
@@ -559,6 +561,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
   background:#f1f5f9;border-top:1px solid #e2e8f0;}
 
 /* ── VOICE INTERVIEW — CHAT STYLE ── */
+/* vi-page fills the fixed overlay; vi-wrap is the full column inside it */
+.vi-page{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;
+  background:#0b1418;}
+.vi-wrap{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;}
 .vi-header{background:#202c33;padding:10px 14px;display:flex;align-items:center;gap:10px;
   flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
 .vi-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ec4899,#8b5cf6);
@@ -571,7 +577,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .vi-hstat{font-size:12px;color:#8696a0;margin-top:1px;}
 .vi-hexit{background:none;border:none;color:#8696a0;font-size:22px;cursor:pointer;padding:4px 8px;margin-left:auto;}
 
-.vi-chat{flex:1;overflow-y:auto;padding:10px 10px 6px;display:flex;flex-direction:column;
+.vi-chat{flex:1;min-height:0;overflow-y:auto;padding:10px 10px 6px;display:flex;flex-direction:column;
   gap:4px;-webkit-overflow-scrolling:touch;}
 .vi-chat::-webkit-scrollbar{display:none;}
 
@@ -606,7 +612,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .vi-prog-fill{height:3px;background:#25d366;transition:width 0.5s ease;}
 
 /* Bottom mic bar */
-.vi-bottom{background:#202c33;padding:10px 14px 20px;display:flex;align-items:center;
+.vi-bottom{background:#202c33;padding:10px 14px max(20px,env(safe-area-inset-bottom));display:flex;align-items:center;
   gap:10px;flex-shrink:0;border-top:2px solid #25d366;box-shadow:0 -4px 16px rgba(0,0,0,0.4);}
 .vi-heard{flex:1;background:#2a3942;border:none;border-radius:20px;padding:10px 14px;
   font-size:14px;color:#e9edef;font-family:'DM Sans',sans-serif;outline:none;
@@ -3544,12 +3550,29 @@ var VI_QS = [
 function viPickVoice(){
   if(!VI_SYNTH) return;
   var vs = VI_SYNTH.getVoices();
-  var prefer = ["Samantha","Karen","Veena","Victoria","Moira","Tessa","Zira",
-                "Google UK English Female","Google US English Female"];
+  // Priority: natural-sounding neural/enhanced voices first, then pleasant system voices
+  var prefer = [
+    "Google UK English Female",   // Chrome Android/Desktop — very natural
+    "Google US English",          // fallback Google
+    "Samantha",                   // macOS/iOS — warm, clear
+    "Karen",                      // macOS Australian — friendly
+    "Moira",                      // macOS Irish — pleasant lilt
+    "Tessa",                      // macOS South African
+    "Victoria",                   // macOS — classic but clear
+    "Microsoft Zira",             // Windows — pleasant female
+    "Microsoft Aria",             // Windows 11 — neural, very natural
+    "Veena"                       // macOS Indian English
+  ];
   var v = null;
-  prefer.forEach(function(n){ if(!v) v=vs.find(function(x){return x.name.indexOf(n)>-1;}); });
-  if(!v) v = vs.find(function(x){ return x.lang.indexOf("en")===0 && x.name.toLowerCase().indexOf("female")>-1; });
-  if(!v) v = vs.find(function(x){ return x.lang.indexOf("en")===0; });
+  prefer.forEach(function(n){
+    if(!v) v = vs.find(function(x){ return x.name.indexOf(n) > -1; });
+  });
+  // Fallback: any English female voice
+  if(!v) v = vs.find(function(x){
+    return x.lang.indexOf("en") === 0 && x.name.toLowerCase().indexOf("female") > -1;
+  });
+  // Last resort: any English voice
+  if(!v) v = vs.find(function(x){ return x.lang.indexOf("en") === 0; });
   VI_VOICE = v || null;
 }
 if(VI_SYNTH){ viPickVoice(); VI_SYNTH.onvoiceschanged = viPickVoice; }
@@ -3559,7 +3582,7 @@ function viSpeak(text, onEnd){
   VI_SYNTH.cancel();
   var utt = new SpeechSynthesisUtterance(text);
   if(VI_VOICE) utt.voice = VI_VOICE;
-  utt.lang="en-IN"; utt.rate=0.90; utt.pitch=1.06; utt.volume=1.0;
+  utt.lang="en-IN"; utt.rate=0.88; utt.pitch=1.10; utt.volume=1.0;
   utt.onstart = function(){
     var av=document.getElementById("vi-av"); if(av) av.className="vi-av sp";
     viSetStatus("Speaking...");
@@ -3628,6 +3651,7 @@ function startVoiceInterview(){
   // Build shell
   document.getElementById("vi-body").innerHTML =
     '<div class="vi-wrap">'
+    // ── Header (fixed top)
     +'<div class="vi-header">'
       +'<div class="vi-av" id="vi-av">👩</div>'
       +'<div style="flex:1;">'
@@ -3636,14 +3660,17 @@ function startVoiceInterview(){
       +'</div>'
       +'<button class="vi-hexit" onclick="exitVI()">✕</button>'
     +'</div>'
+    // ── Progress bar
     +'<div class="vi-prog"><div class="vi-prog-fill" id="vi-prog" style="width:0%"></div></div>'
+    // ── Chat scrollable area (flex:1, min-height:0 keeps it from pushing mic off)
     +'<div class="vi-chat" id="vi-chat"></div>'
-    +'<div style="background:#1a2c35;padding:4px 14px;text-align:right;flex-shrink:0;">'
-      +'<span style="font-size:11px;color:#25d366;font-weight:700;letter-spacing:1px;">TAP 🎤 TO SPEAK YOUR ANSWER</span>'
-      +'</div>'
+    // ── Mic bar (always pinned at bottom)
     +'<div class="vi-bottom">'
-      +'<textarea class="vi-heard" id="vi-heard" rows="1" '
-        +'placeholder="Your spoken words appear here..."></textarea>'
+      +'<div style="flex:1;">'
+        +'<div style="font-size:10px;color:#25d366;font-weight:700;letter-spacing:1px;margin-bottom:4px;">TAP 🎤 TO SPEAK</div>'
+        +'<textarea class="vi-heard" id="vi-heard" rows="1" '
+          +'placeholder="Your spoken words appear here..."></textarea>'
+      +'</div>'
       +'<button class="vi-mic-btn wait" id="vi-mic" onclick="viMicTap()">🎤</button>'
     +'</div>'
     +'</div>';
