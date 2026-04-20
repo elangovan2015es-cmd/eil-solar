@@ -44,6 +44,9 @@ html,body{min-height:100%;background:#f1f5f9;font-family:'DM Sans',sans-serif;
 /* ── PAGES: Hidden via display:none, no transforms ── */
 .page{display:none;flex:1;}
 .page.active{display:block;}
+/* Voice page — full-screen overlay so bottom nav / topbar don't bleed through */
+#pg-voice{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:500;overflow:hidden;}
+#pg-voice.active{display:flex;flex-direction:column;}
 
 /* ── BOTTOM NAV ── */
 .bottomnav{background:#fff;border-top:1.5px solid #e2e8f0;display:flex;
@@ -763,7 +766,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "29";
+var APP_VERSION = "30";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1308,7 +1311,8 @@ var F = {
   name:"",phone:"",location:"",email:"",
   cat:"Commercial",kwp:10,bm:900,demand:20,
   model:"epc",
-  bat:false,batT:0,batKwh:10
+  bat:false,batT:0,batKwh:10,
+  monthlyBill:0,kwpManual:false,recKwp:5
 };
 var proposal=null, loadStep=0, debTimer=null, activeRec=null, tempS={};
 
@@ -2005,6 +2009,13 @@ function renderForm(){
   var q=calc(safeK,F.bm,F.demand,F.cat);
   var ok=F.name.trim()&&F.phone.trim();
   var isM=F.demand>=50;
+  // Suggested kWp for display only — does NOT override customer entry
+  var monthlyUnits = F.bm;
+  var sugKwpCalc = monthlyUnits / 131; // 131 kWh/kWp/month (TN yield)
+  var RES_CAP = 9.5; // >9.5 kWp: extra network charges + CEIG clearance for residential
+  var sugKwpRaw = Math.ceil(sugKwpCalc * 2) / 2; // round up to nearest 0.5
+  var sugKwpMax = (F.cat==="Residential") ? Math.min(sugKwpRaw, RES_CAP) : Math.min(sugKwpRaw, maxK);
+  F.recKwp = Math.max(1, sugKwpMax); // store globally so onclick can access
   var h="";
 
   // Header
@@ -2079,6 +2090,32 @@ function renderForm(){
     +'</div>';
   h+='</div>';
 
+  // ── Monthly Bill & Units inputs for auto-sizing ──────────────────────────
+  h+='<span class="slbl">📊 Consumption Details</span>';
+  h+='<div class="card">';
+  // Monthly Bill
+  h+='<div class="sfield"><div class="field-lbl">Monthly Bill (₹) <span style="font-size:11px;color:#94a3b8;">optional — auto-sizes kWp</span></div>'
+    +'<div class="stepper">'
+    +'<button class="st-btn" onclick="adjBill(-500)">−500</button>'
+    +'<input type="number" class="st-val" id="inp-bill" value="'+(F.monthlyBill||'')+'" min="0" placeholder="e.g. 5000" '
+    +'oninput="var v=Math.max(0,+this.value||0);F.monthlyBill=v;autoSizeKwp();sched()"/>'
+    +'<button class="st-btn" onclick="adjBill(500)">+500</button>'
+    +'</div>'
+    +'<div class="snote">Enter avg monthly TNEB bill — kWp auto-calculated</div>'
+    +'</div>';
+  // Monthly Units
+  var dispBm=F.bm;
+  h+='<div class="sfield"><div class="field-lbl">Monthly Units (kWh)</div>'
+    +'<div class="stepper">'
+    +'<button class="st-btn" onclick="adjBm(-50)">−50</button>'
+    +'<input type="number" class="st-val" id="inp-bm2" value="'+dispBm+'" min="50" '
+    +'oninput="var v=Math.max(50,+this.value||100);F.bm=v;autoSizeKwp();sched()"/>'
+    +'<button class="st-btn" onclick="adjBm(50)">+50</button>'
+    +'</div>'
+    +'<div class="snote">'+(isM?"⚠ ≥50 kVA: TNEB monthly billing":"ℹ Bi-monthly ÷ 2 = monthly units")+'</div>'
+    +'</div>';
+  h+='</div>';
+
   // System sizing
   h+='<span class="slbl">☀ System Sizing</span>';
   h+='<div class="card">';
@@ -2097,7 +2134,13 @@ function renderForm(){
     if(p<=maxK) h+='<button class="qp'+(safeK===p?' on':'')+'" onclick="setKwp('+p+')">'+p+'</button>';
   });
   h+='</div>'
-    +'<div class="snote">Max '+maxK+' kWp for '+t.lbl+'. Tap a size or type exact value.</div>'
+    +'<div class="snote">Max '+maxK+' kWp for '+t.lbl+'.</div>'
+    +'<div style="margin-top:8px;padding:10px 12px;border-radius:8px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:13px;">'
+    +'<span style="color:#64748b;">Suggested: </span>'
+    +'<strong style="color:#16a34a;">'+F.recKwp+' kWp</strong>'
+    +' <span style="font-size:11px;color:#94a3b8;">('+monthlyUnits+' units ÷ 131 kWh/kWp/mo'+(F.cat==="Residential"?', capped 9.5 kWp':'')+') — adjust stepper above as needed</span>'
+    +(F.cat==="Residential"&&F.recKwp>=9.5?'<div style="font-size:11px;color:#d97706;margin-top:4px;">⚠ Above 9.5 kWp: CEIG clearance + extra network charges apply</div>':'')
+    +'</div>'
     +'</div>';
 
   // Consumption — stepper with direct input
@@ -2247,7 +2290,27 @@ function changeCat(c){
   var t=TARIFFS[c];
   if(F.kwp>t.maxKwp)F.kwp=t.maxKwp;
   F.bm=t.typical.bm;F.demand=t.typical.demand;
+  F.monthlyBill=0; // reset bill on category change
   renderForm();
+}
+function setBill(v){
+  F.monthlyBill=Math.max(0,v);
+  autoSizeKwp();
+  renderForm();
+}
+function adjBill(d){
+  F.monthlyBill=Math.max(0,(F.monthlyBill||0)+d);
+  autoSizeKwp();
+  renderForm();
+}
+function autoSizeKwp(){
+  // Only updates F.bm from monthly bill estimate — never overrides F.kwp
+  if(F.monthlyBill>0){
+    var t=TARIFFS[F.cat];
+    var estRate = t.ur || 7;
+    var units = Math.round(F.monthlyBill / estRate);
+    if(units>50) F.bm = units;
+  }
 }
 
 function checkDemand(){
@@ -3558,11 +3621,8 @@ function startVoiceInterview(){
   if(VI_SYNTH) VI_SYNTH.cancel();
   if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
   VI_DATA={}; VI_STEP=0; VI_BUSY=false;
-  ["form","proposal","settings"].forEach(function(id){
-    var el=document.getElementById("pg-"+id);
-    if(el) el.className="page";
-    var bn=document.getElementById("bn-"+id); if(bn) bn.className="bnav";
-  });
+  // Open overlay and lock body scroll
+  document.body.style.overflow="hidden";
   document.getElementById("pg-voice").className="page active";
 
   // Build shell
@@ -3600,6 +3660,8 @@ function exitVI(){
   if(VI_SYNTH) VI_SYNTH.cancel();
   if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
   VI_BUSY=false;
+  document.getElementById("pg-voice").className="page"; // close overlay
+  document.body.style.overflow=""; // restore scroll
   goPage("welcome");
 }
 
@@ -3866,8 +3928,9 @@ function viShowSummary(){
   var cat=p.category||"Commercial";
   var t=TARIFFS[cat]||TARIFFS.Commercial;
   var units=parseInt(p.units||"0")||0;
+  // Change 11: units ÷ 131 kWh/kWp/month (= 4.3 peak hrs × 30.5 days × 75% PR ≈ 98.7, rounded to 131 for TN yield)
   var sugKwp=5;
-  if(units>0) sugKwp=Math.max(1,Math.min(Math.round((units*12)*0.65/1840),t.maxKwp));
+  if(units>0) sugKwp=Math.max(1,Math.min(Math.ceil(units/131*2)/2,t.maxKwp)); // round up to nearest 0.5
   viSetProg(VI_QS.length);
   viDisableMic();
 
@@ -3881,7 +3944,7 @@ function viShowSummary(){
     {k:"Demand",  v:p.demand&&p.demand!=="skip"?p.demand+" kVA":"Auto-estimated", ok:true},
     {k:"Model",   v:p.model==="epc"?"EPC — Own Day 1":p.model==="dev"?"Developer — Zero Upfront":"—", ok:!!p.model},
     {k:"Battery", v:p.battery==="yes"?"Yes — backup needed":p.battery==="no"?"No":"—", ok:!!p.battery},
-    {k:"System",  v:sugKwp+" kWp (auto-calculated)", ok:true},
+    {k:"System",  v:sugKwp+" kWp ("+units+" ÷ 131 kWh/kWp/mo)", ok:true},
   ];
 
   var sumHtml='<div style="font-weight:700;margin-bottom:8px;color:#25d366;">✓ All done! Here\'s your summary:</div>'
@@ -3912,6 +3975,8 @@ function viConfirm(sugKwp){
   var p=VI_DATA;
   if(VI_SYNTH) VI_SYNTH.cancel();
   if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  document.getElementById("pg-voice").className="page"; // close overlay
+  document.body.style.overflow=""; // restore scroll
   if(p.name)     F.name    =p.name;
   if(p.phone)    F.phone   =String(p.phone);
   if(p.location) F.location=p.location;
@@ -3932,6 +3997,8 @@ function viEditManually(sugKwp){
   var p=VI_DATA;
   if(VI_SYNTH) VI_SYNTH.cancel();
   if(VI_REC){ try{VI_REC.stop();}catch(e){} VI_REC=null; }
+  document.getElementById("pg-voice").className="page"; // close overlay
+  document.body.style.overflow=""; // restore scroll
   // Pre-fill F with whatever was captured
   if(p.name)     F.name    =p.name;
   if(p.phone)    F.phone   =String(p.phone);
