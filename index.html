@@ -643,6 +643,59 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .vi-act.go{background:#25d366;color:#fff;}
 .vi-act.re{background:rgba(37,211,102,0.12);color:#25d366;border:1px solid rgba(37,211,102,0.3);}
 .vi-act.ed{background:rgba(255,255,255,0.07);color:#8696a0;border:1px solid rgba(255,255,255,0.1);}
+/* ── v32: Bill capture & load analysis ── */
+.bill-cap-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.bcap-btn{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:13px 8px;
+  font-size:12px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:5px;transition:transform .15s}
+.bcap-btn:active{transform:scale(.95)}
+.bcap-btn.gal{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.bcap-btn .bico{font-size:22px}
+.bill-thumb{display:none;background:#f8fafc;border-radius:10px;padding:8px;
+  text-align:center;margin-bottom:10px;border:2px dashed var(--blue)}
+.bill-thumb img{max-width:100%;max-height:160px;border-radius:8px;object-fit:contain}
+.btn-readbill{width:100%;background:linear-gradient(135deg,#1e3a5f,var(--blue));
+  color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:800;
+  cursor:pointer;display:none;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.btn-readbill.vis{display:flex}
+.read-st{padding:9px 13px;border-radius:8px;font-size:12px;font-weight:700;
+  display:none;align-items:center;gap:8px;margin-bottom:4px}
+.read-st.rd{background:#eff6ff;color:#1d4ed8;display:flex}
+.read-st.ok{background:#dcfce7;color:#15803d;display:flex}
+.read-st.er{background:#fef2f2;color:#dc2626;display:flex}
+.vspin{width:14px;height:14px;border:2px solid #93c5fd;border-top-color:#1d4ed8;
+  border-radius:50%;animation:vspin .7s linear infinite;flex-shrink:0}
+@keyframes vspin{to{transform:rotate(360deg)}}
+.af{background:#f0fdf4!important;color:#15803d!important;font-weight:800!important}
+.load-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.assump-box{background:linear-gradient(135deg,#fffbeb,#fff7ed);border-radius:12px;
+  padding:14px;border:2px solid #fcd34d;margin-top:4px}
+.assump-title{font-size:12px;font-weight:800;color:#92400e;margin-bottom:10px}
+.assump-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+.ag-item{background:#fff;border-radius:8px;padding:7px 4px;text-align:center}
+.ag-val{font-size:14px;font-weight:900;color:#1e293b}
+.ag-lbl{font-size:9px;color:#64748b;margin-top:2px;line-height:1.3}
+.assump-inp-row{display:flex;align-items:center;gap:8px;background:#fff;
+  border-radius:10px;padding:9px 12px;border:2px solid #fcd34d}
+.assump-inp-row label{font-size:11px;font-weight:800;color:#92400e;white-space:nowrap}
+.assump-inp-row input{width:80px;border:1.5px solid #fcd34d;border-radius:7px;
+  padding:6px 8px;font-size:14px;font-weight:900;color:#1e293b;background:#fffbeb;text-align:center}
+.assump-inp-row span{font-size:10px;color:#78716c}
+.assump-deriv{font-size:10px;color:#78716c;margin-top:8px;line-height:1.6;
+  background:#fffbeb;border-radius:6px;padding:6px 10px}
+.auto-sp{background:linear-gradient(135deg,#eff6ff,#f0fdf4);border-radius:12px;
+  padding:12px;border:1.5px solid #93c5fd;margin-top:8px}
+.asp-row{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid #e0f2fe;font-size:12px}
+.asp-row:last-child{border-bottom:none}
+.asp-lbl{color:#475569;font-weight:600}
+.asp-val{font-weight:900;color:#1e293b}
+.asp-val.g{color:#15803d}.asp-val.o{color:#c2410c}.asp-val.r{color:#dc2626}
+.warn-cl,.warn-v2{padding:8px 12px;border-radius:8px;font-size:11px;font-weight:700;
+  margin-top:6px;display:none;align-items:flex-start;gap:6px;line-height:1.5}
+.warn-cl.w,.warn-v2.w{background:#fff7ed;color:#c2410c;border:1.5px solid #fed7aa;display:flex}
+.warn-cl.r,.warn-v2.r{background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;display:flex}
+.warn-cl.g,.warn-v2.g{background:#f0fdf4;color:#15803d;border:1.5px solid #bbf7d0;display:flex}
 </style>
 </head>
 <body>
@@ -772,7 +825,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "31";
+var APP_VERSION = "32";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1318,7 +1371,8 @@ var F = {
   cat:"Commercial",kwp:10,bm:900,demand:20,
   model:"epc",
   bat:false,batT:0,batKwh:10,
-  monthlyBill:0,kwpManual:false,recKwp:5
+  monthlyBill:0,kwpManual:false,recKwp:5,
+  consumerNum:"", meterNum:"", connectedLoad:0, peakPower:0, genFactor:1600
 };
 var proposal=null, loadStep=0, debTimer=null, activeRec=null, tempS={};
 
@@ -2015,6 +2069,8 @@ function renderForm(){
   var q=calc(safeK,F.bm,F.demand,F.cat);
   var ok=F.name.trim()&&F.phone.trim();
   var isM=F.demand>=50;
+  // v32: sync genFactor from F object for display
+  if(!F.genFactor) F.genFactor=1600;
   // Suggested kWp for display only — does NOT override customer entry
   var monthlyUnits = F.bm;
   var sugKwpCalc = monthlyUnits / 131; // 131 kWh/kWp/month (TN yield)
@@ -2055,7 +2111,84 @@ function renderForm(){
   h+='<div class="field"><div class="field-lbl">Location / City</div>'
     +'<input id="inp-location" value="'+esc(F.location)+'" placeholder="Chennai, Coimbatore..."'
     +' style="font-size:19px;font-weight:800;" oninput="F.location=this.value;sched()"/></div>';
-  h+='</div>';
+  // ── v32: Consumer number + Meter number ───────────────────────────────
+  h+='<div class="load-row2">'
+    +'<div class="field"><div class="field-lbl">Consumer Number</div>'
+    +'<input id="inp-consnum" value="'+esc(F.consumerNum)+'" placeholder="0104500746"'
+    +' style="font-size:14px;" oninput="F.consumerNum=this.value"/></div>'
+    +'<div class="field"><div class="field-lbl">Meter Number</div>'
+    +'<input id="inp-meternum" value="'+esc(F.meterNum)+'" placeholder="7096845"'
+    +' style="font-size:14px;" oninput="F.meterNum=this.value"/></div>'
+    +'</div>';
+  h+='</div>';  // ← close customer card
+
+  // ── v32: BILL CAPTURE (own card) ────────────────────────────────────────
+  h+='<span class="slbl">📷 Scan / Upload TNEB Bill — Auto Fills Fields</span>';
+  h+='<div class="card">'
+    +'<input type="file" id="inp-cam" accept="image/*" capture="environment" style="display:none" onchange="billCaptured(this)">'
+    +'<input type="file" id="inp-gal" accept="image/*" style="display:none" onchange="billCaptured(this)">'
+    +'<div class="bill-cap-btns">'
+    +'<button class="bcap-btn" onclick="document.getElementById(\'inp-cam\').click()">'
+    +'<span class="bico">📷</span>Scan Bill<br><small style="font-weight:400;font-size:10px">Use Camera</small></button>'
+    +'<button class="bcap-btn gal" onclick="document.getElementById(\'inp-gal\').click()">'
+    +'<span class="bico">🖼</span>Upload Bill<br><small style="font-weight:400;font-size:10px">From Gallery</small></button>'
+    +'</div>'
+    +'<div class="bill-thumb" id="bill-thumb"><img id="bill-img" src="" alt="Bill"/>'
+    +'<div style="font-size:10px;color:#64748b;margin-top:4px" id="bill-fname"></div></div>'
+    +'<button class="btn-readbill" id="btn-readbill" onclick="readBillVision()">⚡ Read Bill — Auto Extract Fields</button>'
+    +'<div class="read-st" id="read-st"><div class="vspin" id="read-spin"></div><span id="read-stxt">Reading bill...</span></div>'
+    +'</div>';
+
+  // ── v32: Sanctioned Load + Peak Power (own card) ──────────────────────
+  h+='<span class="slbl">⚡ Connection Load Details</span>';
+  h+='<div class="card">'
+    +'<div class="load-row2">'
+    +'<div class="field"><div class="field-lbl">🔌 Sanctioned Load (kW)</div>'
+    +'<input id="inp-cl" type="number" value="'+(F.connectedLoad||'')+'" placeholder="7" step="0.5"'
+    +' style="font-size:19px;font-weight:800;" oninput="F.connectedLoad=+this.value||0;recalcSizing()"/>'
+    +'<div class="snote">From bill header — rooftop solar cannot exceed this</div></div>'
+    +'<div class="field"><div class="field-lbl">⚙️ Peak Load (kW)</div>'
+    +'<input id="inp-pp" type="number" value="'+(F.peakPower||'')+'" placeholder="5" step="0.5"'
+    +' style="font-size:19px;font-weight:800;" oninput="F.peakPower=+this.value||0;recalcSizing()"/>'
+    +'<div class="snote">Actual max demand at premises</div></div>'
+    +'</div>'
+    +'<div class="warn-cl" id="warn-cl"></div>'
+    +'</div>';  // ← close load card
+
+  // ── v32: Generation Assumption + Auto Sizing Panel (own card) ──────────
+  h+='<span class="slbl">📌 Generation Assumption & Auto Sizing</span>';
+  h+='<div class="card">'
+    +'<div class="assump-box">'
+    +'<div class="assump-title">☀️ Rooftop Solar — Chennai | Units per kWp per Year</div>'
+    +'<div class="assump-grid4">'
+    +'<div class="ag-item"><div class="ag-val">5.5</div><div class="ag-lbl">Peak Sun<br>Hrs/day</div></div>'
+    +'<div class="ag-item"><div class="ag-val">0.78</div><div class="ag-lbl">Performance<br>Ratio</div></div>'
+    +'<div class="ag-item"><div class="ag-val">4.29</div><div class="ag-lbl">kWh/kWp<br>/day</div></div>'
+    +'<div class="ag-item"><div class="ag-val">1,566</div><div class="ag-lbl">Annual<br>actual</div></div>'
+    +'</div>'
+    +'<div class="assump-inp-row">'
+    +'<label>Used in model:</label>'
+    +'<input id="inp-gf" type="number" value="'+(F.genFactor||1600)+'" min="1200" max="2000" step="50"'
+    +' oninput="F.genFactor=+this.value||1600;recalcSizing()"/>'
+    +'<span>units/kWp/yr — editable per location</span>'
+    +'</div>'
+    +'<div class="assump-deriv">📐 5.5 peak hrs × 0.78 PR × 365 = 1,566 → rounded to <strong>1,600</strong> (conservative)<br>'
+    +'MNRE TN benchmark: 1,500–1,700 ✅ &nbsp;|&nbsp; Coimbatore: ~1,750 &nbsp;|&nbsp; Madurai: ~1,800</div>'
+    +'</div>'
+    +'<div class="auto-sp" id="auto-sp">'
+    +'<div class="asp-row"><span class="asp-lbl">📅 Bi-monthly units entered</span><span class="asp-val" id="asp-bm">—</span></div>'
+    +'<div class="asp-row"><span class="asp-lbl">📆 Monthly average (÷2)</span><span class="asp-val" id="asp-mo">—</span></div>'
+    +'<div class="asp-row"><span class="asp-lbl">🗓 Annual consumption (×12)</span><span class="asp-val" id="asp-an">—</span></div>'
+    +'<div class="asp-row"><span class="asp-lbl">☀️ Generation factor</span><span class="asp-val g" id="asp-gf">—</span></div>'
+    +'<div class="asp-row"><span class="asp-lbl">📐 Recommended rooftop size</span><span class="asp-val" id="asp-rec">—</span></div>'
+    +'<div class="asp-row"><span class="asp-lbl">🔌 Sanctioned load limit</span><span class="asp-val" id="asp-sl">—</span></div>'
+    +'<div class="asp-row" style="border-top:2px solid #93c5fd;padding-top:8px;margin-top:4px;">'
+    +'<span class="asp-lbl" style="font-weight:800;color:#1e293b">✅ Recommended Final Size</span>'
+    +'<span class="asp-val g" id="asp-final" style="font-size:17px">—</span></div>'
+    +'<div class="asp-row"><span class="asp-lbl">📊 Solar coverage of consumption</span><span class="asp-val" id="asp-cov">—</span></div>'
+    +'</div>'
+    +'<div class="warn-v2" id="warn-v2"></div>'
+    +'</div>';  // ← close assumption card
 
   // Category
   h+='<span class="slbl">⚡ TNEB Tariff Category</span>';
@@ -2071,9 +2204,14 @@ function renderForm(){
   h+='<div style="padding:8px 16px 10px;background:#f0f9ff;border-top:1px solid #bae6fd;">'
     +'<div style="font-size:13px;font-weight:800;color:#0369a1;margin-bottom:3px;">'+t.lbl+'</div>'
     +'<div style="font-size:12px;color:#374151;font-weight:700;">'
-    +'Energy ₹'+t.ur+'/kWh · Fixed ₹'+t.fp+'/kW · Tax: '+(t.tax>0?t.tax*100+"%":"Nil")
-    +(t.demand>0?' · Demand ₹'+t.demand+'/kVA':'')
+    +(F.cat==="Residential"
+      ? 'Slab rate: 0–100 Free · 101–200 ₹2.35 · 201–400 ₹4.70 · 401–500 ₹6.30 · 501–600 ₹8.40 · 601–800 ₹9.45 · 801–1000 ₹10.50 · 1001+ ₹11.55'
+      : 'Energy ₹'+t.ur+'/kWh · Fixed ₹'+t.fp+'/kW · Tax: '+(t.tax>0?t.tax*100+"%":"Nil")
+        +(t.demand>0?' · Demand ₹'+t.demand+'/kVA':''))
     +'</div>'
+    +(F.cat==="Residential" && F.bm>0
+      ? '<div style="font-size:12px;color:#15803d;font-weight:800;margin-top:4px;">Effective rate @ '+F.bm+' bi-monthly units: ₹'+(calcResidentialBill(F.bm)/F.bm).toFixed(2)+'/kWh</div>'
+      : '')
     +'<div style="font-size:11px;color:#0369a1;font-weight:600;margin-top:3px;">'+t.note+'</div>'
     +'<button onclick="goPage(\'settings\')" style="font-size:11px;color:#0369a1;background:none;border:none;'
     +'cursor:pointer;font-weight:800;margin-top:4px;">⚙ Full tariff details in Settings →</button>'
@@ -2313,9 +2451,199 @@ function autoSizeKwp(){
   // Only updates F.bm from monthly bill estimate — never overrides F.kwp
   if(F.monthlyBill>0){
     var t=TARIFFS[F.cat];
-    var estRate = t.ur || 7;
+    var estRate;
+    if(F.cat==="Residential"){
+      // For residential use effective slab rate — estimate bi-monthly = monthly×2
+      var estBm = F.bm > 50 ? F.bm : 300; // use existing bm or assume 300
+      estRate = estBm > 0 ? calcResidentialBill(estBm)/estBm : 4.0;
+    } else {
+      estRate = t.ur || 7;
+    }
     var units = Math.round(F.monthlyBill / estRate);
     if(units>50) F.bm = units;
+  }
+}
+
+// ── v32: BILL CAPTURE & VISION API ───────────────────────────────────────────
+var _billBase64 = null;
+
+function billCaptured(inp){
+  var file = inp.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    _billBase64 = e.target.result.split(',')[1];
+    var thumb = document.getElementById('bill-thumb');
+    var img   = document.getElementById('bill-img');
+    var fname = document.getElementById('bill-fname');
+    if(thumb){ thumb.style.display='block'; }
+    if(img)  { img.src = e.target.result; }
+    if(fname){ fname.textContent = file.name; }
+    var btn = document.getElementById('btn-readbill');
+    if(btn) btn.classList.add('vis');
+    var st = document.getElementById('read-st');
+    if(st) st.className = 'read-st';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function readBillVision(){
+  if(!_billBase64){ alert('Please capture or upload a bill image first.'); return; }
+  var st   = document.getElementById('read-st');
+  var spin = document.getElementById('read-spin');
+  var stxt = document.getElementById('read-stxt');
+  if(st)  st.className  = 'read-st rd';
+  if(stxt) stxt.textContent = 'Reading bill with Claude Vision...';
+
+  var prompt = 'Extract fields from this TNEB electricity bill image. Return ONLY valid JSON, no explanation:\n'
+    +'{"consumer_name":"","consumer_number":"","meter_number":"","tariff_code":"",'
+    +'"sanctioned_load_kw":null,"phase":null,"units_consumed_latest":null,'
+    +'"bill_amount_latest":null,"billing_date":""}\n'
+    +'Rules: sanctioned_load_kw = number only (e.g. 7 for "7 KW"). '
+    +'units_consumed_latest = the "in Units" column of the most recent billing row. '
+    +'bill_amount_latest = "To Be paid" column of most recent row. '
+    +'tariff_code: look for TARIFF CODE field e.g. LA1A or LM51 or HT-I. '
+    +'Return null for any field not clearly visible.';
+
+  var _done = false;
+  var timeout = setTimeout(function(){
+    if(!_done){ _done=true;
+      if(st)  st.className  = 'read-st er';
+      if(stxt) stxt.textContent = '⏱ Timed out — please fill fields manually.';
+    }
+  }, 15000);
+  try{
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01'},
+      body: JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:300,
+        system:'You are a TNEB bill reader. Extract fields and return ONLY valid JSON. No markdown, no explanation.',
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:'image/jpeg',data:_billBase64}},
+          {type:'text',text:prompt}
+        ]}]
+      })
+    });
+    clearTimeout(timeout); _done=true;
+    var data = await res.json();
+    var txb  = (data.content||[]).find(function(b){return b.type==='text';});
+    if(!txb) throw new Error('No response');
+    var parsed = JSON.parse(txb.text.replace(/```json|```/g,'').trim());
+    fillBillFields(parsed);
+    if(st)  st.className  = 'read-st ok';
+    if(stxt) stxt.textContent = '✅ Bill read — fields filled below. Please verify.';
+  }catch(e){
+    clearTimeout(timeout);
+    if(!_done){
+      if(st)  st.className  = 'read-st er';
+      if(stxt) stxt.textContent = '⚠️ Could not auto-read bill — please fill fields manually.';
+    }
+  }
+}
+
+function fillBillFields(d){
+  function setF(id,val,flash){
+    if(val===null||val===undefined||val==='') return;
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.value=String(val);
+    if(flash){ el.classList.add('af'); setTimeout(function(){el.classList.remove('af');},2500); }
+  }
+  if(d.consumer_name)    { F.name=d.consumer_name;        setF('inp-name',d.consumer_name,true); }
+  if(d.consumer_number)  { F.consumerNum=d.consumer_number; setF('inp-consnum',d.consumer_number,true); }
+  if(d.meter_number)     { F.meterNum=d.meter_number;       setF('inp-meternum',d.meter_number,true); }
+  if(d.sanctioned_load_kw!=null){ F.connectedLoad=+d.sanctioned_load_kw; setF('inp-cl',d.sanctioned_load_kw,true); }
+  if(d.units_consumed_latest!=null){ F.bm=+d.units_consumed_latest; setF('inp-bm',d.units_consumed_latest,true); setF('inp-bm2',d.units_consumed_latest,true); }
+  if(d.phase)  document.getElementById('inp-phase') && (document.getElementById('inp-phase').value=String(d.phase));
+  // Tariff dropdown
+  if(d.tariff_code){
+    var tc=String(d.tariff_code).toUpperCase();
+    var catMap={'LA1A':'Residential','LM51':'Commercial','HT-I':'Industrial','HT-III':'HT-III Commercial'};
+    Object.keys(catMap).forEach(function(k){
+      if(tc.indexOf(k)>-1){
+        var newCat=catMap[k];
+        if(TARIFFS[newCat]){ F.cat=newCat; }
+      }
+    });
+  }
+  recalcSizing();
+  renderForm();
+  sched();
+}
+
+// ── v32: RECALC SIZING — runs on any consumption/load/genFactor change ────────
+function recalcSizing(){
+  var bm      = F.bm      || 0;   // bi-monthly units
+  var cl      = F.connectedLoad || 0;
+  var gf      = F.genFactor || 1600;
+  var monthly = bm / 2;
+  var annual  = monthly * 12;
+  var recKwp  = annual > 0 ? annual / gf : 0;
+  var finalKwp= cl > 0 ? Math.min(recKwp, cl) : recKwp;
+  var finalR  = Math.round(finalKwp * 2) / 2; // nearest 0.5
+  var annGen  = finalR * gf;
+  var coverage= annual > 0 ? Math.min(100, (annGen / annual) * 100) : 0;
+
+  function disp(id,val){ var el=document.getElementById(id); if(el) el.textContent=val; }
+  function cls(id,c){    var el=document.getElementById(id); if(el) el.className='asp-val '+c; }
+
+  var fmt = function(n){ return n.toLocaleString('en-IN'); };
+
+  disp('asp-bm',  bm>0 ? fmt(bm)+' units' : '—');
+  disp('asp-mo',  monthly>0 ? fmt(monthly)+' units/month' : '—');
+  disp('asp-an',  annual>0 ? fmt(annual)+' units/year' : '—');
+  disp('asp-gf',  fmt(gf)+' units/kWp/yr');
+  disp('asp-rec', recKwp>0 ? recKwp.toFixed(1)+' kWp' : '—');
+  disp('asp-sl',  cl>0 ? cl+' kW (TNEB sanctioned)' : 'Not entered');
+
+  var finalEl = document.getElementById('asp-final');
+  if(finalEl){
+    finalEl.textContent = finalR>0 ? finalR+' kWp' : '—';
+    finalEl.className   = 'asp-val '+(cl>0 && recKwp>cl ? 'o' : 'g');
+  }
+  disp('asp-cov', coverage>0 ? coverage.toFixed(0)+'% of annual consumption' : '—');
+  if(document.getElementById('asp-cov'))
+    document.getElementById('asp-cov').className = 'asp-val '+(coverage>=90?'g':coverage>=60?'':'o');
+
+  // Suggest kWp if not manually set
+  if(!F.kwpManual && finalR>0){
+    var maxK = TARIFFS[F.cat] ? TARIFFS[F.cat].maxKwp : 500;
+    F.kwp = Math.min(finalR, maxK);
+    F.recKwp = finalR;
+  }
+
+  // ── Connected load warning ──
+  var wCL = document.getElementById('warn-cl');
+  if(wCL){
+    if(cl>0 && recKwp>cl){
+      wCL.className='warn-cl w';
+      wCL.innerHTML='⚠️ Recommended size ('+recKwp.toFixed(1)+' kWp) exceeds sanctioned load ('+cl+' kW). '
+        +'System capped at <strong>'+finalR+' kWp</strong>. Advise customer to apply for load enhancement with TANGEDCO.';
+    } else if(cl>0){
+      wCL.className='warn-cl g';
+      wCL.innerHTML='✅ Sanctioned load ('+cl+' kW) is sufficient for '+finalR+' kWp system.';
+    } else {
+      wCL.className='warn-cl';
+    }
+  }
+
+  // ── Low consumption viability warning ──
+  var wV2 = document.getElementById('warn-v2');
+  if(wV2){
+    if(monthly>0 && monthly<100){
+      wV2.className='warn-v2 r';
+      wV2.innerHTML='❌ Monthly consumption ('+fmt(monthly)+' units) is too low. Solar not recommended — network charges will erode savings.';
+    } else if(monthly>=100 && monthly<150){
+      wV2.className='warn-v2 w';
+      wV2.innerHTML='⚠️ Monthly consumption ('+fmt(monthly)+' units) is borderline. Discuss carefully — payback may exceed 15 years.';
+    } else if(monthly>=150){
+      wV2.className='warn-cl'; // clear
+      wV2.innerHTML='';
+    } else {
+      wV2.className='warn-v2';
+    }
   }
 }
 
@@ -2334,6 +2662,7 @@ function pickBat(i){F.batT=i;renderForm();}
 
 function sched(){clearTimeout(debTimer);debTimer=setTimeout(updateEst,400);}
 function updateEst(){
+  recalcSizing(); // v32: update sizing panel on every change
   var ok=F.name.trim()&&F.phone.trim();
   var btn=document.getElementById("gen-btn");if(btn)btn.disabled=!ok;
   if(!ok)return;
@@ -2416,7 +2745,7 @@ async function generate(){
 
   var prompt="EIL Solar Tamil Nadu proposal writer.\n\n"
     +"CUSTOMER: "+F.name+", "+(F.location||"Tamil Nadu")+"\n"
-    +"TARIFF: "+t.lbl+" ("+t.mechanism+") | ₹"+t.ur+"/kWh | Fixed "+(t.fp>0?"₹"+t.fp+"/kW/mo":"NIL")+" | Network ₹"+t.net+"/kWh | Tax: "+(t.tax===0?"NIL":"5%")+" | Export: "+(t.ex>0?"₹"+t.ex+" Feed-in":"Banked Net Metering")+"\n"
+    +"TARIFF: "+t.lbl+" ("+t.mechanism+") | "+(F.cat==="Residential"?"Slab-based ₹0–₹11.55/kWh (eff. ₹"+((calcResidentialBill(F.bm)||0)/Math.max(F.bm,1)).toFixed(2)+"/kWh @ "+F.bm+" bi-monthly units)":"₹"+t.ur+"/kWh")+" | Fixed "+(t.fp>0?"₹"+t.fp+"/kW/mo":"NIL")+" | Network ₹"+t.net+"/kWh | Tax: "+(t.tax===0?"NIL":"5%")+" | Export: "+(t.ex>0?"₹"+t.ex+" Feed-in":"Banked Net Metering")+"\n"
     +"SYSTEM: "+safeK+" kWp | "+F.bm+" units "+(F.demand>=50?"monthly":"bi-monthly")+" | Gen: "+fin.ag+" kWh/yr"+(F.demand>0?" | Demand: "+F.demand+" kVA":"")+"\n"
     +"MODEL: "+mDesc+batNote+"\n"
     +"KEY: Bill without solar "+L(fin.bw)+"/yr → with solar "+L(fin.bs)+"/yr | Saving "+L(fin.y1)+"/yr | Payback "+fin.pb+" yrs | IRR "+fin.irr+"% | 25yr "+L(fin.cum25)+"\n\n"
@@ -2452,7 +2781,7 @@ async function generate(){
     var f2=fin;
     proposal={
       executive:"Dear "+F.name+", we present this solar proposal under the "+(isEpc?"EPC ownership":"Developer")+" model for your "+t.lbl+" connection in "+(F.location||"Tamil Nadu")+". "+(isEpc?"Investing "+L(f2.total)+", you save "+L(f2.y1)+" in Year 1, recovering fully in "+f2.pb+" years.":"Zero upfront — EIL installs "+safeK+" kWp, you pay "+L(f2.moCharge)+"/month for 5 years, then the plant is yours FREE.")+" Over 25 years, savings reach "+L(f2.cum25)+".",
-      tariffAnalysis:"Under "+t.lbl+" tariff ("+t.mechanism+"), you pay ₹"+t.ur+" per unit. "+(t.tax===0?"As a residential customer, you pay zero electricity tax and zero fixed charge — a direct saving.":"A 5% electricity tax applies on your bill, which solar reduces proportionally.")+" Network charge ₹"+t.net+"/kWh applies on solar generation, and "+(t.ex>0?"under Feed-in Tariff, surplus exports earn ₹"+t.ex+"/kWh from TNEB.":"under Net Metering, your surplus units are banked and offset against imports 1:1."),
+      tariffAnalysis:"Under "+t.lbl+" tariff ("+t.mechanism+"), "+(F.cat==="Residential"?"your bill is calculated on a slab basis — first 100 units free, then progressively ₹2.35 to ₹11.55/kWh depending on total consumption. Your effective rate at "+F.bm+" bi-monthly units is ₹"+((calcResidentialBill(F.bm)||0)/Math.max(F.bm,1)).toFixed(2)+"/kWh.":"you pay ₹"+t.ur+" per unit.")+" "+(t.tax===0?"As a residential customer, you pay zero electricity tax and zero fixed charge — a direct saving.":"A 5% electricity tax applies on your bill, which solar reduces proportionally.")+" Network charge ₹"+t.net+"/kWh applies on solar generation, and "+(t.ex>0?"under Feed-in Tariff, surplus exports earn ₹"+t.ex+"/kWh from TNEB.":"under Net Metering, your surplus units are banked and offset against imports 1:1."),
       yearByYear:"Savings begin at "+L(f2.y1)+" in Year 1 and grow every year as TNEB tariffs escalate at ~5% annually. Full payback arrives in Year "+f2.pb+". By Year 25, cumulative savings reach "+L(f2.cum25)+".",
       roiExplanation:"Solar delivers "+f2.irr+"% IRR — far exceeding bank FDs at ~7%. "+(isEpc?"You also claim 40% accelerated depreciation under IT Act Section 32, significantly reducing your effective cost.":"With zero upfront investment, all financial risk rests with EIL. You benefit from Day 1 with no capital outlay.")+" This is a guaranteed, sunlight-backed return.",
       tamilSummary:"அன்புள்ள "+F.name+" அவர்களே, "+(isEpc?safeK+" kWp சோலார் EPC மாடலில் "+L(f2.total)+" முதலீட்டில் நிறுவப்படும். மாதாந்திர சேமிப்பு "+L(f2.mo)+". "+f2.pb+" ஆண்டுகளில் முதலீடு திரும்பும்.":"டெவலப்பர் மாடலில் முன்பணம் ஏதுமில்லை. மாதாந்திர கட்டணம் "+L(f2.moCharge)+". 5 ஆண்டுகளுக்கு பின் ஆலை உங்களுக்கே சொந்தமாகும்.")+" 25 ஆண்டுகளில் மொத்தம் "+L(f2.cum25)+" சேமிப்பு."
@@ -3119,7 +3448,11 @@ function renderSettings(){
       +'<span style="color:var(--red);">₹'+s.r+'/kWh</span></div>';
   });
   h+='</div>';
-  h+=efRow("Energy Rate","ur_"+F.cat,"₹/kWh",t.ur);
+  h+=F.cat==="Residential"
+    ? '<div class="ef-row"><div><div class="ef-lbl">Energy Rate</div>'
+      +'<div style="font-size:11px;color:#94a3b8;">Slab-based — calculated by calcResidentialBill() function. Effective rate @ '+F.bm+' bi-monthly units: ₹'+(F.bm>0?(calcResidentialBill(F.bm)/F.bm).toFixed(2):"—")+'/kWh</div></div>'
+      +'<div style="font-weight:800;color:var(--green);font-size:13px;">Slab</div></div>'
+    : efRow("Energy Rate","ur_"+F.cat,"₹/kWh",t.ur);
   h+=efRow("Fixed Charge","fp_"+F.cat,"₹/kW/month",t.fp);
   h+=efRow("Network Charge","net_"+F.cat,"₹/kWh",t.net);
   if(t.demand>0)h+=efRow("Demand Charge","demand_"+F.cat,"₹/kVA/month",t.demand);
