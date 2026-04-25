@@ -763,7 +763,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "34";
+var APP_VERSION = "35";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1277,6 +1277,18 @@ function getSelfConsumption(cat, connLoad, recDemand) {
 function updateSelfC() {
   S.selfC = getSelfConsumption(F.cat, F.connLoad, F.recDemand);
 }
+
+// Auto-size kWp from bi-monthly units — runs on every sched unless exec has overridden
+function autoSizeKwp() {
+  if (F.kwpManual) return;  // exec has manually set — don't override
+  var annUnits = F.bm * 6;  // bi-monthly × 6 periods = annual
+  if (annUnits <= 0) return;
+  var recKwp = annUnits / 1600;
+  // Round to nearest 0.5 kWp
+  var rounded = Math.round(recKwp * 2) / 2;
+  var maxK = TARIFFS[F.cat] ? TARIFFS[F.cat].maxKwp : 999;
+  F.kwp = Math.min(Math.max(rounded, 1), maxK);
+}
 // Deploy: Extensions → Apps Script → paste code → Deploy as Web App → copy URL here
 var APPS_SCRIPT_URL = "YOUR_APPS_SCRIPT_URL_HERE";
 
@@ -1342,7 +1354,8 @@ var F = {
   bat:false,batT:0,batKwh:10,
   connLoad:0,    // Sanctioned Load (kW) from TNEB bill
   recDemand:0,   // Recorded Demand (kW) from TNEB bill
-  monthlyBill:0  // Customer's monthly EB bill amount (₹)
+  monthlyBill:0, // Monthly EB bill amount (₹)
+  kwpManual:false // true when exec has overridden auto-calculated kWp
 };
 var proposal=null, loadStep=0, debTimer=null, activeRec=null, tempS={};
 
@@ -2118,49 +2131,129 @@ function renderForm(){
     +'</div>';
   h+='</div>';
 
-  // System sizing
+  // ── SYSTEM SIZING — rebuilt v35 ─────────────────────────────────────────
+  // Flow: Units → Sanctioned Load + Recorded Demand → Auto kWp → Warning → Override
   h+='<span class="slbl">☀ System Sizing</span>';
   h+='<div class="card">';
-  // Capacity — stepper with quick-pick buttons
-  h+='<div class="sfield"><div class="field-lbl">Solar Capacity (kWp)</div>'
-    +'<div class="stepper">'
-    +'<button class="st-btn" onclick="adjKwp(-1)">−</button>'
-    +'<input type="number" class="st-val" id="inp-kwp" value="'+safeK+'" min="1" max="'+maxK+'" '
-    +'oninput="var v=Math.max(1,Math.min('+maxK+',+this.value||1));F.kwp=v;sched()"/>'
-    +'<button class="st-btn" onclick="adjKwp(1)">+</button>'
-    +'</div>'
-    +'<div class="quick-picks">';
-  // Quick pick buttons based on category
-  var picks=(F.cat==="Residential")?[1,2,3,5,8,10]:(F.cat==="Commercial")?[5,10,15,20,30,50]:[10,20,30,50,75,100];
-  picks.forEach(function(p){
-    if(p<=maxK) h+='<button class="qp'+(safeK===p?' on':'')+'" onclick="setKwp('+p+')">'+p+'</button>';
-  });
-  h+='</div>'
-    +'<div class="snote">Max '+maxK+' kWp for '+t.lbl+'. Tap a size or type exact value.</div>'
-    +'</div>';
 
-  // Consumption — stepper with direct input
+  // Step 1: Bi-monthly consumption
   var bmMax=isM?50000:30000;
   var safeBm=Math.min(F.bm,bmMax);
-  h+='<div class="sfield"><div class="field-lbl">'+(isM?"Monthly Consumption (Units)":"Bi-Monthly Consumption (Units)")+'</div>'
+  h+='<div class="sfield"><div class="field-lbl">'
+    +(isM?"Monthly Consumption (Units)":"Bi-Monthly Consumption (Units)")+'</div>'
     +'<div class="stepper">'
     +'<button class="st-btn" onclick="adjBm(-50)">−50</button>'
     +'<input type="number" class="st-val" id="inp-bm" value="'+safeBm+'" min="50" max="'+bmMax+'" '
     +'oninput="var v=Math.max(50,Math.min('+bmMax+',+this.value||100));F.bm=v;sched()"/>'
     +'<button class="st-btn" onclick="adjBm(50)">+50</button>'
     +'</div>'
-    +'<div class="snote">'+(isM?"⚠ ≥50 kVA: TNEB monthly billing":"ℹ <50 kVA: TNEB bi-monthly billing")+'</div>'
+    +'<div class="snote">'+(isM?"⚠ ≥50 kVA: TNEB monthly billing":"ℹ From TNEB bill — bi-monthly period (2 months)")+'</div>'
     +'</div>';
 
-  // Self-consumption ratio — v31: auto-calculated from category + DUF
+  // Step 2: Sanctioned Load + Recorded Demand — moved up above kWp
+  h+='<div style="background:#f8fafc;border-top:1px solid #f1f5f9;padding:12px 16px;">'
+    +'<div class="field-lbl" style="margin-bottom:8px;">🔌 TNEB Connection Details '
+    +'<span style="font-weight:400;color:#94a3b8;font-size:10px;">(From bill header — helps auto-size system)</span></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'
+    +'<div>'
+    +'<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Sanctioned Load (kW)</div>'
+    +'<input type="number" id="inp-cl" value="'+(F.connLoad||'')+'" placeholder="7" step="0.5" '
+    +'style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 12px;'
+    +'font-size:18px;font-weight:800;outline:none;font-family:inherit;background:#fff;" '
+    +'oninput="F.connLoad=+this.value||0;sched()"/>'
+    +'<div style="font-size:10px;color:#94a3b8;margin-top:3px;">TNEB approved maximum</div>'
+    +'</div>'
+    +'<div>'
+    +'<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Recorded Demand (kW)</div>'
+    +'<input type="number" id="inp-rd" value="'+(F.recDemand||'')+'" placeholder="3" step="0.5" '
+    +'style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 12px;'
+    +'font-size:18px;font-weight:800;outline:none;font-family:inherit;background:#fff;" '
+    +'oninput="F.recDemand=+this.value||0;sched()"/>'
+    +'<div style="font-size:10px;color:#94a3b8;margin-top:3px;">Actual peak usage from meter</div>'
+    +'</div>'
+    +'</div>';
+
+  // DUF result — show inline if both entered
+  if(F.connLoad>0 && F.recDemand>0){
+    var duf=F.recDemand/F.connLoad;
+    var dufSC=Math.min(duf*6.5,0.98);
+    h+='<div style="margin-top:8px;background:#eff6ff;border-radius:8px;padding:8px 10px;'
+      +'font-size:11px;color:#1d4ed8;font-weight:700;">'
+      +'DUF = '+F.recDemand+'÷'+F.connLoad+' = '+(duf*100).toFixed(1)+'% → '
+      +'SC = MIN('+(duf*6.5*100).toFixed(0)+'%, 98%) = <strong>'+(dufSC*100).toFixed(0)+'%</strong>'
+      +'</div>';
+  }
+  h+='</div>';
+
+  // Step 3: Auto-calculated recommended kWp
+  var annUnits = isM ? F.bm*12 : F.bm*6;
+  var recKwp   = annUnits>0 ? +(annUnits/1600).toFixed(1) : 0;
+  var exceedsSL= F.connLoad>0 && recKwp>F.connLoad;
+
+  if(recKwp>0){
+    h+='<div style="background:linear-gradient(135deg,#f0fdf4,#eff6ff);'
+      +'border-top:1px solid #e2e8f0;padding:12px 16px;">'
+      +'<div style="font-size:11px;font-weight:800;color:#1a5c3a;margin-bottom:8px;">📐 App Recommendation</div>'
+      +'<div style="display:flex;align-items:center;gap:12px;">'
+      +'<div style="text-align:center;background:#fff;border-radius:10px;padding:10px 16px;'
+      +'border:2px solid '+(exceedsSL?'#f59e0b':'#22c55e')+';min-width:80px;">'
+      +'<div style="font-size:26px;font-weight:900;color:'+(exceedsSL?'#d97706':'#1a7a45')+';">'
+      +recKwp+'</div>'
+      +'<div style="font-size:10px;color:#64748b;font-weight:700;">kWp</div>'
+      +'</div>'
+      +'<div style="font-size:11px;color:#374151;line-height:1.7;flex:1;">'
+      +(isM?F.bm+' units/month → ':Math.round(annUnits/12)+' units/month → ')
+      +annUnits.toLocaleString("en-IN")+' units/year<br>'
+      +'÷ 1,600 (Chennai factor) = <strong>'+recKwp+' kWp</strong>'
+      +(F.connLoad>0?' · Sanctioned load: '+F.connLoad+' kW':'')
+      +'</div>'
+      +'</div>';
+
+    // Warning: exceeds sanctioned load — suggest enhancement, do NOT prevent
+    if(exceedsSL){
+      h+='<div style="margin-top:8px;background:#fffbeb;border:1.5px solid #f59e0b;'
+        +'border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;line-height:1.7;">'
+        +'⚠️ <strong>Recommended '+recKwp+' kWp exceeds your current sanctioned load of '+F.connLoad+' kW.</strong><br>'
+        +'This is not a barrier — you can still proceed with '+recKwp+' kWp installation.<br>'
+        +'<strong>Action before project start:</strong> Apply to TANGEDCO for load enhancement '
+        +'from '+F.connLoad+' kW to minimum <strong>'+(Math.ceil(recKwp))+' kW</strong>. '
+        +'This is a routine process and takes 2–4 weeks. '
+        +'Solar system can be designed now and commissioned after load enhancement is approved.'
+        +'</div>';
+    }
+    h+='</div>';
+  }
+
+  // Step 4: Solar capacity — pre-filled from formula, exec can override
+  h+='<div class="sfield" style="border-top:1px solid #f1f5f9;">'
+    +'<div class="field-lbl">Solar Capacity (kWp) '
+    +(recKwp>0?'<span style="font-weight:400;color:#22c55e;font-size:10px;">— auto-calculated · change if needed</span>'
+              :'<span style="font-weight:400;color:#94a3b8;font-size:10px;">— enter units above to auto-calculate</span>')
+    +'</div>'
+    +'<div class="stepper">'
+    +'<button class="st-btn" onclick="adjKwp(-1)">−</button>'
+    +'<input type="number" class="st-val" id="inp-kwp" value="'+safeK+'" min="1" max="'+maxK+'" '
+    +'oninput="var v=Math.max(1,Math.min('+maxK+',+this.value||1));F.kwp=v;F.kwpManual=true;sched()"/>'
+    +'<button class="st-btn" onclick="adjKwp(1)">+</button>'
+    +'</div>'
+    +'<div class="quick-picks">';
+  var picks=(F.cat==="Residential")?[1,2,3,5,8,10]:(F.cat==="Commercial")?[5,10,15,20,30,50]:[10,20,30,50,75,100];
+  picks.forEach(function(p){
+    if(p<=maxK) h+='<button class="qp'+(safeK===p?' on':'')+'" onclick="setKwp('+p+')">'+p+'</button>';
+  });
+  h+='</div>'
+    +'<div class="snote">Tap a quick-pick or type exact value. Max '+maxK+' kWp for '+t.lbl+'.</div>'
+    +'</div>';
+
+  // Self-consumption ratio
   var scPct = Math.round(S.selfC * 100);
-  var dufCalc = (F.connLoad>0 && F.recDemand>0)
+  var dufCalc2 = (F.connLoad>0 && F.recDemand>0)
     ? (F.recDemand/F.connLoad*100).toFixed(1)+'%' : null;
   var scNote = (F.cat==="Residential")
-    ? (dufCalc
-        ? 'DUF = '+F.recDemand+'÷'+F.connLoad+' = '+dufCalc+' → SC = '+scPct+'% (Net Metering, auto-calculated)'
-        : 'Net Metering — 98% default. Solar exports credited 1:1 by TANGEDCO.')
-    : 'Feed-in Tariff — 75% fixed. Exported units earn FiT ₹3.61 (not full tariff savings).';
+    ? (dufCalc2
+        ? 'DUF = '+F.recDemand+'÷'+F.connLoad+' = '+dufCalc2+' → SC = '+scPct+'% (auto-calculated)'
+        : 'Net Metering — 98% default. Exports credited 1:1 by TANGEDCO.')
+    : 'Feed-in Tariff — 75% fixed. Exports earn FiT ₹3.61/kWh.';
   h+='<div class="sfield"><div class="field-lbl">Self-Consumption Ratio</div>'
     +'<div class="stepper">'
     +'<button class="st-btn" onclick="adjSelf(-5)">−5%</button>'
@@ -2168,11 +2261,10 @@ function renderForm(){
     +'oninput="var v=Math.max(50,Math.min(100,+this.value||75));S.selfC=v/100;sched()"/> <span style="font-size:14px;color:#64748b;">%</span>'
     +'<button class="st-btn" onclick="adjSelf(5)">+5%</button>'
     +'</div>'
-    +'<div class="snote">'+scNote+' &nbsp;·&nbsp; <span style="color:#6366f1;font-weight:700;cursor:pointer;" onclick="goPage(\'settings\')">See full explanation in Settings →</span></div>'
+    +'<div class="snote">'+scNote+' &nbsp;·&nbsp; <span style="color:#6366f1;font-weight:700;cursor:pointer;" onclick="goPage(\'settings\')">See full explanation →</span></div>'
     +'</div>';
 
-  // ── MONTHLY EB PAYMENT DETAILS — new section ─────────────────────────────
-  h+='</div>';  // close consumption card
+  h+='</div>';  // close system sizing card
   h+='<span class="slbl">💡 Monthly EB Payment Details</span>';
   h+='<div class="card">';
 
@@ -2240,24 +2332,6 @@ function renderForm(){
       +'</div>';
   }
   h+='</div>';  // close monthly EB card
-
-  // Re-open consumption card for remaining fields
-  h+='<span class="slbl">⚙ Connection Details</span>';
-  h+='<div class="card">';
-  h+='<div class="sfield" style="background:#f8fafc;border-radius:8px;padding:8px 0 4px;">'
-    +'<div class="field-lbl" style="padding:0 16px;">🔌 Connection Details <span style="font-weight:400;color:#94a3b8;">(Optional — from TNEB bill)</span></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 16px 4px;">'
-    +'<div><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Sanctioned Load (kW)</div>'
-    +'<input type="number" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:16px;font-weight:700;outline:none;font-family:inherit" '
-    +'id="inp-cl" value="'+(F.connLoad||'')+'" placeholder="7" step="0.5" '
-    +'oninput="F.connLoad=+this.value||0;sched()"/></div>'
-    +'<div><div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Recorded Demand (kW)</div>'
-    +'<input type="number" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 12px;font-size:16px;font-weight:700;outline:none;font-family:inherit" '
-    +'id="inp-rd" value="'+(F.recDemand||'')+'" placeholder="3" step="0.5" '
-    +'oninput="F.recDemand=+this.value||0;sched()"/></div>'
-    +'</div>'
-    +'<div style="padding:0 16px 8px;font-size:10px;color:#94a3b8;">DUF = Recorded ÷ Sanctioned. Auto-adjusts self-consumption ratio for residential.</div>'
-    +'</div>';
 
   // Demand — only show if applicable
   if(F.cat!=="Residential"){
@@ -2383,6 +2457,7 @@ function adjDem(d){
 
 function changeCat(c){
   F.cat=c;
+  F.kwpManual=false;  // reset manual flag — auto-size for new category
   var t=TARIFFS[c];
   if(F.kwp>t.maxKwp)F.kwp=t.maxKwp;
   F.bm=t.typical.bm;F.demand=t.typical.demand;
@@ -2402,7 +2477,7 @@ function checkDemand(){
 function togBat(){F.bat=!F.bat;renderForm();}
 function pickBat(i){F.batT=i;renderForm();}
 
-function sched(){clearTimeout(debTimer);updateSelfC();debTimer=setTimeout(updateEst,400);}
+function sched(){clearTimeout(debTimer);updateSelfC();autoSizeKwp();debTimer=setTimeout(updateEst,400);}
 function updateEst(){
   var ok=F.name.trim()&&F.phone.trim();
   var btn=document.getElementById("gen-btn");if(btn)btn.disabled=!ok;
