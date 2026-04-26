@@ -137,10 +137,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
   border:1.5px solid rgba(245,158,11,0.25);border-radius:12px;margin:0 12px 10px;padding:12px 14px;}
 .est-title{font-size:11px;color:var(--amber);font-weight:800;letter-spacing:1.5px;
   text-transform:uppercase;margin-bottom:8px;}
-.est-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.est-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
 .est-item{text-align:center;}
 .est-lbl{font-size:10px;color:#94a3b8;text-transform:uppercase;font-weight:700;letter-spacing:0.5px;}
-.est-val{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;margin-top:2px;}
+.est-val{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;margin-top:2px;}
 
 /* ── BATTERY ── */
 .bat-toggle{display:flex;align-items:center;justify-content:space-between;
@@ -263,13 +263,23 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .yh{background:rgba(245,158,11,0.06)!important;border-left:3px solid var(--amber);}
 .yn{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;}
 
-/* ── BARS ── */
+/* ── BARS → replaced with clean year table ── */
 .bars{padding:0 12px 12px;}
-.br{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
-.bl{font-size:13px;color:#64748b;width:44px;text-align:right;flex-shrink:0;font-weight:700;}
-.bt{flex:1;height:12px;background:#f1f5f9;border-radius:6px;overflow:hidden;}
-.bf{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--amber),var(--red));}
-.bv{font-size:13px;font-weight:800;color:#374151;width:42px;text-align:right;flex-shrink:0;}
+.yr-tbl{margin:0 12px 10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0;background:#fff;}
+.yr-th{display:grid;grid-template-columns:44px 1fr 1fr 1fr;padding:9px 12px;background:#1a1a2e;}
+.yr-th>div{font-size:10px;font-weight:700;color:#e2e8f0;letter-spacing:1px;text-transform:uppercase;}
+.yr-tr{display:grid;grid-template-columns:44px 1fr 1fr 1fr;padding:9px 12px;border-bottom:1px solid #f1f5f9;background:#fff;align-items:center;}
+.yr-tr:last-child{border-bottom:none;}
+.yr-tr:nth-child(even){background:#fafafa;}
+.yr-tr.profit{background:rgba(22,163,74,0.04);border-left:3px solid #16a34a;}
+.yr-tr>div{font-size:13px;color:#374151;font-weight:600;}
+.yr-num{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:#1a1a2e;}
+.yr-gen{font-size:12px;color:#64748b;font-weight:600;}
+.yr-sv{font-weight:800;color:#16a34a;}
+.yr-cum{font-weight:800;color:#4f46e5;}
+.yr-payback{background:rgba(245,158,11,0.12);border:1.5px solid rgba(245,158,11,0.4);border-radius:10px;margin:0 12px 10px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.yr-payback-lbl{font-size:13px;color:#92400e;font-weight:700;}
+.yr-payback-val{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:#d97706;}
 
 /* ── INFO LIST ── */
 .ilist{margin:0 12px 10px;border-radius:12px;overflow:hidden;border:1.5px solid #e2e8f0;}
@@ -327,11 +337,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .mk-lbl{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;font-weight:700;}
 .mk-val{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;}
 .mk-unit{font-size:10px;color:#64748b;margin-top:1px;font-weight:600;}
-.blist{background:rgba(22,163,74,0.04);border:1px solid rgba(22,163,74,0.15);
+.blist{background:#f0fdf4;border:1.5px solid #bbf7d0;
   border-radius:10px;padding:12px;}
 .blist-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;
-  color:var(--green);margin-bottom:6px;}
-.blist-item{font-size:13px;color:#374151;padding:4px 0;border-bottom:1px solid rgba(22,163,74,0.08);font-weight:600;}
+  color:#15803d;margin-bottom:6px;}
+.blist-item{font-size:13px;color:#1a3a2a;padding:5px 0;border-bottom:1px solid #d1fae5;font-weight:600;line-height:1.5;}
 .blist-item:last-child{border-bottom:none;}
 
 /* ── SETTINGS ── */
@@ -763,7 +773,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "35";
+var APP_VERSION = "43";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -2387,17 +2397,20 @@ function renderForm(){
 
   // Live estimate
   if(ok){
+    var scPctEst=Math.round(S.selfC*100);
     h+='<div class="est"><div class="est-title">✦ Live Estimate — '+(F.model==="epc"?"EPC Model":"Developer Model")+'</div>'
-      +'<div class="est-grid">';
+      +'<div class="est-grid" style="grid-template-columns:repeat(4,1fr);">';
     if(F.model==="epc"){
       h+='<div class="est-item"><div class="est-lbl">Net Cost</div><div class="est-val" style="color:#d97706">'+L(q.total)+'</div></div>'
         +'<div class="est-item"><div class="est-lbl">Yr 1 Saving</div><div class="est-val" style="color:var(--green)">'+L(q.y1)+'</div></div>'
-        +'<div class="est-item"><div class="est-lbl">Payback</div><div class="est-val" style="color:var(--indigo)">'+q.pb+' Yrs</div></div>';
+        +'<div class="est-item"><div class="est-lbl">Payback</div><div class="est-val" style="color:var(--indigo)">'+q.pb+' Yrs</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Self Consump</div><div class="est-val" id="est-sc" style="color:#0369a1">'+scPctEst+'%</div></div>';
     } else {
       var ps=Math.round(q.bw*Math.pow(1.05,5)-q.bs);
       h+='<div class="est-item"><div class="est-lbl">Upfront</div><div class="est-val" style="color:var(--indigo)">ZERO</div></div>'
         +'<div class="est-item"><div class="est-lbl">Monthly</div><div class="est-val" style="color:#d97706">'+L(q.moCharge)+'</div></div>'
-        +'<div class="est-item"><div class="est-lbl">Post-5yr/yr</div><div class="est-val" style="color:var(--green)">'+L(ps)+'</div></div>';
+        +'<div class="est-item"><div class="est-lbl">Post-5yr/yr</div><div class="est-val" style="color:var(--green)">'+L(ps)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Self Consump</div><div class="est-val" id="est-sc" style="color:#0369a1">'+scPctEst+'%</div></div>';
     }
     h+='</div></div>';
   }
@@ -2498,17 +2511,20 @@ function updateEst(){
   var ep=document.getElementById("epc-px");var dp=document.getElementById("dev-px");
   if(ep)ep.textContent=L(q.total)+" one-time";
   if(dp)dp.textContent=L(q.moCharge)+"/month";
+  var scPctEst=Math.round(S.selfC*100);
   var eg=document.querySelector(".est-grid");
   if(eg){
     if(F.model==="epc"){
       eg.innerHTML='<div class="est-item"><div class="est-lbl">Net Cost</div><div class="est-val" style="color:#d97706">'+L(q.total)+'</div></div>'
         +'<div class="est-item"><div class="est-lbl">Yr 1 Saving</div><div class="est-val" style="color:var(--green)">'+L(q.y1)+'</div></div>'
-        +'<div class="est-item"><div class="est-lbl">Payback</div><div class="est-val" style="color:var(--indigo)">'+q.pb+' Yrs</div></div>';
+        +'<div class="est-item"><div class="est-lbl">Payback</div><div class="est-val" style="color:var(--indigo)">'+q.pb+' Yrs</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Self Consump</div><div class="est-val" style="color:#0369a1">'+scPctEst+'%</div></div>';
     } else {
       var ps=Math.round(q.bw*Math.pow(1.05,5)-q.bs);
       eg.innerHTML='<div class="est-item"><div class="est-lbl">Upfront</div><div class="est-val" style="color:var(--indigo)">ZERO</div></div>'
         +'<div class="est-item"><div class="est-lbl">Monthly</div><div class="est-val" style="color:#d97706">'+L(q.moCharge)+'</div></div>'
-        +'<div class="est-item"><div class="est-lbl">Post-5yr/yr</div><div class="est-val" style="color:var(--green)">'+L(ps)+'</div></div>';
+        +'<div class="est-item"><div class="est-lbl">Post-5yr/yr</div><div class="est-val" style="color:var(--green)">'+L(ps)+'</div></div>'
+        +'<div class="est-item"><div class="est-lbl">Self Consump</div><div class="est-val" style="color:#0369a1">'+scPctEst+'%</div></div>';
     }
   }
   var tit=document.querySelector(".est-title");
@@ -2579,9 +2595,13 @@ async function generate(){
     var timeout=setTimeout(function(){controller.abort();},12000);
     var res=await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
+      headers:{
+        "Content-Type":"application/json",
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-calls":"true"
+      },
       signal:controller.signal,
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,
         messages:[{role:"user",content:prompt}]})
     });
     clearTimeout(timeout);
@@ -2615,8 +2635,7 @@ function renderProposal(){
   var p=proposal;
   var isEpc=F.model==="epc";
   var postSave=Math.round(fin.bw*Math.pow(1.05,5)-fin.bs);
-  var kyrs=[1,2,3,4,5,6,7,8,9,10,15,20,25].map(function(y){return fin.yearly[y-1];}).filter(Boolean);
-  var maxS=Math.max.apply(null,fin.yearly.slice(0,10).map(function(y){return y.sv;}));
+  var kyrs=[1,2,3,4,5,6,7,8,9,10,15,20,25].map(function(y){return fin.yearlyFull[y-1];}).filter(Boolean);
   var ref="EIL-"+Date.now().toString().slice(-6);
   var h="";
 
@@ -2740,20 +2759,23 @@ function renderProposal(){
     +'</div><div class="pcard-div"></div>'
     +'<div class="narr">'+p.yearByYear+'</div></div>';
   h+='<div class="bars">';
-  fin.yearly.slice(0,10).forEach(function(y){
-    h+='<div class="br"><div class="bl">Yr '+y.y+'</div>'
-      +'<div class="bt"><div class="bf" style="width:'+Math.min((y.sv/maxS)*100,100)+'%"></div></div>'
-      +'<div class="bv">'+L(y.sv)+'</div></div>';
-  });
+  // Payback callout
+  h+='<div class="yr-payback" style="margin:0 0 10px;">'
+    +'<span class="yr-payback-lbl">🎯 Full Payback by Year</span>'
+    +'<span class="yr-payback-val">'+fin.pb+' Yrs</span>'
+    +'</div>';
   h+='</div>';
-  h+='<div class="tbl"><div class="th" style="grid-template-columns:50px 1fr 1fr 70px">'
-    +'<div>Year</div><div>Annual</div><div>Cumulative</div><div>Status</div></div>';
+  // Clean white generation + savings table
+  h+='<div class="yr-tbl">'
+    +'<div class="yr-th"><div>Year</div><div>Solar Gen</div><div>Annual Save</div><div>Cumulative</div></div>';
   kyrs.forEach(function(y){
-    var hi=y.cum>fin.total?" yh":"";
-    h+='<div class="tr'+hi+'" style="grid-template-columns:50px 1fr 1fr 70px">'
-      +'<div class="yn">'+y.y+'</div><div class="vg">'+L(y.sv)+'</div>'
-      +'<div style="font-weight:800;color:var(--indigo)">'+L(y.cum)+'</div>'
-      +'<div style="font-size:12px;color:'+(y.cum>fin.total?"var(--green)":"#94a3b8")+'">'+(y.cum>fin.total?"✓ Profit":"Investing")+'</div></div>';
+    var isProfit = y.cum > fin.total;
+    h+='<div class="yr-tr'+(isProfit?' profit':'')+'">'
+      +'<div class="yr-num">'+y.y+'</div>'
+      +'<div class="yr-gen">'+y.gen.toLocaleString('en-IN')+' kWh</div>'
+      +'<div class="yr-sv">'+L(y.sv)+'</div>'
+      +'<div class="yr-cum">'+L(y.cum)+(isProfit?' <span style="font-size:10px;color:#16a34a;font-weight:700;">✓</span>':'')+'</div>'
+      +'</div>';
   });
   h+='</div>';
 
@@ -3469,88 +3491,130 @@ function sendWA(){
   var safeK=Math.min(F.kwp,TARIFFS[F.cat].maxKwp);
   var fin=calc(safeK,F.bm,F.demand,F.cat);
   var t=TARIFFS[F.cat];
-  var ref="EIL-"+Date.now().toString().slice(-6);
+  var ref=proposal.ref||("EIL-"+Date.now().toString().slice(-6));
   var isEpc=F.model==="epc";
+  var annGen=fin.ag;
+  var pb=fin.pb;
+  var irr=fin.irr;
 
-  // Always include header + system info
-  var msg="━━━━━━━━━━━━━━━━━━━━\n☀ *EIL SOLAR PROPOSAL*\n━━━━━━━━━━━━━━━━━━━━\n"
-    +"Ref: "+ref+" | "+today+"\n\n"
-    +"👤 *"+F.name+"*\n"+(F.location?F.location+"\n":"")+F.phone+"\n"+t.lbl+"\n\n"
-    +"🔋 *SYSTEM*\n"
-    +"Capacity  : *"+safeK+" kWp*\nGen/yr    : "+fin.ag+" kWh\nConsump   : "+F.bm+" Units "+(F.demand>=50?"(monthly)":"(bi-monthly)")+"\n"
-    +(F.demand>0?"Demand    : "+F.demand+" kVA\n":"")
-    +(F.bat?"Battery   : "+F.batKwh+" kWh "+BATT[F.batT].name+"\n":"")+"\n"
-    +"⚡ *TNEB TARIFF — "+t.mechanism+"*\n"
-    +"Energy : "+(F.cat==="Residential"?"Slab-based (₹0–₹11.55/kWh) | Eff. ₹"+fin.dispRate+"/kWh":"₹"+t.ur+"/kWh")+"\n"
-    +(t.fp>0?"Fixed  : ₹"+t.fp+"/kW/mo\n":"Fixed  : NIL (Residential)\n")
-    +"Network: ₹"+t.net+"/kWh\n"
-    +"Tax    : "+(t.tax>0?t.tax*100+"%":"NIL (Residential)")+"\n"
-    +"Export : "+(t.ex>0?"₹"+t.ex+"/kWh (Feed-in)":"Banked (Net Metering 1:1)")+"\n\n";
+  // ── HEADER ──────────────────────────────────────────────────────────────────
+  var msg="☀ *EIL SOLAR — PROPOSAL*\n"
+    +"*Ref: "+ref+"*  |  "+today+"\n"
+    +"─────────────────────────\n"
+    +"👤 *"+F.name+"*"+(F.location?"  |  "+F.location:"")+"\n"
+    +F.phone+"  |  "+t.lbl+"\n"
+    +"─────────────────────────\n\n";
 
-  // Bill Comparison — if selected
-  if(RPT.summary){
-    msg+="🏗️ *BILL COMPARISON*\n"
-      +"*Without Solar : "+L(fin.bw)+"/yr ("+L(Math.round(fin.bw/12))+"/mo)*\n"
-      +"*With Solar    : "+L(fin.bs)+"/yr ("+L(Math.round(fin.bs/12))+"/mo)*\n"
-      +"*Annual Saving : "+L(fin.y1)+"/yr · "+L(fin.mo)+"/month*\n\n";
-  }
+  // ── ANNUAL SAVINGS HERO ──────────────────────────────────────────────────────
+  msg+="💰 *ANNUAL SAVINGS*\n"
+    +"┌─────────────────────────┐\n"
+    +"│  *"+L(fin.y1).padStart(12)+" / year*  │\n"
+    +"│  "+L(fin.mo).padStart(12)+" / month │\n"
+    +"└─────────────────────────┘\n\n";
 
-  // Benefits / Model detail — if selected
+  // ── SYSTEM INFO ──────────────────────────────────────────────────────────────
+  msg+="🔋 *SYSTEM*\n"
+    +"• Capacity    : *"+safeK+" kWp*\n"
+    +"• Generation  : "+annGen+" kWh / yr\n"
+    +"• Consumption : "+F.bm+" Units "+(F.demand>=50?"(monthly)":"(bi-monthly)")+"\n"
+    +(F.demand>0?"• Demand      : "+F.demand+" kVA\n":"")
+    +(F.bat?"• Battery     : "+F.batKwh+" kWh "+BATT[F.batT].name+"\n":"")+"\n";
+
+  // ── BILL COMPARISON (always shown, mirrors app card) ────────────────────────
+  msg+="⚡ *BILL: WITH vs WITHOUT SOLAR*\n"
+    +"┌──────────────┬──────────────┐\n"
+    +"│ ❌ WITHOUT   │ ✅ WITH SOLAR│\n"
+    +"│ *"+L(fin.bw)+" /yr* │ *"+L(fin.bs)+" /yr*│\n"
+    +"│ "+L(Math.round(fin.bw/12))+" /mo   │ "+L(Math.round(fin.bs/12))+" /mo  │\n"
+    +"└──────────────┴──────────────┘\n"
+    +"💚 *Saving: "+L(fin.y1)+" / yr  ·  "+L(fin.mo)+" / mo*\n\n";
+
+  // ── TARIFF BREAKDOWN ────────────────────────────────────────────────────────
+  msg+="📋 *TARIFF — "+t.mechanism+"*\n"
+    +"• Energy   : "+(F.cat==="Residential"?"Slab ₹0–₹11.55/kWh (Eff. ₹"+fin.dispRate+"/kWh)":"₹"+t.ur+"/kWh")+"\n"
+    +"• Fixed    : "+(t.fp>0?"₹"+t.fp+"/kW/mo":"NIL — Residential")+"\n"
+    +"• Network  : ₹"+t.net+"/kWh on solar gen\n"
+    +"• Tax      : "+(t.tax>0?t.tax*100+"%":"NIL — Residential")+"\n"
+    +"• Export   : "+(t.ex>0?"₹"+t.ex+"/kWh (Feed-in)":"Banked (Net Metering 1:1)")+"\n\n";
+
+  // ── KEY METRICS (6 KPIs — mirrors app grid) ─────────────────────────────────
+  msg+="📊 *KEY METRICS*\n"
+    +"• System Size   : *"+safeK+" kWp* ("+annGen+" kWh/yr)\n"
+    +"• Payback       : *"+pb+" years* (Simple)\n"
+    +"• Total Cost    : *"+L(fin.total)+"*\n"
+    +(isEpc && fin.sub?"• PM Subsidy    : *"+L(fin.sub)+"* (Central Govt)\n":"")
+    +"• Net Cost      : *"+L(fin.net)+"*"+(isEpc && fin.sub?" (after subsidy)":"")+"\n"
+    +"• Current Bill  : "+L(fin.bw)+" / yr (without solar)\n"
+    +(isEpc?"• IRR           : *"+irr+"% p.a.* (vs 7% Bank FD)\n":"• Monthly Charge: *"+L(fin.moCharge)+"* (fixed 5 yrs)\n")
+    +"• Self Consump  : "+(Math.round(fin.effSelfC*100)||98)+"% (Net Metering)\n\n";
+
+  // ── MODEL DETAIL ─────────────────────────────────────────────────────────────
   if(RPT.benefits){
     if(isEpc){
-      var d1=Math.round(fin.net*S.depRate),tb1=Math.round(d1*S.taxRate);
-      var d2=Math.round((fin.net-d1)*S.depRate),tb2=Math.round(d2*S.taxRate);
+      var d1b=Math.round(fin.net*S.depRate),tb1b=Math.round(d1b*S.taxRate);
+      var d2b=Math.round((fin.net-d1b)*S.depRate),tb2b=Math.round(d2b*S.taxRate);
       msg+="🏠 *EPC MODEL — OWN FROM DAY 1*\n"
-        +"━━━━━━━━━━━━━━━━━━━━\n"
-        +(fin.sub?"Subsidy    : -"+L(fin.sub)+"\n":"")
-        +"*Net Cost  : "+L(fin.net)+"*\n"
-        +(fin.batC?"Battery    : "+L(fin.batC)+"\n*Total     : "+L(fin.total)+"*\n":"")
-        +"*Yr 1 Save : "+L(fin.y1)+"*\nMonthly    : "+L(fin.mo)+"\n*Payback   : "+fin.pb+" years*\n"
-        +"🏦 Depreciation (IT Act S.32 — 40% WDV)\n"
-        +"Yr 1: "+L(d1)+" → Tax save *"+L(tb1)+"*\n"
-        +"Yr 2: "+L(d2)+" → Tax save *"+L(tb2)+"*\n\n";
+        +(fin.sub?"• Subsidy       : −"+L(fin.sub)+"\n":"")
+        +"• Net Cost      : *"+L(fin.net)+"*\n"
+        +(fin.batC?"• Battery       : "+L(fin.batC)+"\n• Total Cost    : *"+L(fin.total)+"*\n":"")
+        +"• 40% WDV Depr (IT Act S.32)\n"
+        +"  Yr 1 depr "+L(d1b)+" → Tax save *"+L(tb1b)+"*\n"
+        +"  Yr 2 depr "+L(d2b)+" → Tax save *"+L(tb2b)+"*\n\n";
     } else {
-      var ps=Math.round(fin.bw*Math.pow(1.05,5)-fin.bs);
+      var psb=Math.round(fin.bw*Math.pow(1.05,5)-fin.bs);
       msg+="📈 *DEVELOPER MODEL — ZERO UPFRONT*\n"
-        +"━━━━━━━━━━━━━━━━━━━━\n"
-        +"*Your Cost  : ZERO*\n*Monthly    : "+L(fin.moCharge)+"* (fixed 5 yrs)\nEIL Invests : "+L(fin.net)+"\n"
-        +"After 5 Yrs : *Plant YOURS FREE*\n*Post-5yr/yr: "+L(ps)+"*\n\n";
-      for(var yy=1;yy<=5;yy++){
-        var wo=Math.round(fin.bw*Math.pow(1.05,yy-1)),ws=Math.round(fin.bs+fin.annMarg);
-        msg+="Year "+yy+": EB "+L(wo)+" → Pay "+L(ws)+" (Net "+L(ws-wo)+")\n";
-      }
-      msg+="\n";
+        +"• Your Cost     : *ZERO* (no loan, no EMI)\n"
+        +"• Monthly Charge: *"+L(fin.moCharge)+"* (fixed 5 yrs)\n"
+        +"• After 5 yrs   : *Plant YOURS FREE*\n"
+        +"• Post-5yr save : *"+L(psb)+"* / yr\n\n";
     }
   }
 
-  // ROI — if selected
+  // ── ROI ──────────────────────────────────────────────────────────────────────
   if(RPT.roiIrr){
     msg+="📈 *ROI & IRR*\n"
-      +"IRR        : *"+fin.irr+"%* (vs 7% Bank FD)\n"
-      +"25-Yr Save : *"+L(fin.cum25)+"*\n\n";
+      +"• IRR       : *"+irr+"% p.a.* (vs 7% Bank FD)\n"
+      +"• 25-Yr Save: *"+L(fin.cum25)+"*\n\n";
   }
 
-  // 25-year report — if selected
+  // ── 10-YEAR SAVINGS TABLE (mirrors app table) ─────────────────────────────
   if(RPT.yearReport){
-    msg+="📅 *25-YEAR SAVINGS*\n"
-      +"Yr | Annual | Cumulative\n";
-    fin.yearlyFull.forEach(function(yd){
-      msg+=yd.y+" | "+L(yd.sv)+" | "+L(yd.cum)+"\n";
+    msg+="📅 *10-YEAR SAVINGS PROJECTION*\n"
+      +"```\n"
+      +"Yr  Generation    Saving    Cumulative\n"
+      +"─────────────────────────────────────\n";
+    fin.yearlyFull.slice(0,10).forEach(function(yd){
+      var yr=String(yd.y).padStart(2);
+      var gen=String(yd.gen+" kWh").padEnd(12);
+      var sv=L(yd.sv).padEnd(10);
+      var cum=L(yd.cum);
+      msg+=yr+"  "+gen+"  "+sv+"  "+cum+"\n";
     });
-    msg+="\n";
+    msg+="```\n\n";
+
+    // Also show years 11-25 if they exist
+    if(fin.yearlyFull.length>10){
+      var last=fin.yearlyFull[fin.yearlyFull.length-1];
+      msg+="_25-yr cumulative: *"+L(last.cum)+"*_\n\n";
+    }
   }
 
-  // Tamil — if selected
+  // ── TAMIL ────────────────────────────────────────────────────────────────────
   if(RPT.tamil && proposal.tamilSummary){
     msg+="🔤 *தமிழ் சுருக்கம்*\n"+proposal.tamilSummary+"\n\n";
   }
 
+  // ── NEXT STEPS ───────────────────────────────────────────────────────────────
   msg+="🚀 *NEXT STEPS*\n"
-    +"1. Free Site Survey\n2. Design + TNEB Application\n"
-    +"3. Installation (2-3 days)\n4. TNEB Commissioning\n\n"
-    +"━━━━━━━━━━━━━━━━━━━━\n"
-    +"✅ *EIL Solar · Kaveri Power*\nadmin@kaveripower.com\nTNEB Empanelled · Tamil Nadu\n"
-    +"━━━━━━━━━━━━━━━━━━━━";
+    +"1️⃣  Free Site Survey\n"
+    +"2️⃣  Design + TNEB Application\n"
+    +"3️⃣  Installation (2–3 days)\n"
+    +"4️⃣  TNEB Commissioning\n\n"
+    +"─────────────────────────\n"
+    +"✅ *EIL Solar · Kaveri Power Solutions*\n"
+    +"📧 admin@kaveripower.com\n"
+    +"🏛 TNEB Empanelled · Tamil Nadu\n"
+    +"_Valid 48 hrs · Ref: "+ref+"_";
 
   window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
 }
@@ -3993,8 +4057,13 @@ async function viHandleAnswer(raw){
   var extracted=null;
   try{
     var res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:60,
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-calls":"true"
+      },
+      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:60,
         messages:[{role:"user",content:prompt}]})
     });
     var data=await res.json();
