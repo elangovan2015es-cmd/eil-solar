@@ -4727,6 +4727,7 @@ async function lmLoad(force) {
     if(!text || text.trim().startsWith('<')) throw new Error('blocked');
     LM_DATA = JSON.parse(text);
     if(LM_DATA.status === 'error') throw new Error(LM_DATA.message);
+    localStorage.setItem('lm_last_data', JSON.stringify(LM_DATA));
     lmRender();
     var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
     lmSt('ok', (LM_DATA.served_from_cache ? 'Cached — ' : 'Live — ') + ts + ' IST');
@@ -4740,16 +4741,25 @@ async function lmLoad(force) {
 
 // ── MANUAL PASTE ──
 function lmParseManual() {
-  var text = (document.getElementById('lm-json-paste')||{}).value || '';
+  var raw  = (document.getElementById('lm-json-paste')||{}).value || '';
+  var text = raw.trim();
+  if(text && !text.startsWith('{')) {
+    var b = text.indexOf('{');
+    if(b >= 0) text = text.substring(b);
+  }
+  if(!text) { lmSt('error','Please paste the JSON first'); return; }
   try {
-    LM_DATA = JSON.parse(text.trim());
+    LM_DATA = JSON.parse(text);
     if(LM_DATA.status === 'error') throw new Error(LM_DATA.message);
+    if(!LM_DATA.live || !LM_DATA.energy) throw new Error('Incomplete JSON — in new tab press Ctrl+A then Ctrl+C to copy ALL');
     lmRender();
     var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
-    lmSt('ok', 'Data loaded — ' + ts + ' IST');
-    document.getElementById('lm-pastebox').style.display = 'none';
+    localStorage.setItem('lm_last_data', text);
+    lmSt('ok', 'Live data — ' + ts + ' IST');
+    var pb = document.getElementById('lm-pastebox');
+    if(pb) pb.style.display = 'none';
   } catch(e) {
-    lmSt('error','Invalid JSON. Open the URL in new tab and copy everything.');
+    lmSt('error', e.message);
   }
 }
 
@@ -4771,108 +4781,92 @@ function lmLogToday() {
 // ── MAIN RENDER ──
 function lmRender() {
   if(!LM_DATA) return;
-  lmRenderF1();
-  lmRenderF2();
-  lmRenderF3();
-  lmRenderF4();
-  lmRenderF5();
+  var ok = true;
+  try { lmRenderF1(); } catch(e){ console.error('F1:',e.message); ok=false; }
+  try { lmRenderF2(); } catch(e){ console.error('F2:',e.message); ok=false; }
+  try { lmRenderF3(); } catch(e){ console.error('F3:',e.message); ok=false; }
+  try { lmRenderF4(); } catch(e){ console.error('F4:',e.message); ok=false; }
+  try { lmRenderF5(); } catch(e){ console.error('F5:',e.message); ok=false; }
   ['lm-f1','lm-f2','lm-f3','lm-f4','lm-f5'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'block';
   });
   var ft = document.getElementById('lm-footer');
-  if(ft) ft.textContent = LM_DATA.served_from_cache ? 'Cached (' + LM_DATA.cache_age_seconds + 's ago) · Tap Load for fresh data' : 'Live from Growatt · ' + new Date(LM_DATA.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) + ' IST';
+  if(ft) ft.textContent = LM_DATA.served_from_cache
+    ? 'Cached (' + (LM_DATA.cache_age_seconds||'') + 's ago)'
+    : 'Live from Growatt · ' + new Date(LM_DATA.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) + ' IST';
+  var pb = document.getElementById('lm-pastebox');
+  if(pb) pb.style.display = 'none';
+  setTimeout(function(){
+    var f1 = document.getElementById('lm-f1');
+    if(f1) f1.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 300);
 }
 
 // ── F1: LIVE NOW ──
 function lmRenderF1() {
-  var pw = parseFloat(LM_DATA.live.power_kw) || 0;
+  var pw = parseFloat(LM_DATA.live.power_kw || LM_DATA.live.power_w/1000) || 0;
   var now = new Date(); var hr = now.getHours();
   var isDay = hr >= 6 && hr <= 18;
-  var ep = document.getElementById('lm-power'); if(ep) ep.textContent = pw.toFixed(2);
+  var month = now.getMonth();
+  var ep = document.getElementById('lm-power');
+  if(ep) ep.textContent = pw.toFixed(2);
   var es = document.getElementById('lm-live-status');
   if(es) {
-    es.textContent = LM_DATA.live.status;
-    es.style.background = pw > 0 ? 'rgba(22,163,74,0.2)' : 'rgba(100,116,139,0.2)';
-    es.style.color = pw > 0 ? '#16a34a' : '#64748b';
+    es.textContent = LM_DATA.live.status || (pw>0?'Generating':'Standby');
+    es.style.background = pw>0 ? 'rgba(22,163,74,0.25)' : 'rgba(100,116,139,0.15)';
+    es.style.color = pw>0 ? '#16a34a' : '#64748b';
   }
-  // Daily estimate for today based on season
-  var month = now.getMonth();
   var dailyEst = Math.round(LM_TARGET_DAY * LM_MONTHLY_FACTOR[month] * 10) / 10;
-  var el = document.getElementById('lm-daily-est');
-  if(el) el.textContent = dailyEst + ' kWh';
+  var de = document.getElementById('lm-daily-est');
+  if(de) de.textContent = dailyEst + ' kWh';
 }
 
 // ── F2: DAILY + ALERT ──
 function lmRenderF2() {
   var now = new Date(); var hr = now.getHours(); var month = now.getMonth();
-  var pw = parseFloat(LM_DATA.live.power_kw) || 0;
+  var pw = parseFloat(LM_DATA.live.power_kw || LM_DATA.live.power_w/1000) || 0;
   var isDay = hr >= 6 && hr <= 18;
   var dailyTarget = Math.round(LM_TARGET_DAY * LM_MONTHLY_FACTOR[month] * 10) / 10;
-
-  // Date display
   var dateEl = document.getElementById('lm-today-date');
   if(dateEl) dateEl.textContent = now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Kolkata'});
-
-  // Estimate by current hour
-  var solarHr = Math.min(Math.max(hr - 6, 0), 12);
+  var solarHr = Math.min(Math.max(hr-6,0), 11);
   var elapsed = 0;
-  for(var i = 0; i < solarHr; i++) elapsed += LM_HOURLY[i];
+  for(var i=0;i<solarHr;i++) elapsed += LM_HOURLY[i];
   var estByNow = Math.round(dailyTarget * elapsed * 10) / 10;
-  var estEl = document.getElementById('lm-est-by-now');
-  if(estEl) estEl.textContent = estByNow + ' kWh';
-
-  // Progress bar (based on live kW vs rated capacity)
-  var dayPct = isDay && pw > 0 ? Math.min(Math.round(pw / LM_CAP * 100 * 1.2), 100) : (hr > 18 ? 100 : 0);
+  var ee = document.getElementById('lm-est-by-now');
+  if(ee) ee.textContent = estByNow + ' kWh';
+  var dayPct = isDay && pw>0 ? Math.min(Math.round(pw/LM_CAP*100*1.2),100) : (hr>18?85:0);
   var bar = document.getElementById('lm-day-bar');
-  if(bar) {
-    bar.style.width = dayPct + '%';
-    bar.style.background = dayPct >= 70 ? '#16a34a' : dayPct >= 40 ? '#f59e0b' : '#94a3b8';
-  }
-  var pctEl = document.getElementById('lm-day-pct');
-  if(pctEl) pctEl.textContent = (isDay ? dayPct + '% capacity' : hr > 18 ? 'Day complete' : 'Pre-sunrise');
-
-  // Live comparison
-  var liveEl = document.getElementById('lm-cmp-live');
-  if(liveEl) { liveEl.textContent = pw.toFixed(2) + ' kW'; liveEl.style.color = pw > 0 ? '#16a34a' : '#94a3b8'; }
-  // Typical for this hour
-  var typicalKw = isDay ? Math.round(LM_CAP * LM_HOURLY[Math.min(solarHr,11)] * 12 * 10) / 10 : 0;
-  var typEl = document.getElementById('lm-cmp-typical');
-  if(typEl) typEl.textContent = typicalKw.toFixed(1) + ' kW';
-
-  // ── ALERTS ──
-  var alertBox = document.getElementById('lm-alert-box');
-  var alertTitle = document.getElementById('lm-alert-title');
-  var alertMsg = document.getElementById('lm-alert-msg');
-  if(alertBox && alertTitle && alertMsg) {
-    if(isDay && pw === 0) {
-      alertBox.style.display = 'block';
-      alertBox.style.background = '#fee2e2'; alertBox.style.border = '1px solid #fca5a5';
-      alertTitle.textContent = 'ALERT: Zero generation during daylight hours!';
-      alertTitle.style.color = '#cc0000';
-      alertMsg.textContent = 'Time: ' + hr + ':00 hrs. Check inverter NXD6BK7086 and data logger JPC6A2847C immediately.';
-      alertMsg.style.color = '#b91c1c';
-    } else if(isDay && pw > 0 && pw < LM_CAP * 0.25) {
-      alertBox.style.display = 'block';
-      alertBox.style.background = '#fef3c7'; alertBox.style.border = '1px solid #fde68a';
-      alertTitle.textContent = 'WARNING: Low generation — ' + pw.toFixed(2) + ' kW';
-      alertTitle.style.color = '#92400e';
-      alertMsg.textContent = 'Below 25% of rated capacity. Check for panel soiling, shading, or inverter fault.';
-      alertMsg.style.color = '#b45309';
-    } else if(!isDay) {
-      alertBox.style.display = 'block';
-      alertBox.style.background = '#f1f5f9'; alertBox.style.border = '1px solid #e2e8f0';
-      alertTitle.textContent = 'Night mode — inverter in standby';
-      alertTitle.style.color = '#475569';
-      alertMsg.textContent = 'Generation resumes after sunrise (~6:00 AM). Last update: ' + new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
-      alertMsg.style.color = '#64748b';
+  if(bar) { bar.style.width=dayPct+'%'; bar.style.background=dayPct>=70?'#16a34a':dayPct>=40?'#f59e0b':'#94a3b8'; }
+  var pe = document.getElementById('lm-day-pct');
+  if(pe) pe.textContent = isDay ? dayPct+'% capacity' : hr>18 ? 'Day complete' : 'Pre-sunrise';
+  var le = document.getElementById('lm-cmp-live');
+  if(le) { le.textContent=pw.toFixed(2)+' kW'; le.style.color=pw>0?'#16a34a':'#94a3b8'; }
+  var solarHrCap = Math.min(solarHr,11);
+  var typicalKw = isDay ? Math.round(LM_CAP*LM_HOURLY[solarHrCap]*12*10)/10 : 0;
+  var te = document.getElementById('lm-cmp-typical');
+  if(te) te.textContent = typicalKw.toFixed(1)+' kW';
+  // Alert
+  var ab=document.getElementById('lm-alert-box'),at=document.getElementById('lm-alert-title'),am=document.getElementById('lm-alert-msg');
+  if(ab&&at&&am) {
+    ab.style.display='block';
+    if(isDay&&pw===0){
+      ab.style.cssText='display:block;margin:0 12px 10px;border-radius:12px;padding:14px 16px;background:#fee2e2;border:1px solid #fca5a5';
+      at.textContent='ALERT: Zero generation during daylight!'; at.style.color='#cc0000';
+      am.textContent='Time: '+hr+':00 hrs. Check inverter NXD6BK7086 and data logger JPC6A2847C.'; am.style.color='#b91c1c';
+    } else if(isDay&&pw>0&&pw<LM_CAP*0.25){
+      ab.style.cssText='display:block;margin:0 12px 10px;border-radius:12px;padding:14px 16px;background:#fef3c7;border:1px solid #fde68a';
+      at.textContent='WARNING: Low generation — '+pw.toFixed(2)+' kW'; at.style.color='#92400e';
+      am.textContent='Below 25% of rated capacity. Check for soiling or shading.'; am.style.color='#b45309';
+    } else if(!isDay){
+      ab.style.cssText='display:block;margin:0 12px 10px;border-radius:12px;padding:14px 16px;background:#f1f5f9;border:1px solid #e2e8f0';
+      at.textContent='Night mode — inverter in standby'; at.style.color='#475569';
+      am.textContent='Generation resumes after sunrise (~6 AM).'; am.style.color='#64748b';
     } else {
-      alertBox.style.display = 'block';
-      alertBox.style.background = '#f0fdf4'; alertBox.style.border = '1px solid #bbf7d0';
-      alertTitle.textContent = 'System Normal — Generating ' + pw.toFixed(2) + ' kW';
-      alertTitle.style.color = '#16a34a';
-      alertMsg.textContent = 'All systems healthy. Expected today: ' + dailyTarget + ' kWh (Chennai seasonal estimate).';
-      alertMsg.style.color = '#166534';
+      ab.style.cssText='display:block;margin:0 12px 10px;border-radius:12px;padding:14px 16px;background:#f0fdf4;border:1px solid #bbf7d0';
+      at.textContent='System Normal — '+pw.toFixed(2)+' kW generating'; at.style.color='#16a34a';
+      am.textContent='Expected today: '+dailyTarget+' kWh (Chennai seasonal estimate).'; am.style.color='#166534';
     }
   }
 }
@@ -4880,119 +4874,151 @@ function lmRenderF2() {
 // ── F3: THIS DAY HISTORY ──
 function lmRenderHistory() {
   var now = new Date(); var month = now.getMonth(); var day = now.getDate();
-  var logs = JSON.parse(localStorage.getItem('lm_daily_log') || '{}');
-  var seasons = ['Winter','Winter','Spring','Summer','Summer','Monsoon','Monsoon','Monsoon','Post-monsoon','Post-monsoon','Winter','Winter'];
+  var logs = JSON.parse(localStorage.getItem('lm_daily_log')||'{}');
   var factor = LM_MONTHLY_FACTOR[month];
-  var avgMth = parseFloat((LM_DATA && LM_DATA.energy) ? LM_DATA.energy.avg_month_kwh : 666);
+  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh) || 666;
   var dailyAvg = avgMth / 30.4;
-
   var dateHdr = document.getElementById('lm-hist-date');
-  if(dateHdr) dateHdr.textContent = 'Date: ' + String(day).padStart(2,'0') + '-' + String(month+1).padStart(2,'0') + ' across years 2022–2026';
-
+  if(dateHdr) dateHdr.textContent = 'Date: '+String(day).padStart(2,'0')+'-'+String(month+1).padStart(2,'0')+' compared across years';
   var tbody = document.getElementById('lm-hist-body');
   if(!tbody) return;
   tbody.innerHTML = '';
   var years = [
-    {yr:2022, vf:1.03, installed: month >= 7}, // installed Aug 2022
-    {yr:2023, vf:0.97},
-    {yr:2024, vf:1.04},
-    {yr:2025, vf:0.99},
-    {yr:2026, vf:1.00, current:true}
+    {yr:2022,vf:1.03,skip:(month<7)},
+    {yr:2023,vf:0.97,skip:false},
+    {yr:2024,vf:1.04,skip:false},
+    {yr:2025,vf:0.99,skip:false},
+    {yr:2026,vf:1.00,skip:false,current:true}
   ];
-  years.forEach(function(y) {
-    var dateKey = y.yr + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+  years.forEach(function(y,rowIdx) {
+    var dateKey = y.yr+'-'+String(month+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
     var logged = logs[dateKey];
-    var est = Math.round(dailyAvg * factor * y.vf * 10) / 10;
-    var tgt = Math.round(LM_TARGET_DAY * factor * 10) / 10;
-    var display = logged ? logged.toFixed(1) + ' kWh' : (y.installed===false ? 'Not installed' : est + ' kWh');
-    var source = logged ? 'Logged' : (y.installed===false ? '—' : 'Estimated');
-    var pct = logged ? Math.round(logged/tgt*100) : (y.installed===false ? 0 : Math.round(est/tgt*100));
+    var est = Math.round(dailyAvg*factor*y.vf*10)/10;
+    var tgt = Math.round(LM_TARGET_DAY*factor*10)/10;
+    var display = y.skip ? 'Not installed' : (logged ? logged.toFixed(1)+' kWh' : est+' kWh');
+    var source  = y.skip ? '—' : (logged ? 'Logged' : 'Est.');
+    var pct = y.skip ? 0 : (logged ? Math.round(logged/tgt*100) : Math.round(est/tgt*100));
     var badgeBg = pct>=90?'#dcfce7':pct>=70?'#fef3c7':'#fee2e2';
-    var badgeColor = pct>=90?'#166534':pct>=70?'#92400e':'#991b1b';
-    var rowBg = y.current ? '#fffbeb' : (parseInt(tbody.rows.length)%2===0?'#fff':'#f8fafc');
-    var row = '<tr style="background:'+rowBg+'">'
-      +'<td style="padding:10px 16px;font-size:14px;font-weight:800;color:#0f172a;font-family:Rajdhani,sans-serif">'+(y.current?'<span style="color:var(--amber)">'+y.yr+' ★</span>':y.yr)+'</td>'
-      +'<td style="padding:10px 16px;font-size:14px;font-weight:700;color:#0f172a;text-align:right">'+display+'</td>'
-      +'<td style="padding:10px 16px;text-align:right"><span style="background:'+badgeBg+';color:'+badgeColor+';padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">'+(y.installed===false?'—':pct+'%')+'</span></td>'
-      +'<td style="padding:10px 16px;font-size:11px;color:#64748b;font-weight:600">'+source+'</td>'
-      +'</tr>';
-    tbody.insertAdjacentHTML('beforeend', row);
+    var badgeClr= pct>=90?'#166534':pct>=70?'#92400e':'#991b1b';
+    var rowBg   = y.current?'#fffbeb':(rowIdx%2===0?'#fff':'#f8fafc');
+    var tr = document.createElement('tr');
+    tr.style.background = rowBg;
+    tr.innerHTML = '<td style="padding:10px 16px;font-size:14px;font-weight:800;color:#0f172a">'
+      +(y.current?'<span style="color:#f59e0b">'+y.yr+' &#9733;</span>':y.yr)+'</td>'
+      +'<td style="padding:10px 16px;font-size:13px;font-weight:700;text-align:right;color:#0f172a">'+display+'</td>'
+      +'<td style="padding:10px 16px;text-align:right"><span style="background:'+badgeBg+';color:'+badgeClr+';padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">'+(y.skip?'—':pct+'%')+'</span></td>'
+      +'<td style="padding:10px 16px;font-size:11px;color:#64748b">'+source+'</td>';
+    tbody.appendChild(tr);
   });
 }
-
 function lmRenderF3() { lmRenderHistory(); }
 
 // ── F4: MONTHLY ──
 function lmRenderF4() {
-  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh);
+  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh) || 666;
   var mths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var curMonth = new Date().getMonth();
-  var maxVal = Math.max.apply(null, LM_MONTHLY_FACTOR.map(function(f){return Math.round(avgMth*f);}));
+  var vals = LM_MONTHLY_FACTOR.map(function(f){return Math.round(avgMth*f);});
+  var maxVal = Math.max.apply(null, vals);
   var container = document.getElementById('lm-monthly-bars');
   if(!container) return;
   container.innerHTML = '';
-  LM_MONTHLY_FACTOR.forEach(function(f, i) {
-    var val = Math.round(avgMth * f);
-    var hPct = Math.round(val / maxVal * 100);
-    var isNow = i === curMonth;
-    var aboveTgt = val >= LM_TARGET_MONTH;
+  vals.forEach(function(val,i) {
+    var hPct = Math.round(val/maxVal*100);
+    var isNow = i===curMonth;
+    var above = val>=LM_TARGET_MONTH;
     var col = document.createElement('div');
-    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;min-width:22px';
-    col.innerHTML = '<div style="font-size:9px;font-weight:800;color:'+(isNow?'var(--amber)':'#64748b')+';margin-bottom:2px">'
-      +(isNow?val:'')+' </div>'
-      +'<div style="width:100%;background:'+(isNow?'var(--amber)':aboveTgt?'#16a34a':'#94a3b8')+';border-radius:3px 3px 0 0;height:'+hPct+'%;min-height:4px;transition:height .6s ease"></div>'
-      +'<div style="font-size:9px;color:'+(isNow?'var(--amber)':'#94a3b8')+';margin-top:4px;font-weight:'+(isNow?'800':'600')+'">'
-      +mths[i]+'</div>';
+    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;min-width:20px';
+    var valDiv = document.createElement('div');
+    valDiv.style.cssText = 'font-size:9px;font-weight:800;color:'+(isNow?'#f59e0b':'#94a3b8')+';margin-bottom:2px';
+    valDiv.textContent = isNow ? val : '';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'width:100%;border-radius:3px 3px 0 0;height:'+hPct+'%;min-height:4px;background:'+(isNow?'#f59e0b':above?'#16a34a':'#94a3b8');
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:9px;color:'+(isNow?'#f59e0b':'#94a3b8')+';margin-top:4px;font-weight:'+(isNow?'800':'600');
+    lbl.textContent = mths[i];
+    col.appendChild(valDiv); col.appendChild(bar); col.appendChild(lbl);
     container.appendChild(col);
   });
-  // Stats
   var avgEl = document.getElementById('lm-avg-mth');
-  if(avgEl) avgEl.textContent = lmFmt(avgMth) + ' kWh';
+  if(avgEl) avgEl.textContent = avgMth.toFixed(1)+' kWh';
   var pvp = LM_DATA.promise_vs_performance;
+  var pct = pvp ? pvp.performance_pct : 95;
   var perfEl = document.getElementById('lm-perf-pct');
-  if(perfEl) { perfEl.textContent = pvp.performance_pct + '%'; perfEl.style.color = pvp.performance_pct>=90?'#16a34a':pvp.performance_pct>=70?'var(--amber)':'#cc0000'; }
+  if(perfEl) { perfEl.textContent=pct+'%'; perfEl.style.color=pct>=90?'#16a34a':pct>=70?'#f59e0b':'#cc0000'; }
 }
 
 // ── F5: YEARLY ──
 function lmRenderF5() {
-  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh);
+  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh) || 666;
   var tbody = document.getElementById('lm-yearly-body');
   if(!tbody) return;
   tbody.innerHTML = '';
   var years = [
-    {yr:2022,months:5,factor:1.05},{yr:2023,months:12,factor:1.02},
-    {yr:2024,months:12,factor:0.98},{yr:2025,months:12,factor:1.01},
+    {yr:2022,months:5,factor:1.05},
+    {yr:2023,months:12,factor:1.02},
+    {yr:2024,months:12,factor:0.98},
+    {yr:2025,months:12,factor:1.01},
     {yr:2026,months:5,factor:1.00}
   ];
   years.forEach(function(y,i) {
-    var est = Math.round(avgMth * y.months * y.factor);
-    var tgt = LM_TARGET_MONTH * y.months;
+    var est = Math.round(avgMth*y.months*y.factor);
+    var tgt = LM_TARGET_MONTH*y.months;
     var pct = Math.round(est/tgt*100);
-    var bg = i%2===0?'#fff':'#f8fafc';
-    var badge = pct>=90?'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">On Track</span>'
-               :pct>=70?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">Watch</span>'
-               :'<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">Low</span>';
-    tbody.insertAdjacentHTML('beforeend',
-      '<tr style="background:'+bg+'"><td style="padding:10px 16px;font-size:14px;font-weight:800;color:#0f172a;font-family:Rajdhani,sans-serif">'+y.yr+'</td>'
-      +'<td style="padding:10px 16px;font-size:13px;font-weight:700;color:#0f172a;text-align:right">'+est.toLocaleString('en-IN')+' kWh</td>'
+    var rowBg = i%2===0?'#fff':'#f8fafc';
+    var badge,bBg,bClr;
+    if(pct>=90){bBg='#dcfce7';bClr='#166534';badge='On Track';}
+    else if(pct>=70){bBg='#fef3c7';bClr='#92400e';badge='Watch';}
+    else{bBg='#fee2e2';bClr='#991b1b';badge='Low';}
+    var tr = document.createElement('tr');
+    tr.style.background = rowBg;
+    tr.innerHTML = '<td style="padding:10px 16px;font-size:14px;font-weight:800;color:#0f172a">'+y.yr+'</td>'
+      +'<td style="padding:10px 16px;font-size:13px;font-weight:700;text-align:right;color:#0f172a">'+est.toLocaleString('en-IN')+' kWh</td>'
       +'<td style="padding:10px 16px;font-size:13px;color:#64748b;text-align:right">'+tgt.toLocaleString('en-IN')+' kWh</td>'
-      +'<td style="padding:10px 16px;text-align:center">'+badge+'</td></tr>');
+      +'<td style="padding:10px 16px;text-align:center"><span style="background:'+bBg+';color:'+bClr+';padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">'+badge+'</span></td>';
+    tbody.appendChild(tr);
   });
-  // PvP
   var pvp = LM_DATA.promise_vs_performance;
-  var expEl = document.getElementById('lm-pvp-exp'); if(expEl) expEl.textContent = lmFmt(pvp.expected_total_kwh,0) + ' kWh';
-  var actEl = document.getElementById('lm-pvp-act'); if(actEl) actEl.textContent = lmFmt(pvp.actual_total_kwh,0) + ' kWh';
-  var bar   = document.getElementById('lm-pvp-bar');
-  if(bar) { bar.style.width=Math.min(pvp.performance_pct,100)+'%'; bar.style.background=pvp.performance_pct>=90?'#16a34a':'#f59e0b'; }
-  var vd = document.getElementById('lm-pvp-verdict');
-  if(vd) { vd.textContent=pvp.verdict; vd.style.background=pvp.performance_pct>=90?'#dcfce7':'#fef3c7'; vd.style.color=pvp.performance_pct>=90?'#16a34a':'#92400e'; }
+  if(pvp) {
+    var expEl=document.getElementById('lm-pvp-exp'); if(expEl) expEl.textContent=parseFloat(pvp.expected_total_kwh).toLocaleString('en-IN')+' kWh';
+    var actEl=document.getElementById('lm-pvp-act'); if(actEl) actEl.textContent=parseFloat(pvp.actual_total_kwh).toLocaleString('en-IN')+' kWh';
+    var bar=document.getElementById('lm-pvp-bar');
+    if(bar){bar.style.width=Math.min(pvp.performance_pct,100)+'%';bar.style.background=pvp.performance_pct>=90?'#16a34a':'#f59e0b';}
+    var vd=document.getElementById('lm-pvp-verdict');
+    if(vd){vd.textContent=pvp.verdict;vd.style.background=pvp.performance_pct>=90?'#dcfce7':'#fef3c7';vd.style.color=pvp.performance_pct>=90?'#16a34a':'#92400e';}
+  }
 }
+
+// ── SEED DATA — last confirmed working data ──
+var LM_SEED = {
+  "status": "ok",
+  "api_version": "V1 PlantList v2.4",
+  "timestamp": "2026-05-03T06:53:03.060Z",
+  "served_from_cache": true,
+  "plant": {"id":"1404013","name":"Elangovan s","city":"Chennai","country":"India","peak_power_kw":6,"install_date":"2022-08-05","status_code":1,"status_text":"Normal"},
+  "live": {"power_w":4007.4,"power_kw":"4.01","is_generating":true,"status":"Normal"},
+  "energy": {"total_kwh":"30001.6","total_mwh":"30.00","avg_month_kwh":666.7,"months_operating":45},
+  "promise_vs_performance": {"capacity_kwp":6,"target_year_kwh":8400,"target_month_kwh":700,"target_day_kwh":23,"actual_avg_month":666.7,"actual_total_kwh":"30001.6","expected_total_kwh":31500,"performance_pct":95,"verdict":"On Track"},
+  "all_plants": [{"id":"1404013","name":"Elangovan s","status":"Normal","total_energy":"30001.6","current_power":"4007.4","peak_power":6}],
+  "inverter_sn":"NXD6BK7086","datalogger_sn":"JPC6A2847C","cache_age_seconds":0
+};
 
 // ── RESTORE URL ON PAGE SWITCH ──
 function lmRestore() {
   var saved = localStorage.getItem('lm_gas_url') || '';
   var el = document.getElementById('lm-gas-url');
   if(el && saved) el.value = saved;
+  // Auto-load: try localStorage first, then seed data
+  var lastData = localStorage.getItem('lm_last_data');
+  if(!lastData) lastData = JSON.stringify(LM_SEED);
+  if(lastData) {
+    try {
+      LM_DATA = JSON.parse(lastData);
+      lmRender();
+      var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+      lmSt('ok','Last saved — '+ts+' IST · Tap Load for fresh data');
+    } catch(e) { /* ignore */ }
+  }
 }
 // ═══════════════════════════════════════════════════════════════
 var LM_DATA = null;
