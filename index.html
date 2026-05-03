@@ -698,6 +698,65 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     <div id="settings-body"></div>
   </div>
 
+  <!-- LIVE MONITOR PAGE -->
+  <div class="page" id="pg-monitor">
+    <div style="padding:12px 12px 80px">
+      <div id="lm-url-box" style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07)">
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase;margin-bottom:6px">Growatt GAS Proxy URL</div>
+        <input id="lm-gas-url" type="text" placeholder="https://script.google.com/macros/s/…/exec" onchange="localStorage.setItem('lm_gas_url',this.value.trim())" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;font-family:monospace;color:#0f172a;outline:none;margin-bottom:8px"/>
+        <button onclick="lmLoad()" id="lm-btn" style="width:100%;background:#f59e0b;color:#0f172a;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:800;cursor:pointer">⚡ Load Live Data</button>
+      </div>
+      <div id="lm-status" style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div id="lm-dot" style="width:10px;height:10px;border-radius:50%;background:#cbd5e1;flex-shrink:0"></div>
+        <span id="lm-st">Enter GAS URL above and tap Load</span>
+      </div>
+      <div id="lm-hero" style="display:none;background:linear-gradient(135deg,#1565c0,#0d47a1);border-radius:14px;padding:20px;text-align:center;margin-bottom:10px">
+        <div style="font-size:10px;letter-spacing:2px;color:#90caf9;text-transform:uppercase;margin-bottom:4px">Live Generation Right Now</div>
+        <div id="lm-power" style="font-size:58px;font-weight:800;color:#fff;line-height:1;letter-spacing:-2px">—</div>
+        <div style="font-size:15px;color:#90caf9;margin-top:2px">kW</div>
+        <div id="lm-status-txt" style="font-size:14px;color:#fff;margin-top:6px;font-weight:700">—</div>
+        <div id="lm-updated" style="font-size:11px;color:#90caf9;margin-top:4px">—</div>
+      </div>
+      <div id="lm-stats" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Total Lifetime</div>
+          <div id="lm-total" style="font-size:22px;font-weight:800;color:#16a34a">—</div>
+          <div style="font-size:11px;color:#94a3b8">kWh generated</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Total MWh</div>
+          <div id="lm-mwh" style="font-size:22px;font-weight:800;color:#7c3aed">—</div>
+          <div style="font-size:11px;color:#94a3b8">MWh milestone</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Avg Monthly</div>
+          <div id="lm-avg" style="font-size:22px;font-weight:800;color:#ea580c">—</div>
+          <div style="font-size:11px;color:#94a3b8">kWh / month</div>
+        </div>
+        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Operating</div>
+          <div id="lm-months" style="font-size:22px;font-weight:800;color:#0f172a">—</div>
+          <div style="font-size:11px;color:#94a3b8">months since 2022</div>
+        </div>
+      </div>
+      <div id="lm-pvp" style="display:none;background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase;margin-bottom:12px">&#9889; Promise vs Performance</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:#64748b">Target / month</span><span style="font-weight:800;color:#0f172a" id="lm-tgt">700 kWh</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:#64748b">Actual avg / month</span><span style="font-weight:800;color:#16a34a" id="lm-actual">—</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px"><span style="color:#64748b">Expected total</span><span style="font-weight:800;color:#0f172a" id="lm-exp">—</span></div>
+        <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px"><div id="lm-bar" style="height:100%;border-radius:6px;background:#16a34a;transition:width 1s ease;width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:10px"><span>0%</span><span id="lm-pct">—</span><span>100%</span></div>
+        <div id="lm-verdict" style="text-align:center;font-size:14px;font-weight:800;padding:10px;border-radius:10px;background:#dcfce7;color:#16a34a">—</div>
+      </div>
+      <div id="lm-alerts" style="display:none;margin-bottom:10px"></div>
+      <div id="lm-plantinfo" style="display:none;background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase;margin-bottom:10px">Plant Information</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="lm-plant-grid"></div>
+      </div>
+      <div id="lm-footer" style="text-align:center;font-size:11px;color:#94a3b8;margin-top:10px;padding-bottom:10px"></div>
+    </div>
+  </div>
+
   <div class="bottomnav">
     <button class="bnav act" id="bn-form" onclick="goPage('form')">
       <span class="bnav-icon">📋</span>
@@ -714,6 +773,10 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     <button class="bnav" id="bn-settings" onclick="goPage('settings')">
       <span class="bnav-icon">⚙</span>
       <span class="bnav-lbl">Settings</span>
+    </button>
+    <button class="bnav" id="bn-monitor" onclick="goPage('monitor')">
+      <span class="bnav-icon">&#9728;</span>
+      <span class="bnav-lbl">Live</span>
     </button>
     <button class="bnav" onclick="sendWA()">
       <span class="bnav-icon">💬</span>
@@ -773,7 +836,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "43";
+var APP_VERSION = "44";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1519,7 +1582,7 @@ function goPage(p){
     showPinScreen("admin", function(){ goPage("settings"); });
     return;
   }
-  ["welcome","form","proposal","settings","voice","customer"].forEach(function(id){
+  ["welcome","form","proposal","settings","voice","customer","monitor"].forEach(function(id){
     var el=document.getElementById("pg-"+id);
     if(el) el.className="page"+(p===id?" active":"");
     var bn=document.getElementById("bn-"+id);
@@ -1538,6 +1601,7 @@ function goPage(p){
   if(upb && p==="customer") upb.style.display="none";
   if(p==="welcome") renderWelcome();
   if(p==="form") renderForm();
+  if(p==="monitor") { var saved=localStorage.getItem('lm_gas_url'); if(saved){var el=document.getElementById('lm-gas-url');if(el)el.value=saved;} }
   if(p==="settings") renderSettings();
   window.scrollTo(0,0);
 }
@@ -4454,6 +4518,150 @@ if('serviceWorker' in navigator){
     });
   }).catch(function(){/* SW not supported or blocked */});
 }
+
+// ═══════════════════════════════════════════════════════
+// LIVE MONITOR — Growatt API Integration
+// Added in v44 — standalone module, no changes to existing features
+// ═══════════════════════════════════════════════════════
+var LM_DATA = null;
+
+function lmSetStatus(state, msg) {
+  var dot = document.getElementById('lm-dot');
+  var st  = document.getElementById('lm-st');
+  var colors = { loading:'#f59e0b', ok:'#16a34a', error:'#cc0000' };
+  if(dot) { dot.style.background = colors[state]||'#cbd5e1'; dot.style.animation = state==='loading'?'pulse 1s infinite':'none'; }
+  if(st)  st.textContent = msg;
+}
+
+function lmFmt(n, d) {
+  d = d||1;
+  return parseFloat(n).toLocaleString('en-IN', { maximumFractionDigits:d, minimumFractionDigits:d });
+}
+
+async function lmLoad(force) {
+  var url = (document.getElementById('lm-gas-url')||{}).value;
+  // Try saved URL from localStorage
+  if(!url || !url.trim()) url = localStorage.getItem('lm_gas_url') || '';
+  if(!url || !url.trim()) { lmSetStatus('error','Please enter your GAS Proxy URL'); return; }
+  localStorage.setItem('lm_gas_url', url.trim());
+  if(document.getElementById('lm-gas-url')) document.getElementById('lm-gas-url').value = url.trim();
+
+  lmSetStatus('loading','Fetching live data from Growatt...');
+  var btn = document.getElementById('lm-btn');
+  if(btn) btn.disabled = true;
+
+  try {
+    var fullUrl = url.trim() + (url.includes('?') ? '&' : '?') + (force ? 'force=true' : 'ts=' + Date.now());
+    // GAS requires no-cors OR cors with redirect:follow
+    var resp;
+    try {
+      resp = await fetch(fullUrl, { method:'GET', redirect:'follow', mode:'cors' });
+    } catch(corsErr) {
+      // Fallback: try without mode specification
+      resp = await fetch(fullUrl, { redirect:'follow' });
+    }
+    var text = await resp.text();
+    if(!text || text.trim() === '') throw new Error('Empty response — check GAS URL and deployment');
+    if(text.trim().startsWith('<')) throw new Error('GAS returned HTML — please redeploy as New Version in GAS editor');
+    LM_DATA = JSON.parse(text);
+    if(LM_DATA.status === 'error') throw new Error(LM_DATA.message);
+    lmPopulate();
+    var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN', { timeZone:'Asia/Kolkata' });
+    lmSetStatus('ok', (LM_DATA.served_from_cache ? '📦 Cached — ' : '🔴 Live — ') + ts + ' IST');
+  } catch(e) {
+    lmSetStatus('error','Error: ' + e.message);
+  }
+  if(btn) btn.disabled = false;
+}
+
+function lmPopulate() {
+  if(!LM_DATA) return;
+  var pw   = parseFloat(LM_DATA.live.power_kw) || 0;
+  var pvp  = LM_DATA.promise_vs_performance;
+  var pct  = pvp.performance_pct || 0;
+
+  // Hero
+  var hero = document.getElementById('lm-hero');
+  if(hero) hero.style.display = 'block';
+  var ep = document.getElementById('lm-power'); if(ep) ep.textContent = pw.toFixed(2);
+  var es = document.getElementById('lm-status-txt'); if(es) es.textContent = LM_DATA.live.status;
+  var eu = document.getElementById('lm-updated');
+  if(eu) eu.textContent = 'Updated: ' + new Date(LM_DATA.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) + ' IST';
+
+  // Stats grid
+  var sg = document.getElementById('lm-stats');
+  if(sg) sg.style.display = 'grid';
+  var et = document.getElementById('lm-total');  if(et) et.textContent = lmFmt(LM_DATA.energy.total_kwh);
+  var em = document.getElementById('lm-mwh');    if(em) em.textContent = parseFloat(LM_DATA.energy.total_mwh).toFixed(2);
+  var ea = document.getElementById('lm-avg');    if(ea) ea.textContent = lmFmt(LM_DATA.energy.avg_month_kwh);
+  var emo= document.getElementById('lm-months'); if(emo) emo.textContent = LM_DATA.energy.months_operating;
+
+  // PvP
+  var pvpEl = document.getElementById('lm-pvp');
+  if(pvpEl) pvpEl.style.display = 'block';
+  var tgt = document.getElementById('lm-tgt');     if(tgt) tgt.textContent = pvp.target_month_kwh + ' kWh';
+  var act = document.getElementById('lm-actual');  if(act) act.textContent = lmFmt(pvp.actual_avg_month) + ' kWh/mo';
+  var exp = document.getElementById('lm-exp');     if(exp) exp.textContent = lmFmt(pvp.expected_total_kwh,0) + ' kWh';
+  var bar = document.getElementById('lm-bar');
+  if(bar) { bar.style.width = Math.min(pct,100)+'%'; bar.style.background = pct>=90?'#16a34a':pct>=70?'#f59e0b':'#cc0000'; }
+  var pc  = document.getElementById('lm-pct');     if(pc) pc.textContent = pct + '% of target';
+  var vd  = document.getElementById('lm-verdict');
+  if(vd) {
+    vd.textContent = pvp.verdict;
+    vd.style.background = pct>=90?'#dcfce7':pct>=70?'#fef3c7':'#fee2e2';
+    vd.style.color      = pct>=90?'#16a34a':pct>=70?'#d97706':'#cc0000';
+  }
+
+  // Alerts
+  var now = new Date(); var hr = now.getHours(); var isDay = hr>=6&&hr<=18;
+  var alertsHtml = '';
+  if(isDay && pw===0) {
+    alertsHtml += '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px;margin-bottom:8px"><b>⚠️ Zero generation during daylight</b><br><small style="color:#64748b">Check inverter NXD6BK7086 and data logger JPC6A2847C</small></div>';
+  }
+  if(isDay && pw>0 && pw<1.8) {
+    alertsHtml += '<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:12px;margin-bottom:8px"><b>⚠️ Low generation: '+pw.toFixed(2)+' kW</b><br><small style="color:#64748b">Below 30% of rated 6 kWp. Check for shading or soiling.</small></div>';
+  }
+  if(pct<80) {
+    alertsHtml += '<div style="background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:12px;margin-bottom:8px"><b>📉 Performance below target: '+pct+'%</b><br><small style="color:#64748b">Actual '+lmFmt(pvp.actual_total_kwh,0)+' kWh vs expected '+lmFmt(pvp.expected_total_kwh,0)+' kWh</small></div>';
+  }
+  if(!alertsHtml) {
+    alertsHtml = '<div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:8px"><b>✅ All systems normal</b><br><small style="color:#64748b">No alerts. Status: '+LM_DATA.live.status+'</small></div>';
+  }
+  var alEl = document.getElementById('lm-alerts');
+  if(alEl) { alEl.style.display='block'; alEl.innerHTML=alertsHtml; }
+
+  // Plant info
+  var pi = document.getElementById('lm-plantinfo');
+  if(pi) pi.style.display = 'block';
+  var pg = document.getElementById('lm-plant-grid');
+  if(pg) {
+    var p = LM_DATA.plant;
+    pg.innerHTML =
+      lmInfoRow('Plant ID', p.id) + lmInfoRow('Plant Name', p.name) +
+      lmInfoRow('City', p.city + ', ' + p.country) + lmInfoRow('Peak Power', p.peak_power_kw + ' kWp') +
+      lmInfoRow('Inverter SN', LM_DATA.inverter_sn) + lmInfoRow('Install Date', p.install_date);
+  }
+
+  // Footer
+  var ft = document.getElementById('lm-footer');
+  if(ft) ft.textContent = LM_DATA.served_from_cache ? '📦 Cached (' + LM_DATA.cache_age_seconds + 's ago)' : '🔴 Live data from Growatt';
+}
+
+function lmInfoRow(lbl, val) {
+  return '<div style="background:#f8fafc;border-radius:8px;padding:10px">'
+    +'<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:700">'+lbl+'</div>'
+    +'<div style="font-size:14px;font-weight:800;color:#0f172a;margin-top:2px">'+val+'</div></div>';
+}
+
+// Restore saved GAS URL on load
+(function() {
+  var saved = localStorage.getItem('lm_gas_url');
+  if(saved) {
+    var el = document.getElementById('lm-gas-url');
+    if(el) el.value = saved;
+  }
+})();
+// ═══════════════════════════════════════════════════════
 </script>
 </body>
 </html>
