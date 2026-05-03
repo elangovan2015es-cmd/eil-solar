@@ -707,7 +707,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
       <div class="card" style="margin:0 12px 10px">
         <div class="field">
           <div class="field-lbl">GAS Proxy URL</div>
-          <input id="lm-gas-url" type="text" placeholder="https://script.google.com/macros/s/..."
+          <input id="lm-gas-url" type="text" placeholder="https://script.google.com/macros/s/AKfycbwdJcyXPNOddexTvUcmd_6YbXCx0dW2u9VXFD2BObyeRYRB9Ae2Mbo3GVFM2M1nosN74w/exec"
             onchange="localStorage.setItem('lm_gas_url',this.value.trim())"
             style="font-size:13px;font-weight:600;color:#0f172a;width:100%;border:none;outline:none;background:transparent;font-family:'DM Sans',sans-serif"/>
         </div>
@@ -746,6 +746,8 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
             <div id="lm-power" style="font-size:56px;font-weight:800;color:#fff;line-height:1;font-family:Rajdhani,sans-serif;letter-spacing:-1px">—</div>
             <div style="font-size:14px;color:#94a3b8;margin-top:2px">kW</div>
             <div id="lm-live-status" style="margin-top:10px;display:inline-block;padding:4px 16px;border-radius:20px;font-size:13px;font-weight:700;background:rgba(245,158,11,0.2);color:var(--amber)">—</div>
+            <div id="lm-updated" style="font-size:11px;color:#94a3b8;margin-top:8px">—</div>
+            <button onclick="lmRefresh()" style="margin-top:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer">&#128260; Refresh Live Data</button>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid rgba(255,255,255,0.08)">
             <div style="padding:12px;text-align:center;border-right:1px solid rgba(255,255,255,0.08)">
@@ -2118,7 +2120,7 @@ function renderWelcome(){
       +'</div>'
     +'</button>'
     +'</div>'
-    +'<div class="welcome-footer">v'+APP_VERSION+' · Powered by Claude AI · Tamil Nadu</div>'
+    +'<div class="welcome-footer">v'+APP_VERSION+' · Kaveri Power Solutions · Tamil Nadu</div>'
     +'</div>';
   document.getElementById("welcome-body").innerHTML=h;
 }
@@ -4820,6 +4822,8 @@ function lmRenderF1() {
   var dailyEst = Math.round(LM_TARGET_DAY * LM_MONTHLY_FACTOR[month] * 10) / 10;
   var de = document.getElementById('lm-daily-est');
   if(de) de.textContent = dailyEst + ' kWh';
+  var eu = document.getElementById('lm-updated');
+  if(eu) eu.textContent = 'Updated: ' + new Date(LM_DATA.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) + ' IST' + (LM_DATA.served_from_cache ? ' (cached)' : ' (live)');
 }
 
 // ── F2: DAILY + ALERT ──
@@ -4830,6 +4834,36 @@ function lmRenderF2() {
   var dailyTarget = Math.round(LM_TARGET_DAY * LM_MONTHLY_FACTOR[month] * 10) / 10;
   var dateEl = document.getElementById('lm-today-date');
   if(dateEl) dateEl.textContent = now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Kolkata'});
+
+  // Show actual today kWh if available from v2.5 Sheet log
+  var dailyData = LM_DATA.daily || null;
+  var todayActual = dailyData && dailyData.today_kwh !== null ? dailyData.today_kwh : null;
+  var yesterdayActual = dailyData && dailyData.yesterday_kwh !== null ? dailyData.yesterday_kwh : null;
+
+  // Update today actual display
+  var todayActEl = document.getElementById('lm-today-actual');
+  if(todayActEl) {
+    if(todayActual !== null) {
+      todayActEl.textContent = todayActual.toFixed(1) + ' kWh';
+      todayActEl.style.color = '#16a34a';
+      todayActEl.parentElement.style.display = 'block';
+    } else {
+      todayActEl.textContent = 'Building... (open app morning & evening)';
+      todayActEl.style.color = '#94a3b8';
+      todayActEl.parentElement.style.display = 'block';
+    }
+  }
+  // Yesterday
+  var yestEl = document.getElementById('lm-yesterday-actual');
+  if(yestEl) {
+    if(yesterdayActual !== null) {
+      yestEl.textContent = yesterdayActual.toFixed(1) + ' kWh';
+      yestEl.style.color = '#0d47a1';
+    } else {
+      yestEl.textContent = '— (not yet logged)';
+      yestEl.style.color = '#94a3b8';
+    }
+  }
   var solarHr = Math.min(Math.max(hr-6,0), 11);
   var elapsed = 0;
   for(var i=0;i<solarHr;i++) elapsed += LM_HOURLY[i];
@@ -4916,6 +4950,20 @@ function lmRenderF3() { lmRenderHistory(); }
 // ── F4: MONTHLY ──
 function lmRenderF4() {
   var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh) || 666;
+  // Use actual this-month total from sheet if available
+  var monthly = LM_DATA.monthly || null;
+  var actualMonthKwh = monthly && monthly.this_month_kwh !== null ? monthly.this_month_kwh : null;
+  var actualMonthDays = monthly ? monthly.this_month_days : 0;
+  var actualMonthEl = document.getElementById('lm-actual-month');
+  if(actualMonthEl) {
+    if(actualMonthKwh !== null) {
+      actualMonthEl.textContent = actualMonthKwh.toFixed(1) + ' kWh (' + actualMonthDays + ' days logged)';
+      actualMonthEl.style.color = '#16a34a';
+    } else {
+      actualMonthEl.textContent = 'Building log... (open app daily)';
+      actualMonthEl.style.color = '#94a3b8';
+    }
+  }
   var mths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   var curMonth = new Date().getMonth();
   var vals = LM_MONTHLY_FACTOR.map(function(f){return Math.round(avgMth*f);});
@@ -4989,6 +5037,16 @@ function lmRenderF5() {
   }
 }
 
+// ── REFRESH FUNCTION ──
+function lmRefresh() {
+  var btn = document.querySelector('[onclick="lmRefresh()"]');
+  if(btn) { btn.textContent = '⏳ Refreshing...'; btn.disabled = true; }
+  lmLoad(true);
+  setTimeout(function(){
+    if(btn) { btn.textContent = '🔄 Refresh Live Data'; btn.disabled = false; }
+  }, 8000);
+}
+
 // ── SEED DATA — last confirmed working data ──
 var LM_SEED = {
   "status": "ok",
@@ -5005,9 +5063,11 @@ var LM_SEED = {
 
 // ── RESTORE URL ON PAGE SWITCH ──
 function lmRestore() {
-  var saved = localStorage.getItem('lm_gas_url') || '';
+  var defaultUrl = 'https://script.google.com/macros/s/AKfycbwdJcyXPNOddexTvUcmd_6YbXCx0dW2u9VXFD2BObyeRYRB9Ae2Mbo3GVFM2M1nosN74w/exec';
+  var saved = localStorage.getItem('lm_gas_url') || defaultUrl;
+  localStorage.setItem('lm_gas_url', saved);
   var el = document.getElementById('lm-gas-url');
-  if(el && saved) el.value = saved;
+  if(el) el.value = saved;
   // Auto-load: try localStorage first, then seed data
   var lastData = localStorage.getItem('lm_last_data');
   if(!lastData) lastData = JSON.stringify(LM_SEED);
