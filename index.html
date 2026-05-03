@@ -4540,7 +4540,6 @@ function lmFmt(n, d) {
 
 async function lmLoad(force) {
   var url = (document.getElementById('lm-gas-url')||{}).value;
-  // Try saved URL from localStorage
   if(!url || !url.trim()) url = localStorage.getItem('lm_gas_url') || '';
   if(!url || !url.trim()) { lmSetStatus('error','Please enter your GAS Proxy URL'); return; }
   localStorage.setItem('lm_gas_url', url.trim());
@@ -4550,28 +4549,112 @@ async function lmLoad(force) {
   var btn = document.getElementById('lm-btn');
   if(btn) btn.disabled = true;
 
+  var fullUrl = url.trim() + (url.includes('?') ? '&' : '?') + (force ? 'force=true' : 'ts=' + Date.now());
+
+  // Method 1: direct fetch (works when opened as local file)
   try {
-    var fullUrl = url.trim() + (url.includes('?') ? '&' : '?') + (force ? 'force=true' : 'ts=' + Date.now());
-    // GAS requires no-cors OR cors with redirect:follow
-    var resp;
-    try {
-      resp = await fetch(fullUrl, { method:'GET', redirect:'follow', mode:'cors' });
-    } catch(corsErr) {
-      // Fallback: try without mode specification
-      resp = await fetch(fullUrl, { redirect:'follow' });
-    }
+    var resp = await fetch(fullUrl, { redirect:'follow' });
     var text = await resp.text();
-    if(!text || text.trim() === '') throw new Error('Empty response — check GAS URL and deployment');
-    if(text.trim().startsWith('<')) throw new Error('GAS returned HTML — please redeploy as New Version in GAS editor');
-    LM_DATA = JSON.parse(text);
+    if(text && !text.trim().startsWith('<')) {
+      LM_DATA = JSON.parse(text);
+      if(LM_DATA.status !== 'error') {
+        lmPopulate();
+        var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+        lmSetStatus('ok',(LM_DATA.served_from_cache?'Cached — ':'Live — ')+ts+' IST');
+        if(btn) btn.disabled = false;
+        return;
+      }
+    }
+  } catch(e) { /* fall through to Method 2 */ }
+
+  // Method 2: JSONP-style via script tag (bypasses CORS in browsers)
+  try {
+    await lmFetchViaScript(fullUrl);
+    if(btn) btn.disabled = false;
+    return;
+  } catch(e) { /* fall through to Method 3 */ }
+
+  // Method 3: Open in new tab — user pastes JSON manually
+  lmSetStatus('error','Auto-fetch blocked. Tap "Open Data" to get JSON, then paste below.');
+  lmShowManualInput(fullUrl);
+  if(btn) btn.disabled = false;
+}
+
+function lmFetchViaScript(url) {
+  return new Promise(function(resolve, reject) {
+    var timeout = setTimeout(function(){ reject(new Error('timeout')); }, 8000);
+    window.lmJsonpCallback = function(data) {
+      clearTimeout(timeout);
+      LM_DATA = data;
+      lmPopulate();
+      var ts = new Date(data.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+      lmSetStatus('ok','Live — '+ts+' IST');
+      resolve();
+    };
+    var s = document.createElement('script');
+    s.src = url;
+    s.onerror = function(){ clearTimeout(timeout); reject(new Error('script load failed')); };
+    document.head.appendChild(s);
+  });
+}
+
+function lmShowManualInput(url) {
+  window._lmDataUrl = url;
+  var box = document.getElementById("lm-manual-box");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "lm-manual-box";
+    box.style.cssText = "background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07)";
+    var piBox = document.getElementById("lm-plantinfo");
+    if (piBox) piBox.parentNode.insertBefore(box, piBox);
+  }
+  box.innerHTML = "";
+
+  var lbl1 = document.createElement("div");
+  lbl1.style.cssText = "font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px";
+  lbl1.textContent = "Step 1: Open data in new tab";
+  box.appendChild(lbl1);
+
+  var openBtn = document.createElement("button");
+  openBtn.style.cssText = "width:100%;background:#1565c0;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:10px";
+  openBtn.textContent = "Open GAS Data in New Tab";
+  openBtn.onclick = function() { window.open(window._lmDataUrl, "_blank"); };
+  box.appendChild(openBtn);
+
+  var lbl2 = document.createElement("div");
+  lbl2.style.cssText = "font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px";
+  lbl2.textContent = "Step 2: Copy all JSON and paste below";
+  box.appendChild(lbl2);
+
+  var ta = document.createElement("textarea");
+  ta.id = "lm-json-paste";
+  ta.rows = 5;
+  ta.placeholder = "Paste JSON here...";
+  ta.style.cssText = "width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;color:#0f172a;outline:none;resize:vertical";
+  box.appendChild(ta);
+
+  var loadBtn = document.createElement("button");
+  loadBtn.style.cssText = "width:100%;background:#f59e0b;color:#0f172a;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;margin-top:8px";
+  loadBtn.textContent = "Load Pasted Data";
+  loadBtn.onclick = function() { lmParseManual(); };
+  box.appendChild(loadBtn);
+
+  box.style.display = "block";
+}
+
+function lmParseManual() {
+  var text = (document.getElementById('lm-json-paste')||{}).value || '';
+  try {
+    LM_DATA = JSON.parse(text.trim());
     if(LM_DATA.status === 'error') throw new Error(LM_DATA.message);
     lmPopulate();
-    var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN', { timeZone:'Asia/Kolkata' });
-    lmSetStatus('ok', (LM_DATA.served_from_cache ? '📦 Cached — ' : '🔴 Live — ') + ts + ' IST');
+    var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+    lmSetStatus('ok','Data loaded from paste — '+ts+' IST');
+    var box = document.getElementById('lm-manual-box');
+    if(box) box.style.display = 'none';
   } catch(e) {
-    lmSetStatus('error','Error: ' + e.message);
+    lmSetStatus('error','Invalid JSON: ' + e.message);
   }
-  if(btn) btn.disabled = false;
 }
 
 function lmPopulate() {
