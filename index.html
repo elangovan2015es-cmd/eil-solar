@@ -698,62 +698,211 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     <div id="settings-body"></div>
   </div>
 
-  <!-- LIVE MONITOR PAGE -->
+  <!-- LIVE MONITOR PAGE v2 -->
   <div class="page" id="pg-monitor">
-    <div style="padding:12px 12px 80px">
-      <div id="lm-url-box" style="background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07)">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase;margin-bottom:6px">Growatt GAS Proxy URL</div>
-        <input id="lm-gas-url" type="text" placeholder="https://script.google.com/macros/s/…/exec" onchange="localStorage.setItem('lm_gas_url',this.value.trim())" style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;font-family:monospace;color:#0f172a;outline:none;margin-bottom:8px"/>
-        <button onclick="lmLoad()" id="lm-btn" style="width:100%;background:#f59e0b;color:#0f172a;border:none;border-radius:8px;padding:10px;font-size:14px;font-weight:800;cursor:pointer">⚡ Load Live Data</button>
-      </div>
-      <div id="lm-status" style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-        <div id="lm-dot" style="width:10px;height:10px;border-radius:50%;background:#cbd5e1;flex-shrink:0"></div>
-        <span id="lm-st">Enter GAS URL above and tap Load</span>
-      </div>
-      <div id="lm-hero" style="display:none;background:linear-gradient(135deg,#1565c0,#0d47a1);border-radius:14px;padding:20px;text-align:center;margin-bottom:10px">
-        <div style="font-size:10px;letter-spacing:2px;color:#90caf9;text-transform:uppercase;margin-bottom:4px">Live Generation Right Now</div>
-        <div id="lm-power" style="font-size:58px;font-weight:800;color:#fff;line-height:1;letter-spacing:-2px">—</div>
-        <div style="font-size:15px;color:#90caf9;margin-top:2px">kW</div>
-        <div id="lm-status-txt" style="font-size:14px;color:#fff;margin-top:6px;font-weight:700">—</div>
-        <div id="lm-updated" style="font-size:11px;color:#90caf9;margin-top:4px">—</div>
-      </div>
-      <div id="lm-stats" style="display:none;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Total Lifetime</div>
-          <div id="lm-total" style="font-size:22px;font-weight:800;color:#16a34a">—</div>
-          <div style="font-size:11px;color:#94a3b8">kWh generated</div>
+    <div style="padding:0 0 80px;background:#f1f5f9;min-height:100vh">
+
+      <!-- GAS URL -->
+      <span class="slbl" style="padding-top:14px;display:block">Growatt Connection</span>
+      <div class="card" style="margin:0 12px 10px">
+        <div class="field">
+          <div class="field-lbl">GAS Proxy URL</div>
+          <input id="lm-gas-url" type="text" placeholder="https://script.google.com/macros/s/..."
+            onchange="localStorage.setItem('lm_gas_url',this.value.trim())"
+            style="font-size:13px;font-weight:600;color:#0f172a;width:100%;border:none;outline:none;background:transparent;font-family:'DM Sans',sans-serif"/>
         </div>
-        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Total MWh</div>
-          <div id="lm-mwh" style="font-size:22px;font-weight:800;color:#7c3aed">—</div>
-          <div style="font-size:11px;color:#94a3b8">MWh milestone</div>
-        </div>
-        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Avg Monthly</div>
-          <div id="lm-avg" style="font-size:22px;font-weight:800;color:#ea580c">—</div>
-          <div style="font-size:11px;color:#94a3b8">kWh / month</div>
-        </div>
-        <div style="background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-          <div style="font-size:10px;font-weight:800;color:#64748b;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Operating</div>
-          <div id="lm-months" style="font-size:22px;font-weight:800;color:#0f172a">—</div>
-          <div style="font-size:11px;color:#94a3b8">months since 2022</div>
+        <div style="padding:8px 12px 12px;display:flex;gap:8px">
+          <button onclick="lmLoad(true)" id="lm-btn" style="flex:2;background:var(--amber);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;font-family:Rajdhani,sans-serif">&#9889; LOAD LIVE DATA</button>
+          <button onclick="lmOpenTab()" style="flex:1;background:#0f172a;color:#fff;border:none;border-radius:10px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">Open JSON</button>
         </div>
       </div>
-      <div id="lm-pvp" style="display:none;background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase;margin-bottom:12px">&#9889; Promise vs Performance</div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:#64748b">Target / month</span><span style="font-weight:800;color:#0f172a" id="lm-tgt">700 kWh</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px"><span style="color:#64748b">Actual avg / month</span><span style="font-weight:800;color:#16a34a" id="lm-actual">—</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px"><span style="color:#64748b">Expected total</span><span style="font-weight:800;color:#0f172a" id="lm-exp">—</span></div>
-        <div style="background:#e2e8f0;border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px"><div id="lm-bar" style="height:100%;border-radius:6px;background:#16a34a;transition:width 1s ease;width:0%"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:10px"><span>0%</span><span id="lm-pct">—</span><span>100%</span></div>
-        <div id="lm-verdict" style="text-align:center;font-size:14px;font-weight:800;padding:10px;border-radius:10px;background:#dcfce7;color:#16a34a">—</div>
+
+      <!-- Status -->
+      <div id="lm-statusbar" style="margin:0 12px 10px;display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
+        <div id="lm-dot" style="width:9px;height:9px;border-radius:50%;background:#cbd5e1;flex-shrink:0;transition:background .3s"></div>
+        <span id="lm-st" style="font-size:13px;color:#475569;font-weight:600">Enter GAS URL and tap Load</span>
       </div>
-      <div id="lm-alerts" style="display:none;margin-bottom:10px"></div>
-      <div id="lm-plantinfo" style="display:none;background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.06)">
-        <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#64748b;text-transform:uppercase;margin-bottom:10px">Plant Information</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="lm-plant-grid"></div>
+
+      <!-- Paste box (shown only when auto-fetch fails) -->
+      <div id="lm-pastebox" style="display:none;margin:0 12px 10px">
+        <div class="card">
+          <div class="field">
+            <div class="field-lbl">Paste JSON from browser tab</div>
+            <textarea id="lm-json-paste" rows="4" placeholder="Paste JSON here..."
+              style="width:100%;border:none;outline:none;font-size:12px;font-family:monospace;color:#0f172a;background:transparent;resize:vertical"></textarea>
+          </div>
+          <div style="padding:8px 12px 12px">
+            <button onclick="lmParseManual()" style="width:100%;background:var(--green);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:800;cursor:pointer;font-family:Rajdhani,sans-serif">&#10003; LOAD PASTED DATA</button>
+          </div>
+        </div>
       </div>
-      <div id="lm-footer" style="text-align:center;font-size:11px;color:#94a3b8;margin-top:10px;padding-bottom:10px"></div>
+
+      <!-- ═══ FEATURE 1: LIVE NOW ═══ -->
+      <div id="lm-f1" style="display:none">
+        <span class="slbl" style="display:block">&#9728; Live Generation — Right Now</span>
+        <div class="card" style="margin:0 12px 10px;background:var(--navy);overflow:hidden">
+          <div style="padding:20px;text-align:center">
+            <div style="font-size:11px;letter-spacing:2px;color:#94a3b8;text-transform:uppercase;margin-bottom:6px">Current Output</div>
+            <div id="lm-power" style="font-size:56px;font-weight:800;color:#fff;line-height:1;font-family:Rajdhani,sans-serif;letter-spacing:-1px">—</div>
+            <div style="font-size:14px;color:#94a3b8;margin-top:2px">kW</div>
+            <div id="lm-live-status" style="margin-top:10px;display:inline-block;padding:4px 16px;border-radius:20px;font-size:13px;font-weight:700;background:rgba(245,158,11,0.2);color:var(--amber)">—</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid rgba(255,255,255,0.08)">
+            <div style="padding:12px;text-align:center;border-right:1px solid rgba(255,255,255,0.08)">
+              <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Daily Est.</div>
+              <div id="lm-daily-est" style="font-size:18px;font-weight:800;color:#f59e0b;font-family:Rajdhani,sans-serif">23 kWh</div>
+            </div>
+            <div style="padding:12px;text-align:center;border-right:1px solid rgba(255,255,255,0.08)">
+              <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Monthly Est.</div>
+              <div style="font-size:18px;font-weight:800;color:#60a5fa;font-family:Rajdhani,sans-serif">700 kWh</div>
+            </div>
+            <div style="padding:12px;text-align:center">
+              <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Yearly Est.</div>
+              <div style="font-size:18px;font-weight:800;color:#4ade80;font-family:Rajdhani,sans-serif">8,400 kWh</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ FEATURE 2: DAILY CAPTURE + ALERT ═══ -->
+      <div id="lm-f2" style="display:none">
+        <span class="slbl" style="display:block">&#128197; Daily Generation</span>
+
+        <!-- Alert box -->
+        <div id="lm-alert-box" style="display:none;margin:0 12px 10px;border-radius:12px;padding:14px 16px">
+          <div id="lm-alert-title" style="font-size:14px;font-weight:800;margin-bottom:4px">—</div>
+          <div id="lm-alert-msg" style="font-size:12px;font-weight:600">—</div>
+        </div>
+
+        <!-- Today vs estimate comparison -->
+        <div class="card" style="margin:0 12px 10px">
+          <div style="padding:14px 16px 0">
+            <div style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#0f172a">Today vs Estimate</div>
+            <div id="lm-today-date" style="font-size:12px;color:#64748b;margin-top:2px">—</div>
+          </div>
+          <div style="padding:14px 16px">
+            <!-- Progress bar -->
+            <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#475569;margin-bottom:6px">
+              <span>Estimated by now</span>
+              <span id="lm-est-by-now">— kWh</span>
+            </div>
+            <div style="background:#f1f5f9;border-radius:6px;height:10px;overflow:hidden;margin-bottom:4px">
+              <div id="lm-day-bar" style="height:100%;border-radius:6px;background:var(--green);transition:width 1s ease;width:0%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;margin-bottom:14px">
+              <span>0 kWh</span>
+              <span id="lm-day-pct">—</span>
+              <span>23 kWh target</span>
+            </div>
+            <!-- Live vs estimated row -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Live Now</div>
+                <div id="lm-cmp-live" style="font-size:22px;font-weight:800;color:var(--green);font-family:Rajdhani,sans-serif">— kW</div>
+              </div>
+              <div style="background:#f8fafc;border-radius:10px;padding:12px;text-align:center">
+                <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Typical This Hour</div>
+                <div id="lm-cmp-typical" style="font-size:22px;font-weight:800;color:#3b82f6;font-family:Rajdhani,sans-serif">— kW</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Daily log capture -->
+        <div class="card" style="margin:0 12px 10px">
+          <div style="padding:14px 16px 0">
+            <div style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#0f172a">Log Today's Generation</div>
+            <div style="font-size:12px;color:#64748b;margin-top:2px">Enter actual kWh at end of day to build history</div>
+          </div>
+          <div style="padding:10px 12px;display:flex;gap:8px;align-items:center">
+            <input id="lm-log-kwh" type="number" placeholder="e.g. 18.5" step="0.1"
+              style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:16px;font-weight:700;color:#0f172a;outline:none;font-family:'DM Sans',sans-serif"/>
+            <span style="font-size:14px;font-weight:700;color:#64748b">kWh</span>
+            <button onclick="lmLogToday()" style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:800;cursor:pointer;font-family:'DM Sans',sans-serif">Save</button>
+          </div>
+          <div id="lm-log-status" style="padding:0 16px 12px;font-size:12px;color:#64748b;display:none"></div>
+        </div>
+      </div>
+
+      <!-- ═══ FEATURE 3: THIS DAY IN PREVIOUS YEARS ═══ -->
+      <div id="lm-f3" style="display:none">
+        <span class="slbl" style="display:block">&#128197; This Day — Previous Years</span>
+        <div class="card" style="margin:0 12px 10px">
+          <div id="lm-history-intro" style="padding:12px 16px;background:#fef3c7;border-radius:12px 12px 0 0;border-bottom:1px solid #fde68a">
+            <div style="font-size:12px;font-weight:700;color:#92400e">&#128276; Comparing today's date across years</div>
+            <div id="lm-hist-date" style="font-size:11px;color:#b45309;margin-top:2px">—</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse" id="lm-hist-table">
+            <thead>
+              <tr style="background:#f8fafc">
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;text-align:left">Year</th>
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;text-align:right">Generation</th>
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;text-align:right">vs 23 kWh</th>
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;text-align:left">Source</th>
+              </tr>
+            </thead>
+            <tbody id="lm-hist-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ FEATURE 4: MONTHLY GENERATION ═══ -->
+      <div id="lm-f4" style="display:none">
+        <span class="slbl" style="display:block">&#128200; Monthly Generation</span>
+        <div class="card" style="margin:0 12px 10px">
+          <div style="padding:14px 16px 0;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#0f172a">Monthly Performance</div>
+            <div style="font-size:12px;color:#64748b;font-weight:600">Target: 700 kWh</div>
+          </div>
+          <div id="lm-monthly-bars" style="padding:16px;display:flex;align-items:flex-end;gap:4px;height:160px;overflow-x:auto"></div>
+          <div style="padding:0 16px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div style="background:#f8fafc;border-radius:10px;padding:12px">
+              <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Avg Monthly</div>
+              <div id="lm-avg-mth" style="font-size:20px;font-weight:800;color:var(--green);font-family:Rajdhani,sans-serif">— kWh</div>
+            </div>
+            <div style="background:#f8fafc;border-radius:10px;padding:12px">
+              <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Performance</div>
+              <div id="lm-perf-pct" style="font-size:20px;font-weight:800;color:var(--amber);font-family:Rajdhani,sans-serif">—%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ FEATURE 5: YEARLY GENERATION ═══ -->
+      <div id="lm-f5" style="display:none">
+        <span class="slbl" style="display:block">&#128202; Yearly Generation</span>
+        <div class="card" style="margin:0 12px 10px">
+          <div style="padding:14px 16px 0">
+            <div style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#0f172a">Year by Year Summary</div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin-top:8px" id="lm-yearly-tbl">
+            <thead>
+              <tr style="background:#f8fafc">
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-align:left;text-transform:uppercase;letter-spacing:1px">Year</th>
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-align:right;text-transform:uppercase;letter-spacing:1px">Est. kWh</th>
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-align:right;text-transform:uppercase;letter-spacing:1px">Target</th>
+                <th style="padding:10px 16px;font-size:11px;font-weight:800;color:#64748b;text-align:center;text-transform:uppercase;letter-spacing:1px">Status</th>
+              </tr>
+            </thead>
+            <tbody id="lm-yearly-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Lifetime PvP -->
+        <div class="card" style="margin:0 12px 10px">
+          <div style="padding:14px 16px">
+            <div style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#0f172a;margin-bottom:12px">Lifetime Promise vs Performance</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px"><span style="color:#475569">Total expected</span><span id="lm-pvp-exp" style="font-weight:800;color:#0f172a">—</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:13px"><span style="color:#475569">Total actual</span><span id="lm-pvp-act" style="font-weight:800;color:var(--green)">—</span></div>
+            <div style="background:#f1f5f9;border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px">
+              <div id="lm-pvp-bar" style="height:100%;border-radius:6px;background:var(--green);transition:width 1s ease;width:0%"></div>
+            </div>
+            <div id="lm-pvp-verdict" style="text-align:center;margin-top:10px;padding:10px;border-radius:10px;font-size:14px;font-weight:800;background:#dcfce7;color:var(--green)">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="lm-footer" style="text-align:center;font-size:11px;color:#94a3b8;padding:8px 0 10px"></div>
     </div>
   </div>
 
@@ -1601,7 +1750,7 @@ function goPage(p){
   if(upb && p==="customer") upb.style.display="none";
   if(p==="welcome") renderWelcome();
   if(p==="form") renderForm();
-  if(p==="monitor") { var saved=localStorage.getItem('lm_gas_url'); if(saved){var el=document.getElementById('lm-gas-url');if(el)el.value=saved;} }
+  if(p==="monitor") { lmRestore(); }
   if(p==="settings") renderSettings();
   window.scrollTo(0,0);
 }
@@ -4519,10 +4668,333 @@ if('serviceWorker' in navigator){
   }).catch(function(){/* SW not supported or blocked */});
 }
 
-// ═══════════════════════════════════════════════════════
-// LIVE MONITOR — Growatt API Integration
-// Added in v44 — standalone module, no changes to existing features
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// LIVE MONITOR v2 — Full Generation Tracking
+// Features: Live kW, Daily capture, Monthly, Yearly, History
+// ═══════════════════════════════════════════════════════════════
+var LM_DATA = null;
+var LM_GAS_URL = '';
+
+// Chennai monthly irradiance factors
+var LM_MONTHLY_FACTOR = [0.92,0.97,1.10,1.15,1.12,0.88,0.82,0.85,0.90,1.00,0.95,0.90];
+// Hourly generation profile (fraction of daily, 6am-5pm)
+var LM_HOURLY = [0.01,0.04,0.08,0.12,0.13,0.14,0.14,0.12,0.10,0.07,0.04,0.01];
+var LM_CAP = 6, LM_YIELD = 1400;
+var LM_TARGET_YEAR  = LM_CAP * LM_YIELD;
+var LM_TARGET_MONTH = Math.round(LM_TARGET_YEAR / 12);
+var LM_TARGET_DAY   = Math.round(LM_TARGET_YEAR / 365 * 10) / 10;
+
+// ── STATUS ──
+function lmSt(state, msg) {
+  var d = document.getElementById('lm-dot');
+  var s = document.getElementById('lm-st');
+  var c = {loading:'#f59e0b', ok:'#16a34a', error:'#cc0000'};
+  if(d) { d.style.background = c[state]||'#cbd5e1'; d.style.animation = state==='loading'?'pulse 1s infinite':'none'; }
+  if(s) { s.textContent = msg; s.style.color = state==='error'?'#cc0000':state==='ok'?'#16a34a':'#475569'; }
+}
+
+function lmFmt(n,d){ return parseFloat(n).toLocaleString('en-IN',{maximumFractionDigits:d||1,minimumFractionDigits:d||1}); }
+
+// ── OPEN JSON IN NEW TAB ──
+function lmOpenTab() {
+  var url = (document.getElementById('lm-gas-url')||{}).value || localStorage.getItem('lm_gas_url') || '';
+  if(!url) { lmSt('error','Enter GAS URL first'); return; }
+  window._lmOpenUrl = url.trim() + (url.includes('?') ? '&' : '?') + 'ts=' + Date.now();
+  window.open(window._lmOpenUrl, '_blank');
+  // Show paste box
+  var pb = document.getElementById('lm-pastebox');
+  if(pb) pb.style.display = 'block';
+  lmSt('loading','Opened in new tab. Copy all JSON → paste below → Load');
+}
+
+// ── MAIN LOAD ──
+async function lmLoad(force) {
+  var url = (document.getElementById('lm-gas-url')||{}).value || '';
+  if(!url) url = localStorage.getItem('lm_gas_url') || '';
+  if(!url) { lmSt('error','Enter GAS Proxy URL first'); return; }
+  url = url.trim();
+  localStorage.setItem('lm_gas_url', url);
+  LM_GAS_URL = url;
+  var el = document.getElementById('lm-gas-url');
+  if(el) el.value = url;
+  lmSt('loading','Connecting to Growatt...');
+  var btn = document.getElementById('lm-btn');
+  if(btn) btn.disabled = true;
+  var fullUrl = url + (url.includes('?') ? '&' : '?') + 'ts=' + Date.now();
+  try {
+    var resp = await fetch(fullUrl, {redirect:'follow'});
+    var text = await resp.text();
+    if(!text || text.trim().startsWith('<')) throw new Error('blocked');
+    LM_DATA = JSON.parse(text);
+    if(LM_DATA.status === 'error') throw new Error(LM_DATA.message);
+    lmRender();
+    var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+    lmSt('ok', (LM_DATA.served_from_cache ? 'Cached — ' : 'Live — ') + ts + ' IST');
+    document.getElementById('lm-pastebox').style.display = 'none';
+  } catch(e) {
+    lmSt('error','Auto-fetch blocked. Use "Open JSON" button above.');
+    document.getElementById('lm-pastebox').style.display = 'block';
+  }
+  if(btn) btn.disabled = false;
+}
+
+// ── MANUAL PASTE ──
+function lmParseManual() {
+  var text = (document.getElementById('lm-json-paste')||{}).value || '';
+  try {
+    LM_DATA = JSON.parse(text.trim());
+    if(LM_DATA.status === 'error') throw new Error(LM_DATA.message);
+    lmRender();
+    var ts = new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+    lmSt('ok', 'Data loaded — ' + ts + ' IST');
+    document.getElementById('lm-pastebox').style.display = 'none';
+  } catch(e) {
+    lmSt('error','Invalid JSON. Open the URL in new tab and copy everything.');
+  }
+}
+
+// ── LOG TODAY'S READING ──
+function lmLogToday() {
+  var kwhInput = document.getElementById('lm-log-kwh');
+  var kwh = parseFloat(kwhInput ? kwhInput.value : 0);
+  if(!kwh || kwh <= 0 || kwh > 50) { lmSt('error','Enter valid kWh (0.1 - 50)'); return; }
+  var today = new Date().toISOString().slice(0,10);
+  var logs = JSON.parse(localStorage.getItem('lm_daily_log') || '{}');
+  logs[today] = kwh;
+  localStorage.setItem('lm_daily_log', JSON.stringify(logs));
+  var st = document.getElementById('lm-log-status');
+  if(st) { st.style.display = 'block'; st.style.color = '#16a34a'; st.textContent = 'Saved: ' + today + ' = ' + kwh + ' kWh'; }
+  if(kwhInput) kwhInput.value = '';
+  lmRenderHistory(); // refresh history table
+}
+
+// ── MAIN RENDER ──
+function lmRender() {
+  if(!LM_DATA) return;
+  lmRenderF1();
+  lmRenderF2();
+  lmRenderF3();
+  lmRenderF4();
+  lmRenderF5();
+  ['lm-f1','lm-f2','lm-f3','lm-f4','lm-f5'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.style.display = 'block';
+  });
+  var ft = document.getElementById('lm-footer');
+  if(ft) ft.textContent = LM_DATA.served_from_cache ? 'Cached (' + LM_DATA.cache_age_seconds + 's ago) · Tap Load for fresh data' : 'Live from Growatt · ' + new Date(LM_DATA.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}) + ' IST';
+}
+
+// ── F1: LIVE NOW ──
+function lmRenderF1() {
+  var pw = parseFloat(LM_DATA.live.power_kw) || 0;
+  var now = new Date(); var hr = now.getHours();
+  var isDay = hr >= 6 && hr <= 18;
+  var ep = document.getElementById('lm-power'); if(ep) ep.textContent = pw.toFixed(2);
+  var es = document.getElementById('lm-live-status');
+  if(es) {
+    es.textContent = LM_DATA.live.status;
+    es.style.background = pw > 0 ? 'rgba(22,163,74,0.2)' : 'rgba(100,116,139,0.2)';
+    es.style.color = pw > 0 ? '#16a34a' : '#64748b';
+  }
+  // Daily estimate for today based on season
+  var month = now.getMonth();
+  var dailyEst = Math.round(LM_TARGET_DAY * LM_MONTHLY_FACTOR[month] * 10) / 10;
+  var el = document.getElementById('lm-daily-est');
+  if(el) el.textContent = dailyEst + ' kWh';
+}
+
+// ── F2: DAILY + ALERT ──
+function lmRenderF2() {
+  var now = new Date(); var hr = now.getHours(); var month = now.getMonth();
+  var pw = parseFloat(LM_DATA.live.power_kw) || 0;
+  var isDay = hr >= 6 && hr <= 18;
+  var dailyTarget = Math.round(LM_TARGET_DAY * LM_MONTHLY_FACTOR[month] * 10) / 10;
+
+  // Date display
+  var dateEl = document.getElementById('lm-today-date');
+  if(dateEl) dateEl.textContent = now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:'Asia/Kolkata'});
+
+  // Estimate by current hour
+  var solarHr = Math.min(Math.max(hr - 6, 0), 12);
+  var elapsed = 0;
+  for(var i = 0; i < solarHr; i++) elapsed += LM_HOURLY[i];
+  var estByNow = Math.round(dailyTarget * elapsed * 10) / 10;
+  var estEl = document.getElementById('lm-est-by-now');
+  if(estEl) estEl.textContent = estByNow + ' kWh';
+
+  // Progress bar (based on live kW vs rated capacity)
+  var dayPct = isDay && pw > 0 ? Math.min(Math.round(pw / LM_CAP * 100 * 1.2), 100) : (hr > 18 ? 100 : 0);
+  var bar = document.getElementById('lm-day-bar');
+  if(bar) {
+    bar.style.width = dayPct + '%';
+    bar.style.background = dayPct >= 70 ? '#16a34a' : dayPct >= 40 ? '#f59e0b' : '#94a3b8';
+  }
+  var pctEl = document.getElementById('lm-day-pct');
+  if(pctEl) pctEl.textContent = (isDay ? dayPct + '% capacity' : hr > 18 ? 'Day complete' : 'Pre-sunrise');
+
+  // Live comparison
+  var liveEl = document.getElementById('lm-cmp-live');
+  if(liveEl) { liveEl.textContent = pw.toFixed(2) + ' kW'; liveEl.style.color = pw > 0 ? '#16a34a' : '#94a3b8'; }
+  // Typical for this hour
+  var typicalKw = isDay ? Math.round(LM_CAP * LM_HOURLY[Math.min(solarHr,11)] * 12 * 10) / 10 : 0;
+  var typEl = document.getElementById('lm-cmp-typical');
+  if(typEl) typEl.textContent = typicalKw.toFixed(1) + ' kW';
+
+  // ── ALERTS ──
+  var alertBox = document.getElementById('lm-alert-box');
+  var alertTitle = document.getElementById('lm-alert-title');
+  var alertMsg = document.getElementById('lm-alert-msg');
+  if(alertBox && alertTitle && alertMsg) {
+    if(isDay && pw === 0) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#fee2e2'; alertBox.style.border = '1px solid #fca5a5';
+      alertTitle.textContent = 'ALERT: Zero generation during daylight hours!';
+      alertTitle.style.color = '#cc0000';
+      alertMsg.textContent = 'Time: ' + hr + ':00 hrs. Check inverter NXD6BK7086 and data logger JPC6A2847C immediately.';
+      alertMsg.style.color = '#b91c1c';
+    } else if(isDay && pw > 0 && pw < LM_CAP * 0.25) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#fef3c7'; alertBox.style.border = '1px solid #fde68a';
+      alertTitle.textContent = 'WARNING: Low generation — ' + pw.toFixed(2) + ' kW';
+      alertTitle.style.color = '#92400e';
+      alertMsg.textContent = 'Below 25% of rated capacity. Check for panel soiling, shading, or inverter fault.';
+      alertMsg.style.color = '#b45309';
+    } else if(!isDay) {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#f1f5f9'; alertBox.style.border = '1px solid #e2e8f0';
+      alertTitle.textContent = 'Night mode — inverter in standby';
+      alertTitle.style.color = '#475569';
+      alertMsg.textContent = 'Generation resumes after sunrise (~6:00 AM). Last update: ' + new Date(LM_DATA.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
+      alertMsg.style.color = '#64748b';
+    } else {
+      alertBox.style.display = 'block';
+      alertBox.style.background = '#f0fdf4'; alertBox.style.border = '1px solid #bbf7d0';
+      alertTitle.textContent = 'System Normal — Generating ' + pw.toFixed(2) + ' kW';
+      alertTitle.style.color = '#16a34a';
+      alertMsg.textContent = 'All systems healthy. Expected today: ' + dailyTarget + ' kWh (Chennai seasonal estimate).';
+      alertMsg.style.color = '#166534';
+    }
+  }
+}
+
+// ── F3: THIS DAY HISTORY ──
+function lmRenderHistory() {
+  var now = new Date(); var month = now.getMonth(); var day = now.getDate();
+  var logs = JSON.parse(localStorage.getItem('lm_daily_log') || '{}');
+  var seasons = ['Winter','Winter','Spring','Summer','Summer','Monsoon','Monsoon','Monsoon','Post-monsoon','Post-monsoon','Winter','Winter'];
+  var factor = LM_MONTHLY_FACTOR[month];
+  var avgMth = parseFloat((LM_DATA && LM_DATA.energy) ? LM_DATA.energy.avg_month_kwh : 666);
+  var dailyAvg = avgMth / 30.4;
+
+  var dateHdr = document.getElementById('lm-hist-date');
+  if(dateHdr) dateHdr.textContent = 'Date: ' + String(day).padStart(2,'0') + '-' + String(month+1).padStart(2,'0') + ' across years 2022–2026';
+
+  var tbody = document.getElementById('lm-hist-body');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  var years = [
+    {yr:2022, vf:1.03, installed: month >= 7}, // installed Aug 2022
+    {yr:2023, vf:0.97},
+    {yr:2024, vf:1.04},
+    {yr:2025, vf:0.99},
+    {yr:2026, vf:1.00, current:true}
+  ];
+  years.forEach(function(y) {
+    var dateKey = y.yr + '-' + String(month+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+    var logged = logs[dateKey];
+    var est = Math.round(dailyAvg * factor * y.vf * 10) / 10;
+    var tgt = Math.round(LM_TARGET_DAY * factor * 10) / 10;
+    var display = logged ? logged.toFixed(1) + ' kWh' : (y.installed===false ? 'Not installed' : est + ' kWh');
+    var source = logged ? 'Logged' : (y.installed===false ? '—' : 'Estimated');
+    var pct = logged ? Math.round(logged/tgt*100) : (y.installed===false ? 0 : Math.round(est/tgt*100));
+    var badgeBg = pct>=90?'#dcfce7':pct>=70?'#fef3c7':'#fee2e2';
+    var badgeColor = pct>=90?'#166534':pct>=70?'#92400e':'#991b1b';
+    var rowBg = y.current ? '#fffbeb' : (parseInt(tbody.rows.length)%2===0?'#fff':'#f8fafc');
+    var row = '<tr style="background:'+rowBg+'">'
+      +'<td style="padding:10px 16px;font-size:14px;font-weight:800;color:#0f172a;font-family:Rajdhani,sans-serif">'+(y.current?'<span style="color:var(--amber)">'+y.yr+' ★</span>':y.yr)+'</td>'
+      +'<td style="padding:10px 16px;font-size:14px;font-weight:700;color:#0f172a;text-align:right">'+display+'</td>'
+      +'<td style="padding:10px 16px;text-align:right"><span style="background:'+badgeBg+';color:'+badgeColor+';padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">'+(y.installed===false?'—':pct+'%')+'</span></td>'
+      +'<td style="padding:10px 16px;font-size:11px;color:#64748b;font-weight:600">'+source+'</td>'
+      +'</tr>';
+    tbody.insertAdjacentHTML('beforeend', row);
+  });
+}
+
+function lmRenderF3() { lmRenderHistory(); }
+
+// ── F4: MONTHLY ──
+function lmRenderF4() {
+  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh);
+  var mths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var curMonth = new Date().getMonth();
+  var maxVal = Math.max.apply(null, LM_MONTHLY_FACTOR.map(function(f){return Math.round(avgMth*f);}));
+  var container = document.getElementById('lm-monthly-bars');
+  if(!container) return;
+  container.innerHTML = '';
+  LM_MONTHLY_FACTOR.forEach(function(f, i) {
+    var val = Math.round(avgMth * f);
+    var hPct = Math.round(val / maxVal * 100);
+    var isNow = i === curMonth;
+    var aboveTgt = val >= LM_TARGET_MONTH;
+    var col = document.createElement('div');
+    col.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;min-width:22px';
+    col.innerHTML = '<div style="font-size:9px;font-weight:800;color:'+(isNow?'var(--amber)':'#64748b')+';margin-bottom:2px">'
+      +(isNow?val:'')+' </div>'
+      +'<div style="width:100%;background:'+(isNow?'var(--amber)':aboveTgt?'#16a34a':'#94a3b8')+';border-radius:3px 3px 0 0;height:'+hPct+'%;min-height:4px;transition:height .6s ease"></div>'
+      +'<div style="font-size:9px;color:'+(isNow?'var(--amber)':'#94a3b8')+';margin-top:4px;font-weight:'+(isNow?'800':'600')+'">'
+      +mths[i]+'</div>';
+    container.appendChild(col);
+  });
+  // Stats
+  var avgEl = document.getElementById('lm-avg-mth');
+  if(avgEl) avgEl.textContent = lmFmt(avgMth) + ' kWh';
+  var pvp = LM_DATA.promise_vs_performance;
+  var perfEl = document.getElementById('lm-perf-pct');
+  if(perfEl) { perfEl.textContent = pvp.performance_pct + '%'; perfEl.style.color = pvp.performance_pct>=90?'#16a34a':pvp.performance_pct>=70?'var(--amber)':'#cc0000'; }
+}
+
+// ── F5: YEARLY ──
+function lmRenderF5() {
+  var avgMth = parseFloat(LM_DATA.energy.avg_month_kwh);
+  var tbody = document.getElementById('lm-yearly-body');
+  if(!tbody) return;
+  tbody.innerHTML = '';
+  var years = [
+    {yr:2022,months:5,factor:1.05},{yr:2023,months:12,factor:1.02},
+    {yr:2024,months:12,factor:0.98},{yr:2025,months:12,factor:1.01},
+    {yr:2026,months:5,factor:1.00}
+  ];
+  years.forEach(function(y,i) {
+    var est = Math.round(avgMth * y.months * y.factor);
+    var tgt = LM_TARGET_MONTH * y.months;
+    var pct = Math.round(est/tgt*100);
+    var bg = i%2===0?'#fff':'#f8fafc';
+    var badge = pct>=90?'<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">On Track</span>'
+               :pct>=70?'<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">Watch</span>'
+               :'<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:800">Low</span>';
+    tbody.insertAdjacentHTML('beforeend',
+      '<tr style="background:'+bg+'"><td style="padding:10px 16px;font-size:14px;font-weight:800;color:#0f172a;font-family:Rajdhani,sans-serif">'+y.yr+'</td>'
+      +'<td style="padding:10px 16px;font-size:13px;font-weight:700;color:#0f172a;text-align:right">'+est.toLocaleString('en-IN')+' kWh</td>'
+      +'<td style="padding:10px 16px;font-size:13px;color:#64748b;text-align:right">'+tgt.toLocaleString('en-IN')+' kWh</td>'
+      +'<td style="padding:10px 16px;text-align:center">'+badge+'</td></tr>');
+  });
+  // PvP
+  var pvp = LM_DATA.promise_vs_performance;
+  var expEl = document.getElementById('lm-pvp-exp'); if(expEl) expEl.textContent = lmFmt(pvp.expected_total_kwh,0) + ' kWh';
+  var actEl = document.getElementById('lm-pvp-act'); if(actEl) actEl.textContent = lmFmt(pvp.actual_total_kwh,0) + ' kWh';
+  var bar   = document.getElementById('lm-pvp-bar');
+  if(bar) { bar.style.width=Math.min(pvp.performance_pct,100)+'%'; bar.style.background=pvp.performance_pct>=90?'#16a34a':'#f59e0b'; }
+  var vd = document.getElementById('lm-pvp-verdict');
+  if(vd) { vd.textContent=pvp.verdict; vd.style.background=pvp.performance_pct>=90?'#dcfce7':'#fef3c7'; vd.style.color=pvp.performance_pct>=90?'#16a34a':'#92400e'; }
+}
+
+// ── RESTORE URL ON PAGE SWITCH ──
+function lmRestore() {
+  var saved = localStorage.getItem('lm_gas_url') || '';
+  var el = document.getElementById('lm-gas-url');
+  if(el && saved) el.value = saved;
+}
+// ═══════════════════════════════════════════════════════════════
 var LM_DATA = null;
 
 function lmSetStatus(state, msg) {
