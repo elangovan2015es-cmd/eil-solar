@@ -763,7 +763,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
       </div>
 
       <!-- ═══ SECTION 1B: SOLCAST FORECAST ═══ -->
-      <div id="lm-sc" style="display:none">
+      <div id="lm-sc" style="display:block">
         <span class="slbl" style="display:block">&#9728; Solcast Forecast</span>
         <div class="card" style="margin:0 12px 10px">
           <div style="padding:14px 16px 0;display:flex;justify-content:space-between;align-items:center">
@@ -808,7 +808,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
           </div>
           <!-- Update button -->
           <div style="padding:0 16px 14px">
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Paste updated forecast JSON from Solcast (max 10 calls/day):</div>
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Solcast API key added to GAS? Tap Load Live Data above for auto-fetch. Or paste JSON manually here:</div>
             <textarea id="sc-paste" rows="3" placeholder='Paste Solcast JSON here... {"forecasts":[...]}'
               style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;color:#0f172a;outline:none;resize:vertical;box-sizing:border-box;margin-bottom:6px"></textarea>
             <button onclick="scLoadPaste()"
@@ -4833,9 +4833,11 @@ function scRender() {
   }
 
   // Updated time
-  var ts = localStorage.getItem(SC_KEY+'_ts');
+  var ts = localStorage.getItem('lm_solcast_data_ts') || localStorage.getItem(SC_KEY+'_ts');
   var upd = document.getElementById('sc-updated');
-  if(upd&&ts) upd.textContent = 'Forecast loaded: '+new Date(ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST';
+  if(upd) upd.textContent = ts
+    ? 'Auto-fetched: '+new Date(ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST (via GAS)'
+    : 'Paste JSON below or add Solcast API key to GAS script';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -5033,6 +5035,10 @@ function lmRestore() {
   lmSeedKnownData();
   // Load Solcast forecast from storage
   setTimeout(scRender, 300);
+  // Auto-load if we have a saved GAS URL — fetch live data on page open
+  if(localStorage.getItem('lm_gas_url')) {
+    setTimeout(function(){ lmLoad(); }, 500);
+  }
   // Set URL
   var url = localStorage.getItem('lm_gas_url') || LM.gasUrl;
   var el  = document.getElementById('lm-url');
@@ -5082,6 +5088,13 @@ async function lmLoad() {
 
     // Import ALL data from sheet into localStorage log
     var today = lmIST();
+    // Auto-process Solcast if returned in GAS response
+    if(d.solcast && d.solcast.forecasts && d.solcast.forecasts.length) {
+      SC_DATA = d.solcast;
+      localStorage.setItem('lm_solcast_data', JSON.stringify(d.solcast));
+      localStorage.setItem('lm_solcast_data_ts', new Date().toISOString());
+      setTimeout(scRender, 200);
+    }
     // Store first reading of day for subtraction calculation
     var firstKey = 'lm_first_'+today;
     if(!localStorage.getItem(firstKey) && d.energy && d.energy.total_kwh) {
@@ -5171,9 +5184,8 @@ function lmShowMsg(el, txt, clr) {
 // ─── MAIN RENDER ───────────────────────────────────────────
 function lmRender() {
   if(!LM.data) return;
-  // Also show Solcast if we have saved forecast
-  var scSaved = localStorage.getItem('lm_solcast_data');
-  if(scSaved) scRender();
+  // Always try to render Solcast (shows paste box if no data)
+  setTimeout(scRender, 100);
   ['lm-s1','lm-s2','lm-s3','lm-s4'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'block';
