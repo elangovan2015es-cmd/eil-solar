@@ -5244,13 +5244,18 @@ function lmRenderS2() {
   var te = document.getElementById('lm-d-tgt');
   if(te) te.textContent = lmFmt(avg)+' kWh';
 
-  // Alert box
+  // Alert box — only show when we have real live data
   var ab = document.getElementById('lm-alert');
   var at = document.getElementById('lm-alert-t');
   var am = document.getElementById('lm-alert-m');
+  var isRealData = LM.data && LM.data.api_version && LM.data.api_version.indexOf('Seeded')<0;
   if(ab&&at&&am) {
     ab.style.display = 'block';
-    if(isDay&&pw===0) {
+    if(!isRealData) {
+      ab.style.cssText='display:block;margin:0 12px 10px;border-radius:12px;padding:14px 16px;background:#f1f5f9;border:1px solid #e2e8f0';
+      at.textContent='Tap Load Live Data for real-time readings'; at.style.color='#475569';
+      am.textContent='Open app from GitHub Pages for automatic live data fetch.'; am.style.color='#64748b';
+    } else if(isDay&&pw===0) {
       ab.style.cssText='display:block;margin:0 12px 10px;border-radius:12px;padding:14px 16px;background:#fee2e2;border:1px solid #fca5a5';
       at.textContent='ALERT: Zero generation during daylight!'; at.style.color='#cc0000';
       am.textContent='Check inverter NXD6BK7086 and data logger JPC6A2847C.'; am.style.color='#b91c1c';
