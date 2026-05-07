@@ -762,6 +762,64 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
         </div>
       </div>
 
+      <!-- ═══ SECTION 1B: SOLCAST FORECAST ═══ -->
+      <div id="lm-sc" style="display:none">
+        <span class="slbl" style="display:block">&#9728; Solcast Forecast</span>
+        <div class="card" style="margin:0 12px 10px">
+          <div style="padding:14px 16px 0;display:flex;justify-content:space-between;align-items:center">
+            <div style="font-family:Rajdhani,sans-serif;font-size:16px;font-weight:700;color:#0f172a">3-Day Generation Forecast</div>
+            <div style="font-size:11px;color:#64748b;background:#f1f5f9;padding:3px 8px;border-radius:6px">Solcast AI</div>
+          </div>
+          <div style="padding:10px 16px 4px;font-size:11px;color:#64748b">
+            Elango Home · 6 kWp · Chennai · 30-min intervals
+          </div>
+          <!-- Day summary cards -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 16px 12px">
+            <div id="sc-day0" style="background:#f0fdf4;border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Today</div>
+              <div id="sc-d0-kwh" style="font-size:22px;font-weight:800;color:#16a34a;font-family:Rajdhani,sans-serif">—</div>
+              <div style="font-size:10px;color:#64748b">kWh forecast</div>
+              <div id="sc-d0-peak" style="font-size:11px;color:#16a34a;font-weight:700;margin-top:2px">—</div>
+            </div>
+            <div id="sc-day1" style="background:#fffbeb;border-radius:10px;padding:10px;text-align:center">
+              <div id="sc-d1-lbl" style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Tomorrow</div>
+              <div id="sc-d1-kwh" style="font-size:22px;font-weight:800;color:#f59e0b;font-family:Rajdhani,sans-serif">—</div>
+              <div style="font-size:10px;color:#64748b">kWh forecast</div>
+              <div id="sc-d1-peak" style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:2px">—</div>
+            </div>
+            <div id="sc-day2" style="background:#eff6ff;border-radius:10px;padding:10px;text-align:center">
+              <div id="sc-d2-lbl" style="font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Day 3</div>
+              <div id="sc-d2-kwh" style="font-size:22px;font-weight:800;color:#3b82f6;font-family:Rajdhani,sans-serif">—</div>
+              <div style="font-size:10px;color:#64748b">kWh forecast</div>
+              <div id="sc-d2-peak" style="font-size:11px;color:#3b82f6;font-weight:700;margin-top:2px">—</div>
+            </div>
+          </div>
+          <!-- Hourly bar chart for today -->
+          <div style="padding:0 16px 6px">
+            <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Today Hourly Profile (kW)</div>
+            <div id="sc-hourly" style="display:flex;align-items:flex-end;gap:2px;height:80px;overflow-x:auto"></div>
+            <div style="display:flex;justify-content:space-between;font-size:9px;color:#94a3b8;margin-top:4px;padding:0 2px">
+              <span>6am</span><span>9am</span><span>12pm</span><span>3pm</span><span>6pm</span>
+            </div>
+          </div>
+          <!-- Confidence range -->
+          <div style="padding:8px 16px 14px">
+            <div id="sc-confidence" style="background:#f8fafc;border-radius:8px;padding:10px;font-size:12px;color:#475569"></div>
+          </div>
+          <!-- Update button -->
+          <div style="padding:0 16px 14px">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Paste updated forecast JSON from Solcast (max 10 calls/day):</div>
+            <textarea id="sc-paste" rows="3" placeholder='Paste Solcast JSON here... {"forecasts":[...]}'
+              style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;color:#0f172a;outline:none;resize:vertical;box-sizing:border-box;margin-bottom:6px"></textarea>
+            <button onclick="scLoadPaste()"
+              style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:800;cursor:pointer">
+              &#9889; Load Forecast
+            </button>
+          </div>
+          <div style="padding:0 16px 10px;font-size:11px;color:#94a3b8;text-align:center" id="sc-updated">—</div>
+        </div>
+      </div>
+
       <!-- ═══ SECTION 2: DAILY GENERATION ═══ -->
       <div id="lm-s2" style="display:none">
         <span class="slbl" style="display:block">&#128197; Daily Generation</span>
@@ -4647,7 +4705,140 @@ if(window.navigator.standalone){
   });
 }
 </script>
-<script>// ═══════════════════════════════════════════════════════════
+<script>
+// ─── SOLCAST FORECAST ──────────────────────────────────────
+var SC_DATA = null;
+var SC_KEY  = 'lm_solcast_data';
+
+function scLoadPaste() {
+  var ta = document.getElementById('sc-paste');
+  if(!ta) return;
+  var text = ta.value.trim();
+  var brace = text.indexOf('{');
+  if(brace > 0) text = text.substring(brace);
+  if(!text) { alert('Please paste Solcast JSON first'); return; }
+  try {
+    var d = JSON.parse(text);
+    if(!d.forecasts || !d.forecasts.length) throw new Error('No forecasts found in JSON');
+    SC_DATA = d;
+    localStorage.setItem(SC_KEY, text);
+    localStorage.setItem(SC_KEY+'_ts', new Date().toISOString());
+    scRender();
+    ta.value = '';
+    lmSt('ok','Solcast forecast loaded!');
+  } catch(e) {
+    alert('Invalid JSON: ' + e.message);
+  }
+}
+
+function scRender() {
+  // Load from storage if not in memory
+  if(!SC_DATA) {
+    var saved = localStorage.getItem(SC_KEY);
+    if(saved) {
+      try { SC_DATA = JSON.parse(saved); } catch(e){ return; }
+    } else { return; }
+  }
+
+  var sc = document.getElementById('lm-sc');
+  if(sc) sc.style.display = 'block';
+
+  var forecasts = SC_DATA.forecasts || [];
+  if(!forecasts.length) return;
+
+  // Convert UTC to IST and group by IST date
+  var byDate = {};
+  forecasts.forEach(function(f) {
+    // period_end in UTC, add 5:30 for IST
+    var utc  = new Date(f.period_end);
+    var ist  = new Date(utc.getTime() + (5.5 * 3600 * 1000));
+    var date = ist.toISOString().slice(0,10);
+    var hr   = ist.getUTCHours();
+    var mn   = ist.getUTCMinutes();
+    var label= (hr%12||12)+':'+(mn===0?'00':'30')+(hr<12?'am':'pm');
+    if(!byDate[date]) byDate[date] = [];
+    byDate[date].push({
+      time    : label,
+      hour    : hr,
+      minute  : mn,
+      pv      : parseFloat(f.pv_estimate)||0,
+      pv10    : parseFloat(f.pv_estimate10)||0,
+      pv90    : parseFloat(f.pv_estimate90)||0,
+      // kWh = kW * 0.5 hours
+      kwh     : Math.round((parseFloat(f.pv_estimate)||0)*0.5*100)/100
+    });
+  });
+
+  var dates = Object.keys(byDate).sort();
+  var colors = ['#16a34a','#f59e0b','#3b82f6'];
+  var ids    = ['0','1','2'];
+  var lbls   = ['Today','Tomorrow','Day 3'];
+
+  dates.slice(0,3).forEach(function(date, i) {
+    var slots    = byDate[date];
+    var dayKwh   = Math.round(slots.reduce(function(s,r){return s+r.kwh;},0)*10)/10;
+    var peakSlot = slots.reduce(function(a,b){return b.pv>a.pv?b:a;},{pv:0,time:'—'});
+    var dayName  = i===0?'Today':(i===1?'Tomorrow':new Date(date+'T12:00:00Z').toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'}));
+
+    var kEl = document.getElementById('sc-d'+i+'-kwh');
+    var pEl = document.getElementById('sc-d'+i+'-peak');
+    var lEl = document.getElementById('sc-d'+i+'-lbl');
+    if(kEl) kEl.textContent = dayKwh.toFixed(1);
+    if(pEl) pEl.textContent = 'Peak: '+peakSlot.pv.toFixed(2)+' kW at '+peakSlot.time;
+    if(lEl) lEl.textContent = dayName;
+  });
+
+  // Draw hourly chart for today
+  var todaySlots = byDate[dates[0]] || [];
+  var daySlots   = todaySlots.filter(function(s){ return s.hour>=6&&s.hour<=18; });
+  var hBars      = document.getElementById('sc-hourly');
+  if(hBars && daySlots.length) {
+    hBars.innerHTML = '';
+    var maxPv = Math.max.apply(null, daySlots.map(function(s){return s.pv;})) || 1;
+    var now   = new Date();
+    var istNow = new Date(now.getTime() + 5.5*3600*1000);
+    var nowHr = istNow.getUTCHours(), nowMn = istNow.getUTCMinutes();
+
+    daySlots.forEach(function(s) {
+      var hPct   = Math.round(s.pv/maxPv*100);
+      var isPast = (s.hour < nowHr) || (s.hour===nowHr && s.minute <= nowMn);
+      var isNow  = s.hour===nowHr;
+      var bg     = isNow?'#f59e0b':(isPast?'#94a3b8':'#16a34a');
+      var col    = document.createElement('div');
+      col.style.cssText = 'display:flex;flex-direction:column;align-items:center;flex:1;min-width:14px;cursor:pointer';
+      col.title = s.time+': '+s.pv.toFixed(2)+' kW | '+s.kwh+' kWh';
+      var bar    = document.createElement('div');
+      bar.style.cssText = 'width:100%;border-radius:2px 2px 0 0;height:'+Math.max(hPct,2)+'%;background:'+bg+';opacity:'+(isPast?'0.5':'1');
+      col.appendChild(bar);
+      hBars.appendChild(col);
+    });
+  }
+
+  // Confidence message for today
+  var d0slots = byDate[dates[0]] || [];
+  var goodSlots = d0slots.filter(function(s){ return s.pv>0; });
+  var avgConf = 0;
+  if(goodSlots.length) {
+    avgConf = goodSlots.reduce(function(s,r){ return s+(r.pv90-r.pv10)/Math.max(r.pv,0.1)*100; },0)/goodSlots.length;
+  }
+  var confEl = document.getElementById('sc-confidence');
+  if(confEl) {
+    var d0kwh = (byDate[dates[0]]||[]).reduce(function(s,r){return s+r.kwh;},0);
+    var d0best = (byDate[dates[0]]||[]).reduce(function(s,r){return s+r.pv90*0.5;},0);
+    var d0worst = (byDate[dates[0]]||[]).reduce(function(s,r){return s+r.pv10*0.5;},0);
+    confEl.innerHTML =
+      '<b>Today forecast:</b> '+d0kwh.toFixed(1)+' kWh central · '
+      +d0best.toFixed(1)+' kWh best · '+d0worst.toFixed(1)+' kWh worst<br>'
+      +'<span style="color:#94a3b8;font-size:11px">Source: Solcast · Elango Home · Resource: 40fa-27fa-524d-2f08</span>';
+  }
+
+  // Updated time
+  var ts = localStorage.getItem(SC_KEY+'_ts');
+  var upd = document.getElementById('sc-updated');
+  if(upd&&ts) upd.textContent = 'Forecast loaded: '+new Date(ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST';
+}
+
+// ═══════════════════════════════════════════════════════════
 // EIL Solar — Live Monitor v4 (Clean Build 07-May-2026)
 // All 6 features built correctly from scratch
 // ═══════════════════════════════════════════════════════════
@@ -4823,6 +5014,8 @@ function lmSeedKnownData() {
 function lmRestore() {
   // Seed known data on first run
   lmSeedKnownData();
+  // Load Solcast forecast from storage
+  setTimeout(scRender, 300);
   // Set URL
   var url = localStorage.getItem('lm_gas_url') || LM.gasUrl;
   var el  = document.getElementById('lm-url');
@@ -4898,9 +5091,33 @@ async function lmLoad() {
     lmSt('ok','Live — '+ts+' IST');
 
   } catch(e) {
-    lmSt('error', e.message.length < 100 ? e.message : 'Fetch failed — check network and GAS URL');
-    // Still show last data if available
-    if(LM.data) lmRender();
+    // Show last saved data automatically
+    var last = localStorage.getItem('lm_last');
+    if(last) {
+      try {
+        LM.data = JSON.parse(last);
+        lmRender();
+        var ts = new Date(LM.data.timestamp).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'});
+        lmSt('error','Using saved data from '+ts+' — open app from GitHub Pages for live fetch');
+      } catch(pe) {
+        lmSt('error','Fetch failed. Open from GitHub Pages for live data.');
+      }
+    } else {
+      // No saved data — still show sections with seeded values
+      LM.data = {
+        status:'ok', api_version:'Seeded', timestamp:new Date().toISOString(),
+        served_from_cache:true,
+        plant:{id:'1404013',name:'Elangovan s',city:'Chennai',country:'India',peak_power_kw:6,install_date:'2022-08-05',status_code:1,status_text:'Normal'},
+        live:{power_w:0,power_kw:'0.00',is_generating:false,status:'Load data for live reading'},
+        daily:{today_date:lmIST(),today_kwh:null,yesterday_kwh:null,target_kwh:25.8,source:'Fetch failed',first_reading:null,readings_today:0,current_total:null},
+        monthly:{this_month_kwh:null,this_month_days:0,target_month:700,daily_log:[]},
+        energy:{total_kwh:'30089',total_mwh:'30.09',avg_month_kwh:666.7,months_operating:45},
+        promise_vs_performance:{capacity_kwp:6,target_year_kwh:8400,target_month_kwh:700,target_day_kwh:23,actual_avg_month:666.7,actual_total_kwh:'30089',expected_total_kwh:31500,performance_pct:95,verdict:'On Track'},
+        yearly_log:{},inverter_sn:'NXD6BK7086',datalogger_sn:'JPC6A2847C'
+      };
+      lmRender();
+      lmSt('error','Live fetch failed — showing estimated data. Host on GitHub Pages for live feed.');
+    }
   }
 
   if(btn) btn.disabled = false;
