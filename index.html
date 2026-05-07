@@ -806,15 +806,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
           <div style="padding:8px 16px 14px">
             <div id="sc-confidence" style="background:#f8fafc;border-radius:8px;padding:10px;font-size:12px;color:#475569"></div>
           </div>
-          <!-- Update button -->
+          <!-- Auto-fetch message -->
           <div style="padding:0 16px 14px">
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Solcast API key added to GAS? Tap Load Live Data above for auto-fetch. Or paste JSON manually here:</div>
-            <textarea id="sc-paste" rows="3" placeholder='Paste Solcast JSON here... {"forecasts":[...]}'
-              style="width:100%;border:1.5px solid #e2e8f0;border-radius:8px;padding:8px;font-size:11px;font-family:monospace;color:#0f172a;outline:none;resize:vertical;box-sizing:border-box;margin-bottom:6px"></textarea>
-            <button onclick="scLoadPaste()"
-              style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:800;cursor:pointer">
-              &#9889; Load Forecast
-            </button>
+            <div style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:12px;color:#166534;font-weight:600;text-align:center">
+              &#9889; Forecast fetches automatically when you tap Load Live Data
+            </div>
           </div>
           <div style="padding:0 16px 10px;font-size:11px;color:#94a3b8;text-align:center" id="sc-updated">—</div>
         </div>
