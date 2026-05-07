@@ -4948,14 +4948,31 @@ function lmTodayKwh() {
   var today = lmIST();
   if(LM.data && LM.data.daily) {
     var dl = LM.data.daily;
-    // Direct from sheet calculation
+    // Direct from sheet calculation (v2.5 fixed)
     if(dl.today_kwh != null && parseFloat(dl.today_kwh) > 0)
       return parseFloat(dl.today_kwh);
-    // Calculate: current total - first reading of day
-    if(dl.first_reading != null && LM.data.energy && LM.data.energy.total_kwh) {
+    // Calculate from current total - first reading stored in localStorage
+    var storedFirst = localStorage.getItem('lm_first_'+today);
+    if(!storedFirst && dl.first_reading) {
+      storedFirst = dl.first_reading;
+      localStorage.setItem('lm_first_'+today, storedFirst);
+    }
+    if(storedFirst && LM.data.energy && LM.data.energy.total_kwh) {
       var cur   = parseFloat(LM.data.energy.total_kwh);
-      var first = parseFloat(dl.first_reading);
+      var first = parseFloat(storedFirst);
       if(cur > first) return Math.round((cur - first)*10)/10;
+    }
+    // Also try current_total from daily
+    if(dl.current_total && LM.data.energy && LM.data.energy.total_kwh) {
+      var storedFirst2 = localStorage.getItem('lm_first_'+today);
+      if(!storedFirst2) {
+        // Store first reading of today
+        localStorage.setItem('lm_first_'+today, LM.data.energy.total_kwh);
+      } else {
+        var cur2 = parseFloat(LM.data.energy.total_kwh);
+        var f2   = parseFloat(storedFirst2);
+        if(cur2 > f2) return Math.round((cur2 - f2)*10)/10;
+      }
     }
   }
   // Fallback to local log
@@ -5065,6 +5082,11 @@ async function lmLoad() {
 
     // Import ALL data from sheet into localStorage log
     var today = lmIST();
+    // Store first reading of day for subtraction calculation
+    var firstKey = 'lm_first_'+today;
+    if(!localStorage.getItem(firstKey) && d.energy && d.energy.total_kwh) {
+      localStorage.setItem(firstKey, d.energy.total_kwh);
+    }
     // Today's kWh
     if(d.daily) {
       if(d.daily.today_kwh != null && d.daily.today_kwh > 0)
@@ -5149,6 +5171,9 @@ function lmShowMsg(el, txt, clr) {
 // ─── MAIN RENDER ───────────────────────────────────────────
 function lmRender() {
   if(!LM.data) return;
+  // Also show Solcast if we have saved forecast
+  var scSaved = localStorage.getItem('lm_solcast_data');
+  if(scSaved) scRender();
   ['lm-s1','lm-s2','lm-s3','lm-s4'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'block';
