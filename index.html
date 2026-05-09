@@ -1039,7 +1039,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "44";
+var APP_VERSION = "45";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -4837,7 +4837,7 @@ function scRender() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EIL Solar — Live Monitor v4 (Clean Build 07-May-2026)
+// EIL Solar — Live Monitor v4 (Clean Build 09-May-2026) — v45 Sheet History Import
 // All 6 features built correctly from scratch
 // ═══════════════════════════════════════════════════════════
 var LM = {
@@ -5010,25 +5010,54 @@ function lmCheckAutoRec() {
 }
 
 // ─── PAGE RESTORE ──────────────────────────────────────────
-// Pre-seed known data from Google Sheet (04-May to 06-May 2026)
-// This runs once to populate localStorage before first API call
-function lmSeedKnownData() {
-  var known = {
-    '2026-05-04': 22.0,
-    '2026-05-05': 27.0,
-    '2026-05-06': 22.6
-  };
-  var seeded = localStorage.getItem('lm_seeded_v1');
-  if(!seeded) {
-    Object.keys(known).forEach(function(d){ lmSaveDate(d, known[d]); });
-    localStorage.setItem('lm_seeded_v1', '1');
-    console.log('EIL Solar: seeded known sheet data into localStorage');
+// Bulk-import ALL historical daily data from Google Sheet via GAS
+// Runs once per session (flag: lm_hist_imported_YYYY-MM-DD)
+// After backfill script is run, GAS returns full history in monthly.daily_log
+async function lmBulkImportHistory() {
+  var today   = lmIST();
+  var flag    = 'lm_hist_' + today;
+  if(localStorage.getItem(flag)) return; // already done today
+
+  var url = localStorage.getItem('lm_gas_url') || LM.gasUrl;
+  if(!url) return;
+
+  try {
+    var resp = await fetch(url + (url.includes('?')?'&':'?') + 'action=history&ts=' + Date.now(), {redirect:'follow'});
+    var text = await resp.text();
+    if(!text || text.trim().startsWith('<')) return;
+    var d = JSON.parse(text);
+
+    var rows = null;
+    // Support both: direct {result:'ok',data:[...]} or wrapped in monthly.daily_log
+    if(d.result === 'ok' && Array.isArray(d.data))        rows = d.data;
+    else if(Array.isArray(d.daily_log))                   rows = d.daily_log;
+    else if(d.monthly && Array.isArray(d.monthly.daily_log)) rows = d.monthly.daily_log;
+
+    if(!rows || !rows.length) return;
+
+    var imported = 0;
+    rows.forEach(function(r) {
+      var date = r.date || r[0];
+      var kwh  = parseFloat(r.kwh  || r[1]);
+      if(date && !isNaN(kwh) && kwh > 0) {
+        lmSaveDate(date, kwh);
+        imported++;
+      }
+    });
+
+    localStorage.setItem(flag, '1');
+    console.log('EIL Solar: bulk-imported ' + imported + ' historical days from Sheet');
+    // Re-render charts now that log is populated
+    lmRenderS2(); lmRenderS3(); lmRenderS4();
+
+  } catch(e) {
+    console.warn('EIL Solar: history import failed —', e.message);
   }
 }
 
 function lmRestore() {
-  // Seed known data on first run
-  lmSeedKnownData();
+  // Bulk-import historical data from Sheet (async, non-blocking)
+  setTimeout(lmBulkImportHistory, 1000);
   // Load Solcast forecast from storage
   setTimeout(scRender, 300);
   // Auto-load if we have a saved GAS URL — fetch live data on page open
