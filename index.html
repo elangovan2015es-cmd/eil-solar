@@ -718,6 +718,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     <div id="settings-body"></div>
   </div>
 
+  <!-- AI ASSIST PAGE -->
+  <div class="page" id="pg-aiassist">
+    <div id="aiassist-body" style="padding-bottom:90px;background:#f8fafc;min-height:100vh"></div>
+  </div>
+
   <!-- LIVE MONITOR PAGE v4 -->
   <div class="page" id="pg-monitor">
     <div style="padding:0 0 80px;background:#f1f5f9;min-height:100vh">
@@ -997,9 +1002,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
       <div class="bnav-fab" onclick="doGenerate()">⚡</div>
       <span class="bnav-lbl" style="color:var(--amber);font-size:11px;font-weight:700;">Generate</span>
     </div>
-    <button class="bnav" id="bn-settings" onclick="goPage('settings')">
-      <span class="bnav-icon">⚙</span>
-      <span class="bnav-lbl">Settings</span>
+    <button class="bnav" id="bn-aiassist" onclick="goPage('aiassist')" style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border-radius:12px;">
+      <span class="bnav-icon" style="font-size:18px">✨</span>
+      <span class="bnav-lbl" style="color:#6366f1;font-weight:800">AI Help</span>
     </button>
     <button class="bnav" id="bn-monitor" onclick="goPage('monitor')">
       <span class="bnav-icon">&#9728;</span>
@@ -1809,7 +1814,7 @@ function goPage(p){
     showPinScreen("admin", function(){ goPage("settings"); });
     return;
   }
-  ["welcome","form","proposal","settings","voice","customer","monitor"].forEach(function(id){
+  ["welcome","form","proposal","settings","voice","customer","monitor","aiassist"].forEach(function(id){
     var el=document.getElementById("pg-"+id);
     if(el) el.className="page"+(p===id?" active":"");
     var bn=document.getElementById("bn-"+id);
@@ -1832,6 +1837,7 @@ function goPage(p){
   if(p==="monitor") { setTimeout(function(){ lmRestore(); }, 100); }
   if(p==="monitor") { lmRestore(); }
   if(p==="settings") renderSettings();
+  if(p==="aiassist") renderAIAssist();
   // Inject AI Assist on proposal page
   if(p==="proposal") {
     setTimeout(function(){
@@ -2429,6 +2435,7 @@ function renderForm(){
     +'<button onclick="goPage(\'settings\')" style="font-size:11px;color:#0369a1;background:none;border:none;'
     +'cursor:pointer;font-weight:800;margin-top:4px;">⚙ Full tariff details in Settings →</button>'
     +'</div></div>';
+  h+=formAI('category');
 
   // Model choice
   h+='<span class="slbl">🏗️ Offer Model — Choose One</span>';
@@ -2446,6 +2453,7 @@ function renderForm(){
     +'<div class="mcard-price" id="dev-px" style="color:var(--indigo)">'+L(q.moCharge)+'/month</div>'
     +'</div>';
   h+='</div>';
+  h+=formAI('model');
 
   // ── SYSTEM SIZING — rebuilt v35 ─────────────────────────────────────────
   // Flow: Units → Sanctioned Load + Recorded Demand → Auto kWp → Warning → Override
@@ -2662,6 +2670,7 @@ function renderForm(){
       +'</div>';
   }
   h+='</div>';
+  h+=formAI('sizing');
 
   // Battery
   h+='<span class="slbl">🔋 Battery Storage (Optional)</span>';
@@ -2691,6 +2700,7 @@ function renderForm(){
       +'🔋 Battery adds '+L(F.batKwh*BATT[F.batT].cost)+' · '+BATT[F.batT].name+'</div>';
   }
   h+='</div>';
+  h+=formAI('battery');
 
   // Viability warning — residential only
   h+='<div id="viab-container">';
@@ -2719,6 +2729,7 @@ function renderForm(){
         +'<div class="est-item"><div class="est-lbl">Self Consump</div><div class="est-val" id="est-sc" style="color:#0369a1">'+scPctEst+'%</div></div>';
     }
     h+='</div></div>';
+    h+=formAI('estimate');
   }
 
   // Generate button
@@ -5746,6 +5757,344 @@ function aiPanelHTML(id, chips){
         '<button class="ai-send" onclick="aiSend(\''+id+'\')">➤</button>'+
       '</div>'+
     '</div>';
+}
+// ═══════════════════════════════════════════════════════════
+// DEDICATED AI ASSIST PAGE
+// ═══════════════════════════════════════════════════════════
+
+var AI_TOPICS = [
+  {
+    id:'sizing', icon:'📐', title:'System Sizing',
+    subtitle:'Right kWp for your consumption',
+    chips:['Minimum viable size for ₹5,000/month bill','How many kWp for 500 units/month?','What kWp suits a small shop?','Max kWp for residential rooftop'],
+    context:'Expert in solar sizing for Tamil Nadu. Use TNEB tariff knowledge. 1 kWp generates ~120–140 kWh/month in Chennai.'
+  },
+  {
+    id:'commercial', icon:'🏢', title:'Commercial Solar',
+    subtitle:'HT/LT commercial & industrial',
+    chips:['Best kWp for LT Commercial building?','Does solar make sense for a hotel?','HT vs LT connection solar savings','What is the ideal commercial system size?','ROI for factory rooftop solar'],
+    context:'Expert in TNEB LT Commercial (LT-III), HT, and industrial solar in Tamil Nadu. Energy rate ₹8.75/kWh + fixed charges.'
+  },
+  {
+    id:'residential', icon:'🏠', title:'Residential Solar',
+    subtitle:'Home rooftop — LT-I slab tariff',
+    chips:['PM Surya Ghar subsidy amount?','Best kWp for home with ₹3,000 bill?','Net metering vs gross metering','How long to pay back investment?','Can I go completely off-grid?'],
+    context:'Expert in TNEB Residential (LT-I) slab tariff, net metering, and PM Surya Ghar subsidy (capped ₹78,000 for 3kWp). Chennai rooftop generation 130 kWh/kWp/month.'
+  },
+  {
+    id:'battery', icon:'🔋', title:'Battery Storage',
+    subtitle:'When does battery make sense?',
+    chips:['When should I add a battery?','Battery for commercial — peak shaving?','Does battery make sense for home?','LFP vs lithium ion battery','How many hours backup from 10 kWh?','Peak shaving with battery — savings?'],
+    context:'CRITICAL BATTERY GUIDANCE — always answer with this framework: '+
+      'For COMMERCIAL/INDUSTRIAL customers: Battery makes strong financial sense. TNEB ToD tariff has peak hours 6–10 AM and 6–10 PM at +25% premium. HT/LT commercial customers pay demand charges. Battery stores solar energy during day and discharges during peak hours, saving ₹2–3/unit on peak rate difference. Demand charge reduction adds further savings. No net metering uplift is lost because commercial customers gain more from peak arbitrage than from exporting to grid. '+
+      'For RESIDENTIAL customers: Battery makes limited financial sense in Tamil Nadu currently. Residential consumers benefit from net metering — every unit exported to TNEB offsets their bill at full tariff rate, so storing energy in battery instead of exporting it does NOT improve financials. Residential TNEB tariff has NO ToD peak surcharge as of 2025. Therefore battery for residential is justified ONLY for backup during power outages, NOT for financial ROI. '+
+      'Always lead the answer by asking or identifying whether the customer is commercial or residential before recommending.'
+  },
+  {
+    id:'epc', icon:'🏗️', title:'EPC Model',
+    subtitle:'Own from Day 1 — one-time payment',
+    chips:['What is EPC model?','40% depreciation benefit explained','EPC vs Developer — which is better?','Bank loan for EPC solar?','How to claim accelerated depreciation?'],
+    context:'EPC = Engineering Procurement Construction. Customer owns system from Day 1. Companies can claim 40% accelerated depreciation under Section 32 IT Act. EIL Solar EPC cost ~₹50/Wp.'
+  },
+  {
+    id:'developer', icon:'📈', title:'Developer Model',
+    subtitle:'Zero upfront — monthly charge 5 years',
+    chips:['How does Developer model work?','Monthly charge calculation','Who owns the plant in Developer model?','What happens after 5 years?','Is Developer model good for small business?'],
+    context:'Developer model: EIL installs at zero upfront cost. Customer pays fixed monthly charge for 5 years. After 5 years plant transfers FREE to customer. Good for cash-flow-constrained businesses.'
+  },
+  {
+    id:'tneb', icon:'⚡', title:'TNEB Tariff & Rules',
+    subtitle:'Understanding your electricity bill',
+    chips:['What is fixed charge in TNEB bill?','Difference between LT and HT connection','What is EB demand charge?','TNEB net metering rules 2024','How is bi-monthly bill calculated?','ToD tariff peak hours Tamil Nadu'],
+    context:'Expert in TNEB tariff structure: LT-I residential slabs, LT-III commercial ₹8.75/kWh, HT rates, fixed charges, demand charges, net metering TNERC regulations, ToD tariff T.O. No.6 of 2025.'
+  },
+  {
+    id:'general', icon:'🌞', title:'General Solar',
+    subtitle:'Learn solar basics',
+    chips:['How does solar work?','What is kWp vs kWh?','How many panels in 5 kWp system?','Solar panel lifespan','Effect of Chennai heat on solar output','Monsoon impact on solar generation'],
+    context:'Expert in rooftop solar PV technology, panel types (monocrystalline, polycrystalline), inverter types, system components, Chennai irradiance ~5.2 peak sun hours average.'
+  }
+];
+
+function renderAIAssist(){
+  var el=document.getElementById('aiassist-body');
+  if(!el) return;
+
+  var h='';
+  // Header
+  h+='<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px 16px 24px;">'
+    +'<div style="font-family:Rajdhani,sans-serif;font-size:26px;font-weight:700;color:#fff;margin-bottom:4px;">✨ AI Solar Advisor</div>'
+    +'<div style="font-size:13px;color:#a5b4fc;font-weight:600;">Your expert guide — ask anything about solar</div>'
+    +'<div style="margin-top:12px;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 14px;">'
+    +'<div style="font-size:11px;color:#c7d2fe;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Quick Ask</div>'
+    +'<div style="display:flex;gap:8px;">'
+    +'<input id="ai-global-inp" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.4);border-radius:10px;padding:9px 12px;color:#fff;font-size:13px;outline:none;" placeholder="Type any solar question..." onkeydown="if(event.key===\'Enter\')aiGlobalAsk()">'
+    +'<button onclick="aiGlobalAsk()" style="background:#6366f1;border:none;border-radius:10px;padding:9px 14px;color:#fff;font-size:16px;cursor:pointer;">➤</button>'
+    +'</div>'
+    +'<div id="ai-global-resp" style="display:none;margin-top:10px;color:#e0e7ff;font-size:13px;line-height:1.7;"></div>'
+    +'</div></div>';
+
+  // Topic cards
+  AI_TOPICS.forEach(function(topic){
+    var panelId='ai-topic-'+topic.id;
+    h+='<div style="margin:10px 12px 0;">'
+      +'<div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'
+        // Card header — tappable
+        +'<div onclick="aiTopicToggle(\''+panelId+'\')" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;">'
+          +'<span style="font-size:28px;">'+topic.icon+'</span>'
+          +'<div style="flex:1;">'
+            +'<div style="font-size:15px;font-weight:800;color:#0f172a;">'+topic.title+'</div>'
+            +'<div style="font-size:12px;color:#64748b;font-weight:600;">'+topic.subtitle+'</div>'
+          +'</div>'
+          +'<span id="'+panelId+'-arr" style="font-size:18px;color:#6366f1;transition:transform 0.2s;">›</span>'
+        +'</div>'
+        // Expandable panel
+        +'<div id="'+panelId+'" style="display:none;border-top:1px solid #f1f5f9;background:linear-gradient(135deg,#1e1b4b,#312e81);padding:14px;">'
+          +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'
+          +topic.chips.map(function(c){
+            return '<span style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);color:#c7d2fe;border-radius:12px;padding:6px 12px;font-size:12px;cursor:pointer;" onclick="aiTopicAsk(\''+panelId+'\',this.textContent,this,\''+escAttr(topic.context)+'\')">'+c+'</span>';
+          }).join('')
+          +'</div>'
+          +'<div id="'+panelId+'-resp" style="color:#e0e7ff;font-size:13px;line-height:1.7;min-height:0;padding:2px 0;"></div>'
+          +'<div style="display:flex;gap:6px;margin-top:10px;">'
+            +'<input id="'+panelId+'-inp" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);border-radius:10px;padding:8px 12px;color:#e0e7ff;font-size:12px;outline:none;" placeholder="Ask anything about '+topic.title.toLowerCase()+'..." onkeydown="if(event.key===\'Enter\')aiTopicAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+escAttr(topic.context)+'\')">'
+            +'<button onclick="aiTopicAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+escAttr(topic.context)+'\')" style="background:#6366f1;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-size:14px;cursor:pointer;">➤</button>'
+          +'</div>'
+        +'</div>'
+      +'</div>'
+    +'</div>';
+  });
+
+  // Footer note
+  h+='<div style="text-align:center;padding:20px 16px;font-size:11px;color:#94a3b8;">'
+    +'Powered by Claude AI · EIL Solar · Kaveri Power Solutions, Chennai</div>';
+
+  el.innerHTML=h;
+}
+
+function aiTopicToggle(panelId){
+  var panel=document.getElementById(panelId);
+  var arr=document.getElementById(panelId+'-arr');
+  if(!panel) return;
+  var open=panel.style.display==='block';
+  // Close all first — clear responses
+  AI_TOPICS.forEach(function(t){
+    var p=document.getElementById('ai-topic-'+t.id);
+    var a=document.getElementById('ai-topic-'+t.id+'-arr');
+    var r=document.getElementById('ai-topic-'+t.id+'-resp');
+    var i=document.getElementById('ai-topic-'+t.id+'-inp');
+    if(p){p.style.display='none';}
+    if(a){a.style.transform='rotate(0deg)';}
+    if(r){r.innerHTML='';}
+    if(i){i.value='';}
+  });
+  if(!open){
+    panel.style.display='block';
+    if(arr){arr.style.transform='rotate(90deg)';}
+  }
+}
+
+function aiTopicAsk(panelId, question, chipEl, context){
+  if(!question||!question.trim()) return;
+  var resp=document.getElementById(panelId+'-resp');
+  var inp=document.getElementById(panelId+'-inp');
+  if(!resp) return;
+  if(chipEl) chipEl.style.opacity='0.5';
+  resp.innerHTML='<span style="color:#818cf8;">Thinking<span style="animation:dots 1.2s steps(4,end) infinite">...</span></span>';
+
+  var systemPrompt='You are an expert solar energy advisor for EIL Solar (Kaveri Power Solutions), Chennai. '+
+    context+' '+
+    'Plant owner context: 6 kWp rooftop at Chennai, generating ~700 kWh/month. '+
+    'Always use ₹ for currency. Indian number format. Max 150 words. Bold key numbers with **n**. '+
+    'Give practical, actionable advice relevant to Tamil Nadu and TNEB regulations.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':secGet('apiKey')||'',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-calls':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:250,
+      messages:[{role:'user',content:question}],
+      system:systemPrompt
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Unable to get response.';
+    var formatted=txt.replace(/\*\*(.*?)\*\*/g,'<b style="color:#a5b4fc">$1</b>').replace(/\n/g,'<br>');
+    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
+    resp.innerHTML=formatted
+      +'<div style="display:flex;gap:8px;margin-top:10px;">'
+        +'<button onclick="aiShareWA(\''+encodeURIComponent('Q: '+question+'\n\nA: '+plain)+'\',this)" style="display:flex;align-items:center;gap:5px;background:#25D366;border:none;border-radius:10px;padding:6px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">📱 Share on WhatsApp</button>'
+        +'<button onclick="aiClearResp(\''+panelId+'\')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:10px;padding:6px 12px;color:#c7d2fe;font-size:12px;cursor:pointer;">✕ Clear</button>'
+      +'</div>';
+    if(inp) inp.value='';
+    if(chipEl) chipEl.style.opacity='1';
+  })
+  .catch(function(e){
+    resp.innerHTML='<span style="color:#f87171">AI unavailable. Set API key in ⚙ Settings.</span>';
+    if(chipEl) chipEl.style.opacity='1';
+  });
+}
+
+function aiGlobalAsk(){
+  var inp=document.getElementById('ai-global-inp');
+  var resp=document.getElementById('ai-global-resp');
+  if(!inp||!inp.value.trim()) return;
+  resp.style.display='block';
+  resp.innerHTML='<span style="color:#818cf8;">Thinking...</span>';
+  var q=inp.value.trim();
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':secGet('apiKey')||'',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-calls':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:250,
+      messages:[{role:'user',content:q}],
+      system:'You are an expert solar energy advisor for EIL Solar (Kaveri Power Solutions), Chennai. '+
+        'Expert in TNEB tariff, Tamil Nadu solar policy, rooftop solar sizing, battery storage, EPC vs Developer models. '+
+        'Use ₹ for currency. Indian number format. Max 150 words. Bold key numbers with **n**.'
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Unable to get response.';
+    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
+    resp.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b style="color:#a5b4fc">$1</b>').replace(/\n/g,'<br>')
+      +'<div style="display:flex;gap:8px;margin-top:10px;">'
+        +'<button onclick="aiShareWA(\''+encodeURIComponent('Q: '+q+'\n\nA: '+plain)+'\',this)" style="display:flex;align-items:center;gap:4px;background:#25D366;border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">📱 Share on WhatsApp</button>'
+        +'<button onclick="var r=document.getElementById(\'ai-global-resp\');r.innerHTML=\'\';r.style.display=\'none\';document.getElementById(\'ai-global-inp\').value=\'\';" style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:8px;padding:5px 10px;color:#c7d2fe;font-size:11px;cursor:pointer;">✕ Clear</button>'
+      +'</div>';
+    inp.value='';
+  })
+  .catch(function(){
+    resp.innerHTML='<span style="color:#f87171">AI unavailable. Set API key in ⚙ Settings.</span>';
+  });
+}
+
+function escAttr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// ── CONTEXTUAL AI BUTTONS IN FORM ───────────────────────────
+// Called from renderForm() to return AI assist HTML for each section
+function formAI(section){
+  var chips={
+    category:['What is LT Commercial?','Residential slab rates explained','Is my business HT or LT?','Which category saves most with solar?'],
+    sizing:['Minimum kWp for my consumption?','Can I oversize my system?','What affects system size?','Optimal size for ₹10,000 bill?'],
+    model:['EPC vs Developer — which is better?','How does zero upfront work?','Can company claim depreciation?','Is Developer model good for shop?'],
+    battery:['When does battery make sense?','Cost of adding battery?','Battery ROI for commercial?','How many hours backup?'],
+    estimate:['Is this a good deal?','How was payback calculated?','Why is my savings lower than expected?','What is the best ROI scenario?']
+  };
+  var c=chips[section]||chips.general||[];
+  var panelId='form-ai-'+section;
+  return '<div style="padding:10px 16px 14px">'
+    +'<button onclick="formAIToggle(\''+panelId+'\')" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:14px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;">'
+    +'<span style="font-size:15px">✨</span> Ask AI about this section</button>'
+    +'<div id="'+panelId+'" style="display:none;margin-top:8px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:14px;">'
+      +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">'
+      +c.map(function(q){return '<span style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);color:#c7d2fe;border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;" onclick="formAIAsk(\''+panelId+'\',this.textContent,this,\''+section+'\')">'+q+'</span>';}).join('')
+      +'</div>'
+      +'<div id="'+panelId+'-resp" style="color:#e0e7ff;font-size:12px;line-height:1.6;"></div>'
+      +'<div style="display:flex;gap:6px;margin-top:8px;">'
+        +'<input id="'+panelId+'-inp" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);border-radius:10px;padding:7px 10px;color:#e0e7ff;font-size:12px;outline:none;" placeholder="Ask about '+section+'..." onkeydown="if(event.key===\'Enter\')formAIAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+section+'\')">'
+        +'<button onclick="formAIAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+section+'\')" style="background:#6366f1;border:none;border-radius:10px;padding:7px 12px;color:#fff;font-size:13px;cursor:pointer;">➤</button>'
+      +'</div>'
+    +'</div>'
+  +'</div>';
+}
+
+function aiShareWA(encodedText, btn){
+  var text=decodeURIComponent(encodedText);
+  var waText='*EIL Solar AI Advisor*\n\n'+text+'\n\n_Powered by EIL Solar · Kaveri Power Solutions, Chennai_';
+  window.open('https://wa.me/?text='+encodeURIComponent(waText),'_blank');
+}
+
+function aiClearResp(panelId){
+  var resp=document.getElementById(panelId+'-resp');
+  var inp=document.getElementById(panelId+'-inp');
+  if(resp) resp.innerHTML='';
+  if(inp) inp.value='';
+}
+
+function formAIToggle(id){
+  var p=document.getElementById(id);
+  if(p){
+    var closing=p.style.display==='block';
+    p.style.display=closing?'none':'block';
+    // Clear on close
+    if(closing){
+      var r=document.getElementById(id+'-resp');
+      var i=document.getElementById(id+'-inp');
+      if(r) r.innerHTML='';
+      if(i) i.value='';
+    }
+  }
+}
+
+function formAIAsk(panelId,question,chipEl,section){
+  if(!question||!question.trim()) return;
+  var resp=document.getElementById(panelId+'-resp');
+  var inp=document.getElementById(panelId+'-inp');
+  if(!resp) return;
+  if(chipEl) chipEl.style.opacity='0.5';
+  resp.innerHTML='<span style="color:#818cf8;">Thinking...</span>';
+
+  var ctxMap={
+    category:'TNEB tariff categories: LT-I Residential slab (₹0-₹11.55/kWh), LT-III Commercial (₹8.75/kWh + fixed ₹100/month), HT (₹7.45-₹8.25/kWh + demand charges). Explain clearly.',
+    sizing:'Solar sizing: 1 kWp = 130 kWh/month in Chennai. Formula: monthly units ÷ 130 = kWp needed. Max residential 10 kWp, commercial up to 500 kWp. PM Surya Ghar subsidy capped at 3 kWp.',
+    model:'EPC model: customer pays one-time, owns system Day 1, can claim 40% depreciation. Developer model: zero upfront, fixed monthly charge 5 years, plant transfers free after. Suit different cash flow needs.',
+    battery:'CRITICAL — Battery guidance must distinguish by customer type: '+
+      'COMMERCIAL/INDUSTRIAL: Battery makes strong financial sense. TNEB ToD peak hours 6–10 AM and 6–10 PM carry +25% surcharge. Battery stores daytime solar and discharges during peak, saving ₹2–3/unit. HT demand charge reduction adds ₹500–2,000/month savings. Commercial customers should seriously consider battery. '+
+      'RESIDENTIAL: Battery has LIMITED financial justification in Tamil Nadu currently. Net metering allows residential consumers to export surplus solar to TNEB at full tariff rate — this already neutralises the financial case for storage. Residential TNEB tariff has NO ToD peak surcharge as of 2025. So battery for home = backup power during outages ONLY, not financial ROI. '+
+      'Current customer category is '+F.cat+'. Tailor your answer strictly to this category.',
+    estimate:'Solar savings = units generated × tariff rate. Payback = system cost ÷ annual savings. Chennai: 5-7 year payback typical. 25-year system life.'
+  };
+
+  var ctx=ctxMap[section]||'Expert solar advisor for Tamil Nadu.';
+  // Add live form context
+  var liveCtx='Current customer: '+F.cat+' category, '+F.kwp+' kWp, '+F.bm+' units/month, '+F.model+' model.';
+
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key':secGet('apiKey')||'',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-calls':'true'
+    },
+    body:JSON.stringify({
+      model:'claude-haiku-4-5-20251001',
+      max_tokens:200,
+      messages:[{role:'user',content:question}],
+      system:'You are an expert solar advisor for EIL Solar, Chennai. '+ctx+' '+liveCtx+' Use ₹. Max 120 words. Bold key figures with **n**.'
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'No response.';
+    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
+    resp.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b style="color:#a5b4fc">$1</b>').replace(/\n/g,'<br>')
+      +'<div style="display:flex;gap:8px;margin-top:8px;">'
+        +'<button onclick="aiShareWA(\''+encodeURIComponent('Q: '+question+'\n\nA: '+plain)+'\',this)" style="display:flex;align-items:center;gap:4px;background:#25D366;border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">📱 WhatsApp</button>'
+        +'<button onclick="aiClearResp(\''+panelId+'\')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:8px;padding:5px 10px;color:#c7d2fe;font-size:11px;cursor:pointer;">✕ Clear</button>'
+      +'</div>';
+    if(inp) inp.value='';
+    if(chipEl) chipEl.style.opacity='1';
+  })
+  .catch(function(){
+    resp.innerHTML='<span style="color:#f87171">Set API key in ⚙ Settings to use AI.</span>';
+    if(chipEl) chipEl.style.opacity='1';
+  });
 }
 // ═══════════════════════════════════════════════════════════
 </script>
