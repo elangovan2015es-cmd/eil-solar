@@ -644,26 +644,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .vi-act.go{background:#25d366;color:#fff;}
 .vi-act.re{background:rgba(37,211,102,0.12);color:#25d366;border:1px solid rgba(37,211,102,0.3);}
 .vi-act.ed{background:rgba(255,255,255,0.07);color:#8696a0;border:1px solid rgba(255,255,255,0.1);}
-/* ── AI ASSIST PANEL ───────────────────────────────────── */
-.ai-btn{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:0.3px;box-shadow:0 2px 8px rgba(99,102,241,0.35);margin-top:10px;width:100%;}
-.ai-btn:active{transform:scale(0.97);}
-.ai-panel{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:16px;padding:16px;margin-top:10px;display:none;}
-.ai-panel.open{display:block;}
-.ai-panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
-.ai-panel-title{color:#c7d2fe;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;}
-.ai-close{background:rgba(255,255,255,0.1);border:none;color:#c7d2fe;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
-.ai-response{color:#e0e7ff;font-size:13px;line-height:1.7;min-height:60px;}
-.ai-response b{color:#a5b4fc;}
-.ai-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
-.ai-chip{background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);color:#c7d2fe;border-radius:12px;padding:4px 10px;font-size:11px;cursor:pointer;}
-.ai-chip:active{background:rgba(165,180,252,0.2);}
-.ai-typing{display:inline-block;color:#818cf8;}
-.ai-typing::after{content:'...';animation:dots 1.2s steps(4,end) infinite;}
-@keyframes dots{0%,20%{color:rgba(0,0,0,0);}40%{color:#818cf8;}60%,100%{color:rgba(0,0,0,0);}}
-.ai-input-row{display:flex;gap:6px;margin-top:10px;}
-.ai-input{flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);border-radius:12px;padding:7px 12px;color:#e0e7ff;font-size:12px;outline:none;}
-.ai-input::placeholder{color:#6366f1;}
-.ai-send{background:#6366f1;border:none;border-radius:12px;padding:7px 12px;color:#fff;font-size:13px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -716,11 +696,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
   <!-- SETTINGS PAGE -->
   <div class="page" id="pg-settings">
     <div id="settings-body"></div>
-  </div>
-
-  <!-- AI ASSIST PAGE -->
-  <div class="page" id="pg-aiassist">
-    <div id="aiassist-body" style="padding-bottom:90px;background:#f8fafc;min-height:100vh"></div>
   </div>
 
   <!-- LIVE MONITOR PAGE v4 -->
@@ -838,7 +813,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
             </div>
           </div>
           <div style="padding:0 16px 10px;font-size:11px;color:#94a3b8;text-align:center" id="sc-updated">—</div>
-          <div style="padding:0 16px 16px" id="ai-s1-wrap"></div>
         </div>
       </div>
 
@@ -917,7 +891,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
               style="background:var(--navy);color:#fff;border:none;border-radius:8px;padding:10px 6px;font-size:13px;font-weight:800;cursor:pointer">Save</button>
           </div>
           <div id="lm-log-msg" style="padding:0 16px 10px;font-size:12px;color:#64748b;display:none"></div>
-          <div style="padding:0 16px 16px" id="ai-s2-wrap"></div>
         </div>
       </div>
 
@@ -944,7 +917,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
               <div style="font-size:10px;color:#64748b">kWh target</div>
             </div>
           </div>
-          <div style="padding:0 16px 16px" id="ai-s3-wrap"></div>
         </div>
       </div>
 
@@ -980,7 +952,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
               <div id="lm-pvp-bar" style="height:100%;border-radius:6px;background:#16a34a;transition:width 1s;width:0%"></div>
             </div>
             <div id="lm-pvp-verdict" style="text-align:center;margin-top:10px;padding:10px;border-radius:10px;font-size:15px;font-weight:800;background:#dcfce7;color:#16a34a">—</div>
-            <div style="padding:10px 0 0" id="ai-s4-wrap"></div>
           </div>
         </div>
       </div>
@@ -1002,9 +973,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
       <div class="bnav-fab" onclick="doGenerate()">⚡</div>
       <span class="bnav-lbl" style="color:var(--amber);font-size:11px;font-weight:700;">Generate</span>
     </div>
-    <button class="bnav" id="bn-aiassist" onclick="goPage('aiassist')" style="background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(139,92,246,0.1));border-radius:12px;">
-      <span class="bnav-icon" style="font-size:18px">✨</span>
-      <span class="bnav-lbl" style="color:#6366f1;font-weight:800">AI Help</span>
+    <button class="bnav" id="bn-settings" onclick="goPage('settings')">
+      <span class="bnav-icon">⚙</span>
+      <span class="bnav-lbl">Settings</span>
     </button>
     <button class="bnav" id="bn-monitor" onclick="goPage('monitor')">
       <span class="bnav-icon">&#9728;</span>
@@ -1068,7 +1039,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "46";
+var APP_VERSION = "48";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1814,7 +1785,7 @@ function goPage(p){
     showPinScreen("admin", function(){ goPage("settings"); });
     return;
   }
-  ["welcome","form","proposal","settings","voice","customer","monitor","aiassist"].forEach(function(id){
+  ["welcome","form","proposal","settings","voice","customer","monitor"].forEach(function(id){
     var el=document.getElementById("pg-"+id);
     if(el) el.className="page"+(p===id?" active":"");
     var bn=document.getElementById("bn-"+id);
@@ -1837,20 +1808,6 @@ function goPage(p){
   if(p==="monitor") { setTimeout(function(){ lmRestore(); }, 100); }
   if(p==="monitor") { lmRestore(); }
   if(p==="settings") renderSettings();
-  if(p==="aiassist") renderAIAssist();
-  // Inject AI Assist on proposal page
-  if(p==="proposal") {
-    setTimeout(function(){
-      var pb=document.getElementById('prop-body');
-      if(pb && !document.getElementById('ai-proposal-wrap')){
-        var aiDiv=document.createElement('div');
-        aiDiv.id='ai-proposal-wrap';
-        aiDiv.style.cssText='padding:0 16px 20px';
-        aiDiv.innerHTML=aiPanelHTML('ai-proposal',['Is this proposal good?','ROI in 5 years','Compare to grid cost','Subsidy eligibility']);
-        pb.appendChild(aiDiv);
-      }
-    },500);
-  }
   window.scrollTo(0,0);
 }
 
@@ -2435,7 +2392,6 @@ function renderForm(){
     +'<button onclick="goPage(\'settings\')" style="font-size:11px;color:#0369a1;background:none;border:none;'
     +'cursor:pointer;font-weight:800;margin-top:4px;">⚙ Full tariff details in Settings →</button>'
     +'</div></div>';
-  h+=formAI('category');
 
   // Model choice
   h+='<span class="slbl">🏗️ Offer Model — Choose One</span>';
@@ -2453,7 +2409,6 @@ function renderForm(){
     +'<div class="mcard-price" id="dev-px" style="color:var(--indigo)">'+L(q.moCharge)+'/month</div>'
     +'</div>';
   h+='</div>';
-  h+=formAI('model');
 
   // ── SYSTEM SIZING — rebuilt v35 ─────────────────────────────────────────
   // Flow: Units → Sanctioned Load + Recorded Demand → Auto kWp → Warning → Override
@@ -2670,7 +2625,6 @@ function renderForm(){
       +'</div>';
   }
   h+='</div>';
-  h+=formAI('sizing');
 
   // Battery
   h+='<span class="slbl">🔋 Battery Storage (Optional)</span>';
@@ -2700,7 +2654,6 @@ function renderForm(){
       +'🔋 Battery adds '+L(F.batKwh*BATT[F.batT].cost)+' · '+BATT[F.batT].name+'</div>';
   }
   h+='</div>';
-  h+=formAI('battery');
 
   // Viability warning — residential only
   h+='<div id="viab-container">';
@@ -2729,7 +2682,6 @@ function renderForm(){
         +'<div class="est-item"><div class="est-lbl">Self Consump</div><div class="est-val" id="est-sc" style="color:#0369a1">'+scPctEst+'%</div></div>';
     }
     h+='</div></div>';
-    h+=formAI('estimate');
   }
 
   // Generate button
@@ -4885,7 +4837,7 @@ function scRender() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EIL Solar — Live Monitor v4 (Clean Build 07-May-2026)
+// EIL Solar — Live Monitor v4 (Clean Build 09-May-2026) — v45 Sheet History Import
 // All 6 features built correctly from scratch
 // ═══════════════════════════════════════════════════════════
 var LM = {
@@ -5058,53 +5010,128 @@ function lmCheckAutoRec() {
 }
 
 // ─── PAGE RESTORE ──────────────────────────────────────────
-// Pre-seed known data from Google Sheet (04-May to 06-May 2026)
-// This runs once to populate localStorage before first API call
-function lmSeedKnownData() {
-  var known = {
-    '2026-05-04': 22.0,
-    '2026-05-05': 27.0,
-    '2026-05-06': 22.6
-  };
-  var seeded = localStorage.getItem('lm_seeded_v1');
-  if(!seeded) {
-    Object.keys(known).forEach(function(d){ lmSaveDate(d, known[d]); });
-    localStorage.setItem('lm_seeded_v1', '1');
-    console.log('EIL Solar: seeded known sheet data into localStorage');
-  }
+// ── Verified ShinePhone daily generation data (Aug 2022 → May 2026) ──────────
+var SOLAR_HISTORY_DATA = {
+  '2022-08':[0,0,0,0,0,0,0,0,0,20,20,24,24,25,26,25,24,23,22,25,24,23,22,21,25,24,25,21,20,30,21],
+  '2022-09':[7,29,25,31,32,6,18,18,25,1,13,30,30,13,18,24,25,26,35,36,34,32,30,25,19,18,12,11],
+  '2022-10':[22,14,18,18,12,19,18,25,24,25,25,25,30,15,7,25,18,19,24,2,29,30,31,30,30,13,12,19,20,6],
+  '2022-11':[1,7,19,26,24,19,13,12,18,7,4,12,0,6,22,22,19,18,22,14,5,7,36,18,17,16,15,14,15,16],
+  '2022-12':[16,21,17,17,13,13,15,5,4,15,3,2,20,15,19,18,19,14,14,16,16,16,16,11,14,21,13,15,17,17,13],
+  '2023-01':[19,17,5,13,18,13,12,11,18,19,19,21,20,17,16,18,20,20,20,20,16,22,21,23,13,15,16,20,15,14],
+  '2023-02':[14,10,20,25,26,26,25,25,25,29,18,29,29,24,25,25,29,29,30,30,30,31,31,32,31,31,31,27],
+  '2023-03':[31,33,30,30,30,30,30,30,24,26,30,29,18,25,13,11,15,13,18,25,14,18,24,27,30,30,31,30,31,33],
+  '2023-04':[28,29,30,30,31,30,30,30,31,30,31,34,30,29,28,27,30,32,30,30,24,30,30,24,23,30,29,24,27],
+  '2023-05':[17,13,29,19,18,24,24,24,11,11,17,17,18,21,17,29,29,30,30,29,11,24,24,18,24,12,24,25,24,30],
+  '2023-06':[25,25,24,24,24,22,28,28,20,32,32,31,30,16,29,29,7,3,15,23,20,19,20,22,24,21,25,31,31,31],
+  '2023-07':[25,8,14,21,21,21,30,24,18,17,21,21,17,30,32,16,28,29,26,24,25,18,9,9,9,16,25,29,31,25],
+  '2023-08':[20,27,28,27,27,25,23,26,25,22,21,19,25,26,27,27,29,28,27,27,24,22,26,27,29,27,27,21,24,26,27],
+  '2023-09':[32,31,5,3,30,29,32,27,30,18,31,17,5,26,25,28,26,24,25,27,28,30,30,27,34,29,27,31,30,29],
+  '2023-10':[16,29,28,27,25,22,24,28,28,5,21,21,13,20,21,27,27,22,22,27,18,28,24,28,27,24,20,14,7,7],
+  '2023-11':[5,14,14,16,16,16,13,12,19,19,15,12,4,16,15,19,15,13,1,4,14,13,17,8,9,14,13,14,17,7,13],
+  '2023-12':[13,7,12,12,8,12,13,9,15,14,11,16,12,15,12,13,18,19,12,8,17,15,12,8,16,16,17,13,12,12],
+  '2024-01':[13,9,13,8,9,5,5,17,19,20,16,15,16,14,16,23,19,20,20,14,20,20,17,16,20,20,14,20,20,20],
+  '2024-02':[18,23,24,25,26,25,26,24,24,25,24,18,25,25,29,30,31,30,29,28,28,30,28,27,27,26,25,29,31,31],
+  '2024-03':[27,31,30,26,25,27,26,29,30,30,30,30,29,30,29,30,25,30,31,30,30,28,30,32,32,34,31,30,30,35],
+  '2024-04':[32,33,33,33,33,33,31,30,24,30,30,31,30,30,29,30,30,31,30,30,32,31,32,25,24,29,30,30,29],
+  '2024-05':[31,29,28,28,27,27,25,26,31,32,31,30,27,24,23,5,12,24,22,24,23,24,25,1,25,19,20,25,24,25,29],
+  '2024-06':[13,18,24,12,11,18,18,19,29,25,25,22,23,19,12,18,13,19,31,30,27,29,30,29,25,14,24,13,7,2],
+  '2024-07':[16,31,29,22,29,13,14,19,19,11,10,13,18,10,10,13,19,19,13,19,24,23,31,25,24,21,13,24,29],
+  '2024-08':[23,10,31,31,6,25,24,24,29,12,30,30,30,15,29,26,25,28,28,25,26,30,26,33,24,18,10,17,15,13],
+  '2024-09':[29,28,5,16,15,14,19,27,30,18,15,13,33,29,25,27,24,27,25,2,27,29,30,27,23,34,30,27,29,27],
+  '2024-10':[31,29,24,25,27,25,25,13,14,13,12,29,5,11,13,18,24,18,24,30,24,26,20,15,22,24,20,20,18,11],
+  '2024-11':[19,24,24,25,5,21,18,23,12,3,12,14,30,19,18,18,18,18,14,13,12,13,18,12,13,8,7,1,6,2],
+  '2024-12':[4,16,20,16,16,16,9,9,13,13,1,12,14,16,9,8,3,20,19,20,20,16,19,5,8,17,18,14,12,12,14],
+  '2025-01':[14,18,13,13,12,13,17,17,11,11,5,15,15,18,7,6,7,20,12,17,19,18,20,20,19,23,19,19,18,31,23],
+  '2025-02':[26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26],
+  '2025-03':[30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
+  '2025-04':[28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28],
+  '2025-05':[29,30,27,27,30,31,30,29,27,24,19,13,24,25,13,10,23,18,18,24,25,29,26,24,24,20,17,24,20,19,3],
+  '2025-06':[23,31,31,32,24,24,24,18,17,20,30,22,19,22,14,24,27,22,22,30,30,31,18,15,13,24,30,30,25],
+  '2025-07':[26,19,13,26,26,28,25,29,25,30,15,11,12,11,30,24,15,16,14,13,5,11,20,25,21,25,29,17,24,23],
+  '2025-08':[23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23],
+  '2025-09':[23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23],
+  '2025-10':[14,18,18,25,23,24,25,19,26,18,15,18,14,27,15,16,25,5,12,11,21,6,20,11,6,15,28,28,28],
+  '2025-11':[32,23,20,15,10,13,18,21,10,16,13,13,13,13,12,13,13,13,12,13,19,15,11,11,12,17,17,15,16,9],
+  '2025-12':[13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
+  '2026-01':[16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16],
+  '2026-02':[23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23],
+  '2026-03':[28,29,28,28,27,28,23,29,29,29,28,28,29,29,29,29,29,28,24,24,28,30,30,33,30,30,30,29,28,27],
+  '2026-04':[33,33,29,28,12,28,29,30,33,33,30,30,29,29,30,29,20,29,30,30,32,30,28,25,27,30,29,25,29],
+  '2026-05':[28,29,28,24,28,28,30,24,13]
+};
+
+// Seeds all verified ShinePhone data into localStorage on first run
+function seedShinePhoneHistory() {
+  var flag = 'lm_shineph_v48';
+  if(localStorage.getItem(flag)) return;
+  var count = 0;
+  Object.keys(SOLAR_HISTORY_DATA).forEach(function(ym) {
+    var vals = SOLAR_HISTORY_DATA[ym];
+    var yr   = ym.substring(0,4);
+    var mo   = parseInt(ym.substring(5,7));
+    var startDay = (ym === '2022-08') ? 5 : 1;
+    vals.forEach(function(kwh, idx) {
+      if(kwh <= 0) return;
+      var day = startDay + idx;
+      var dateStr = yr + '-' + (mo<10?'0':'') + mo + '-' + (day<10?'0':'') + day;
+      lmSaveDate(dateStr, kwh);
+      count++;
+    });
+  });
+  localStorage.setItem(flag, '1');
+  console.log('EIL Solar v48: seeded ' + count + ' days of ShinePhone history');
 }
 
+// Bulk-import ALL historical daily data from Google Sheet via GAS
+// Runs once per session (flag: lm_hist_imported_YYYY-MM-DD)
+// After backfill script is run, GAS returns full history in monthly.daily_log
 async function lmBulkImportHistory() {
-  var today = lmIST();
-  var flag  = 'lm_hist_' + today;
-  if(localStorage.getItem(flag)) return;
+  var today   = lmIST();
+  var flag    = 'lm_hist_' + today;
+  if(localStorage.getItem(flag)) return; // already done today
+
   var url = localStorage.getItem('lm_gas_url') || LM.gasUrl;
   if(!url) return;
+
   try {
     var resp = await fetch(url + (url.includes('?')?'&':'?') + 'action=history&ts=' + Date.now(), {redirect:'follow'});
     var text = await resp.text();
     if(!text || text.trim().startsWith('<')) return;
     var d = JSON.parse(text);
+
     var rows = null;
-    if(d.result === 'ok' && Array.isArray(d.data)) rows = d.data;
-    else if(Array.isArray(d.daily_log)) rows = d.daily_log;
+    // Support both: direct {result:'ok',data:[...]} or wrapped in monthly.daily_log
+    if(d.result === 'ok' && Array.isArray(d.data))        rows = d.data;
+    else if(Array.isArray(d.daily_log))                   rows = d.daily_log;
     else if(d.monthly && Array.isArray(d.monthly.daily_log)) rows = d.monthly.daily_log;
+
     if(!rows || !rows.length) return;
+
     var imported = 0;
     rows.forEach(function(r) {
       var date = r.date || r[0];
-      var kwh  = parseFloat(r.kwh || r[1]);
-      if(date && !isNaN(kwh) && kwh > 0) { lmSaveDate(date, kwh); imported++; }
+      var kwh  = parseFloat(r.kwh  || r[1]);
+      if(date && !isNaN(kwh) && kwh > 0) {
+        lmSaveDate(date, kwh);
+        imported++;
+      }
     });
+
     localStorage.setItem(flag, '1');
-    console.log('EIL Solar v46: bulk-imported ' + imported + ' days from Sheet');
+    console.log('EIL Solar: bulk-imported ' + imported + ' historical days from Sheet');
+    // Re-render charts now that log is populated
     lmRenderS2(); lmRenderS3(); lmRenderS4();
-  } catch(e) { console.warn('history import failed:', e.message); }
+
+  } catch(e) {
+    console.warn('EIL Solar: history import failed —', e.message);
+  }
 }
 
 function lmRestore() {
-  seedCorrectedHistory();
-  setTimeout(lmBulkImportHistory, 800);
+  // Step 1: Seed verified ShinePhone history into localStorage (once only)
+  seedShinePhoneHistory();
+  // Step 2: Try to pull latest from Google Sheet (fills any gaps / recent days)
+  setTimeout(lmBulkImportHistory, 1200);
   // Load Solcast forecast from storage
   setTimeout(scRender, 300);
   // Auto-load if we have a saved GAS URL — fetch live data on page open
@@ -5266,15 +5293,6 @@ function lmRender() {
   try { lmRenderS2(); } catch(e){ console.error('S2:',e); }
   try { lmRenderS3(); } catch(e){ console.error('S3:',e); }
   try { lmRenderS4(); } catch(e){ console.error('S4:',e); }
-  // Inject AI Assist panels
-  var ai1=document.getElementById('ai-s1-wrap');
-  if(ai1&&!ai1.innerHTML) ai1.innerHTML=aiPanelHTML('ai-s1',['How is today performing?','Sunny day forecast','Why is power low?','CO₂ saved today']);
-  var ai2=document.getElementById('ai-s2-wrap');
-  if(ai2&&!ai2.innerHTML) ai2.innerHTML=aiPanelHTML('ai-s2',['Best month this year?','vs last year comparison','Will I hit target?','Monsoon impact']);
-  var ai3=document.getElementById('ai-s3-wrap');
-  if(ai3&&!ai3.innerHTML) ai3.innerHTML=aiPanelHTML('ai-s3',['Best performing year?','Year-on-year trend','2025 vs 2024','Lifetime earnings estimate']);
-  var ai4=document.getElementById('ai-s4-wrap');
-  if(ai4&&!ai4.innerHTML) ai4.innerHTML=aiPanelHTML('ai-s4',['Why below target?','ROI calculation','Payback period','What improves performance?']);
   var ft = document.getElementById('lm-footer');
   if(ft) ft.textContent =
     'Data: '+new Date(LM.data.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST · Auto-record: 6:15 PM daily';
@@ -5541,560 +5559,6 @@ function lmRenderS4() {
     var ve = document.getElementById('lm-pvp-verdict');
     if(ve){ve.textContent=pvp.verdict;ve.style.background=pvp.performance_pct>=90?'#dcfce7':'#fef3c7';ve.style.color=pvp.performance_pct>=90?'#16a34a':'#92400e';}
   }
-}
-// ═══════════════════════════════════════════════════════════
-// AI ASSIST ENGINE — EIL Solar v46
-// Powers AI panels on every page & Live Monitor section
-// ═══════════════════════════════════════════════════════════
-
-// ── Corrected daily generation data (ShinePhone verified) ──
-var SOLAR_HISTORY = {
-  '2022-08':[0,0,0,0,0,0,0,0,0,20,20,24,24,25,26,25,24,23,22,25,24,23,22,21,25,24,25,21,20,30,21],
-  '2022-09':[7,29,25,31,32,6,18,18,25,1,13,30,30,13,18,24,25,26,35,36,34,32,30,25,19,18,12,11],
-  '2022-10':[22,14,18,18,12,19,18,25,24,25,25,25,30,15,7,25,18,19,24,2,29,30,31,30,30,13,12,19,20,6],
-  '2022-11':[1,7,19,26,24,19,13,12,18,7,4,12,0,6,22,22,19,18,22,14,5,7,36,18,17,16,15,14,15,16],
-  '2022-12':[16,21,17,17,13,13,15,5,4,15,3,2,20,15,19,18,19,14,14,16,16,16,16,11,14,21,13,15,17,17,13],
-  '2023-01':[19,17,5,13,18,13,12,11,18,19,19,21,20,17,16,18,20,20,20,20,16,22,21,23,13,15,16,20,15,14],
-  '2023-02':[14,10,20,25,26,26,25,25,25,29,18,29,29,24,25,25,29,29,30,30,30,31,31,32,31,31,31,27],
-  '2023-03':[31,33,30,30,30,30,30,30,24,26,30,29,18,25,13,11,15,13,18,25,14,18,24,27,30,30,31,30,31,33],
-  '2023-04':[28,29,30,30,31,30,30,30,31,30,31,34,30,29,28,27,30,32,30,30,24,30,30,24,23,30,29,24,27],
-  '2023-05':[17,13,29,19,18,24,24,24,11,11,17,17,18,21,17,29,29,30,30,29,11,24,24,18,24,12,24,25,24,30],
-  '2023-06':[25,25,24,24,24,22,28,28,20,32,32,31,30,16,29,29,7,3,15,23,20,19,20,22,24,21,25,31,31,31],
-  '2023-07':[25,8,14,21,21,21,30,24,18,17,21,21,17,30,32,16,28,29,26,24,25,18,9,9,9,16,25,29,31,25],
-  '2023-08':[20,27,28,27,27,25,23,26,25,22,21,19,25,26,27,27,29,28,54,27,24,22,26,27,29,27,27,21,24,26,27],
-  '2023-09':[32,31,5,3,30,29,32,60,30,18,31,17,5,26,25,28,26,24,25,27,28,30,30,27,34,29,27,31,30,29],
-  '2023-10':[16,29,28,27,25,22,24,28,28,5,21,21,13,20,21,27,27,22,22,27,18,28,24,28,27,24,20,14,7,7],
-  '2023-11':[5,14,14,16,16,16,13,12,19,19,15,12,4,16,15,19,15,13,1,4,14,13,17,8,9,14,13,14,17,7,13],
-  '2023-12':[13,7,12,12,8,12,13,9,15,14,11,16,12,15,12,13,18,19,12,8,17,15,12,8,16,16,17,13,12,12],
-  '2024-01':[13,9,13,8,9,5,5,17,19,20,16,15,16,14,16,23,19,20,20,14,20,20,17,16,20,20,14,20,20,20],
-  '2024-02':[18,23,24,25,26,25,26,24,24,25,24,18,25,25,29,30,31,30,29,28,28,30,28,27,27,26,25,29,31,31],
-  '2024-03':[27,31,30,26,25,27,26,29,30,30,30,30,29,30,29,30,25,30,31,30,30,28,30,32,32,34,31,30,30,35],
-  '2024-04':[32,33,33,33,33,33,31,30,24,30,30,31,30,30,29,30,30,31,30,30,32,31,32,25,24,29,30,30,29],
-  '2024-05':[31,29,28,28,27,27,25,26,31,32,31,30,27,24,23,5,12,24,22,24,23,24,25,1,25,19,20,25,24,25,29],
-  '2024-06':[13,18,24,12,11,18,18,19,29,25,25,22,23,19,12,18,13,19,31,30,27,29,30,29,25,14,24,13,7,2],
-  '2024-07':[16,31,29,22,29,13,14,19,19,11,10,13,18,10,10,13,19,19,13,19,24,23,31,25,24,21,13,24,29],
-  '2024-08':[23,10,31,31,6,25,24,24,29,12,30,30,30,15,29,26,25,28,28,25,26,30,26,33,24,18,10,17,15,13],
-  '2024-09':[29,28,5,16,15,14,19,60,30,18,15,13,33,29,25,27,24,27,25,2,27,29,30,27,23,34,30,27,29,27],
-  '2024-10':[31,29,24,25,27,25,25,13,14,13,12,29,5,11,13,18,24,18,24,30,24,26,20,15,22,24,20,20,18,11],
-  '2024-11':[19,24,24,25,5,21,18,23,12,3,12,14,30,19,18,18,18,18,14,13,12,13,18,12,13,8,7,1,6,2],
-  '2024-12':[4,16,20,16,16,16,9,9,13,13,1,12,14,16,9,8,3,20,19,20,20,16,19,5,8,17,18,14,12,12,14],
-  '2025-01':[14,18,13,13,12,13,17,17,11,11,5,15,15,18,7,6,7,20,12,17,19,18,20,20,19,23,19,19,18,31,23],
-  '2025-02':[26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26,26],
-  '2025-03':[30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30,30],
-  '2025-04':[28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28,28],
-  '2025-05':[29,30,27,27,30,31,30,29,27,24,19,13,24,25,13,10,23,18,18,24,25,29,26,24,24,20,17,24,20,19,3],
-  '2025-06':[23,31,31,32,24,24,24,18,17,20,30,22,19,22,14,24,27,22,22,30,30,31,18,15,13,24,30,30,25],
-  '2025-07':[26,19,13,26,26,28,25,29,25,30,15,11,12,11,30,24,15,16,14,13,5,11,20,25,21,25,29,17,24,23],
-  '2025-08':[23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23],
-  '2025-09':[23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23],
-  '2025-10':[14,18,18,25,23,24,25,19,26,18,15,18,14,27,15,16,25,5,12,11,21,6,20,11,6,15,28,28,28],
-  '2025-11':[32,23,20,15,10,13,18,21,10,16,13,13,13,13,12,13,13,13,12,13,19,15,11,11,12,17,17,15,16,9],
-  '2025-12':[13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13],
-  '2026-01':[16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16],
-  '2026-02':[23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23],
-  '2026-03':[28,29,28,28,27,28,23,29,29,29,28,28,29,29,29,29,29,28,24,24,28,30,30,33,30,30,30,29,28,27],
-  '2026-04':[33,33,29,28,12,28,29,30,33,33,30,30,29,29,30,29,20,29,30,30,32,30,28,25,27,30,29,25,29],
-  '2026-05':[28,29,28,24,28,28,30,24,13]
-};
-
-// ── Build monthly/yearly totals from SOLAR_HISTORY ──────────
-function shMonthly(ym){ var v=SOLAR_HISTORY[ym]; return v?v.reduce(function(a,b){return a+b;},0):0; }
-function shYearly(yr){
-  var t=0;
-  for(var m=1;m<=12;m++){ t+=shMonthly(yr+'-'+(m<10?'0':'')+m); }
-  return Math.round(t);
-}
-function shBestMonth(){
-  var best='',bestV=0;
-  Object.keys(SOLAR_HISTORY).forEach(function(ym){
-    var v=shMonthly(ym);
-    if(v>bestV){bestV=v;best=ym;}
-  });
-  return {ym:best,kwh:Math.round(bestV)};
-}
-function shAvgMonthly(){
-  var total=0,cnt=0;
-  Object.keys(SOLAR_HISTORY).forEach(function(ym){
-    var v=shMonthly(ym);
-    if(v>50){total+=v;cnt++;}
-  });
-  return cnt?Math.round(total/cnt):0;
-}
-
-// ── Seed corrected data into localStorage on load ────────────
-function seedCorrectedHistory(){
-  var flag='lm_corrected_v46';
-  if(localStorage.getItem(flag)) return;
-  Object.keys(SOLAR_HISTORY).forEach(function(ym){
-    var vals=SOLAR_HISTORY[ym];
-    var yr=ym.substring(0,4), mo=parseInt(ym.substring(5,7));
-    var start=(ym==='2022-08')?5:1;
-    vals.forEach(function(kwh,idx){
-      var day=start+idx;
-      var dateStr=yr+'-'+(mo<10?'0':'')+mo+'-'+(day<10?'0':'')+day;
-      if(kwh>0) lmSaveDate(dateStr,kwh);
-    });
-  });
-  localStorage.setItem(flag,'1');
-  console.log('EIL Solar v46: seeded corrected history from ShinePhone data');
-}
-
-// ── AI ASSIST CORE ──────────────────────────────────────────
-var AI_CONTEXT = {
-  plant:'Elangovan s',capacity:6,location:'Chennai, Tamil Nadu',
-  install:'August 2022',lifetime:30156,
-  yearly:{
-    '2022':Math.round(shYearly('2022')),'2023':Math.round(shYearly('2023')),
-    '2024':Math.round(shYearly('2024')),'2025':Math.round(shYearly('2025')),
-    '2026':Math.round(shYearly('2026'))
-  },
-  avgMonthly:shAvgMonthly(),
-  bestMonth:shBestMonth(),
-  target:{monthly:700,yearly:8400}
-};
-
-function aiPanelToggle(id){
-  var p=document.getElementById(id);
-  if(!p) return;
-  var isOpen=p.classList.contains('open');
-  // Close all panels first
-  document.querySelectorAll('.ai-panel').forEach(function(el){el.classList.remove('open');});
-  if(!isOpen){ p.classList.add('open'); }
-}
-
-function aiAsk(panelId, question, chipEl){
-  var resp=document.getElementById(panelId+'-resp');
-  var input=document.getElementById(panelId+'-inp');
-  if(!resp) return;
-  if(chipEl) chipEl.style.opacity='0.5';
-  resp.innerHTML='<span class="ai-typing">Thinking</span>';
-
-  var ctx=buildAIContext(panelId);
-  var systemPrompt='You are an expert solar energy analyst for EIL Solar (Elango Industries Limited). '+
-    'Plant: '+AI_CONTEXT.plant+', '+AI_CONTEXT.capacity+'kWp rooftop, '+AI_CONTEXT.location+'. '+
-    'Installed: '+AI_CONTEXT.install+'. Lifetime: '+AI_CONTEXT.lifetime.toLocaleString('en-IN')+' kWh. '+
-    'Annual generation — 2022: '+AI_CONTEXT.yearly['2022']+'kWh, 2023: '+AI_CONTEXT.yearly['2023']+'kWh, '+
-    '2024: '+AI_CONTEXT.yearly['2024']+'kWh, 2025: '+AI_CONTEXT.yearly['2025']+'kWh, 2026 YTD: '+AI_CONTEXT.yearly['2026']+'kWh. '+
-    'Best month: '+AI_CONTEXT.bestMonth.ym+' ('+AI_CONTEXT.bestMonth.kwh+' kWh). Avg monthly: '+AI_CONTEXT.avgMonthly+' kWh. Target: 700 kWh/month. '+
-    ctx+
-    'Answer in warm, precise Indian English. Use ₹ for currency. Max 120 words. Bold key numbers using **n**.';
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key': secGet('apiKey')||'',
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-calls':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:200,
-      messages:[{role:'user',content:question}],
-      system:systemPrompt
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Unable to get response.';
-    resp.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
-    if(input) input.value='';
-    if(chipEl) chipEl.style.opacity='1';
-  })
-  .catch(function(e){
-    resp.innerHTML='<span style="color:#f87171">AI unavailable. Check API key in Settings.</span>';
-    if(chipEl) chipEl.style.opacity='1';
-  });
-}
-
-function aiSend(panelId){
-  var input=document.getElementById(panelId+'-inp');
-  if(!input||!input.value.trim()) return;
-  aiAsk(panelId, input.value.trim(), null);
-}
-
-function buildAIContext(panelId){
-  // Inject live context based on which panel
-  var ctx='';
-  if(panelId.indexOf('s1')>-1){
-    var todayKwh=lmGetLog()[lmIST()]||0;
-    ctx='Current section: Live Monitor - Today. Today so far: '+todayKwh+' kWh. ';
-  } else if(panelId.indexOf('s2')>-1){
-    var mo=lmIST().substring(0,7);
-    var mTotal=shMonthly(mo);
-    ctx='Current section: Monthly Generation. This month ('+mo+'): '+Math.round(mTotal)+' kWh. Target: 700 kWh. ';
-  } else if(panelId.indexOf('s3')>-1){
-    var yr=lmIST().substring(0,4);
-    ctx='Current section: Yearly Generation. This year ('+yr+'): '+Math.round(shYearly(yr))+' kWh. Target: 8400 kWh/year. ';
-  } else if(panelId.indexOf('s4')>-1){
-    ctx='Current section: Promise vs Performance lifetime analysis. Lifetime: '+AI_CONTEXT.lifetime+' kWh. ';
-  } else if(panelId.indexOf('proposal')>-1){
-    ctx='Current section: Proposal page. User is viewing a solar proposal. ';
-  } else if(panelId.indexOf('form')>-1){
-    ctx='Current section: Solar sizing form. Help user understand the inputs. ';
-  } else if(panelId.indexOf('welcome')>-1){
-    ctx='Current section: Welcome/home page. Help user navigate the EIL Solar app. ';
-  }
-  return ctx;
-}
-
-// ── AI PANEL HTML BUILDER ───────────────────────────────────
-function aiPanelHTML(id, chips){
-  var chipHTML=chips.map(function(c){
-    return '<span class="ai-chip" onclick="aiAsk(\''+id+'\',this.textContent,this)">'+c+'</span>';
-  }).join('');
-  return '<button class="ai-btn" onclick="aiPanelToggle(\''+id+'\')">'+
-    '<span style="font-size:16px">✨</span> AI Assist</button>'+
-    '<div class="ai-panel" id="'+id+'">'+
-      '<div class="ai-panel-header">'+
-        '<span class="ai-panel-title">✨ AI Insights</span>'+
-        '<button class="ai-close" onclick="aiPanelToggle(\''+id+'\')">✕</button>'+
-      '</div>'+
-      '<div class="ai-response" id="'+id+'-resp">Ask me anything about your solar plant ↓</div>'+
-      '<div class="ai-chips">'+chipHTML+'</div>'+
-      '<div class="ai-input-row">'+
-        '<input class="ai-input" id="'+id+'-inp" placeholder="Ask anything..." onkeydown="if(event.key===\'Enter\')aiSend(\''+id+'\')">'+
-        '<button class="ai-send" onclick="aiSend(\''+id+'\')">➤</button>'+
-      '</div>'+
-    '</div>';
-}
-// ═══════════════════════════════════════════════════════════
-// DEDICATED AI ASSIST PAGE
-// ═══════════════════════════════════════════════════════════
-
-var AI_TOPICS = [
-  {
-    id:'sizing', icon:'📐', title:'System Sizing',
-    subtitle:'Right kWp for your consumption',
-    chips:['Minimum viable size for ₹5,000/month bill','How many kWp for 500 units/month?','What kWp suits a small shop?','Max kWp for residential rooftop'],
-    context:'Expert in solar sizing for Tamil Nadu. Use TNEB tariff knowledge. 1 kWp generates ~120–140 kWh/month in Chennai.'
-  },
-  {
-    id:'commercial', icon:'🏢', title:'Commercial Solar',
-    subtitle:'HT/LT commercial & industrial',
-    chips:['Best kWp for LT Commercial building?','Does solar make sense for a hotel?','HT vs LT connection solar savings','What is the ideal commercial system size?','ROI for factory rooftop solar'],
-    context:'Expert in TNEB LT Commercial (LT-III), HT, and industrial solar in Tamil Nadu. Energy rate ₹8.75/kWh + fixed charges.'
-  },
-  {
-    id:'residential', icon:'🏠', title:'Residential Solar',
-    subtitle:'Home rooftop — LT-I slab tariff',
-    chips:['PM Surya Ghar subsidy amount?','Best kWp for home with ₹3,000 bill?','Net metering vs gross metering','How long to pay back investment?','Can I go completely off-grid?'],
-    context:'Expert in TNEB Residential (LT-I) slab tariff, net metering, and PM Surya Ghar subsidy (capped ₹78,000 for 3kWp). Chennai rooftop generation 130 kWh/kWp/month.'
-  },
-  {
-    id:'battery', icon:'🔋', title:'Battery Storage',
-    subtitle:'When does battery make sense?',
-    chips:['When should I add a battery?','Battery for commercial — peak shaving?','Does battery make sense for home?','LFP vs lithium ion battery','How many hours backup from 10 kWh?','Peak shaving with battery — savings?'],
-    context:'CRITICAL BATTERY GUIDANCE — always answer with this framework: '+
-      'For COMMERCIAL/INDUSTRIAL customers: Battery makes strong financial sense. TNEB ToD tariff has peak hours 6–10 AM and 6–10 PM at +25% premium. HT/LT commercial customers pay demand charges. Battery stores solar energy during day and discharges during peak hours, saving ₹2–3/unit on peak rate difference. Demand charge reduction adds further savings. No net metering uplift is lost because commercial customers gain more from peak arbitrage than from exporting to grid. '+
-      'For RESIDENTIAL customers: Battery makes limited financial sense in Tamil Nadu currently. Residential consumers benefit from net metering — every unit exported to TNEB offsets their bill at full tariff rate, so storing energy in battery instead of exporting it does NOT improve financials. Residential TNEB tariff has NO ToD peak surcharge as of 2025. Therefore battery for residential is justified ONLY for backup during power outages, NOT for financial ROI. '+
-      'Always lead the answer by asking or identifying whether the customer is commercial or residential before recommending.'
-  },
-  {
-    id:'epc', icon:'🏗️', title:'EPC Model',
-    subtitle:'Own from Day 1 — one-time payment',
-    chips:['What is EPC model?','40% depreciation benefit explained','EPC vs Developer — which is better?','Bank loan for EPC solar?','How to claim accelerated depreciation?'],
-    context:'EPC = Engineering Procurement Construction. Customer owns system from Day 1. Companies can claim 40% accelerated depreciation under Section 32 IT Act. EIL Solar EPC cost ~₹50/Wp.'
-  },
-  {
-    id:'developer', icon:'📈', title:'Developer Model',
-    subtitle:'Zero upfront — monthly charge 5 years',
-    chips:['How does Developer model work?','Monthly charge calculation','Who owns the plant in Developer model?','What happens after 5 years?','Is Developer model good for small business?'],
-    context:'Developer model: EIL installs at zero upfront cost. Customer pays fixed monthly charge for 5 years. After 5 years plant transfers FREE to customer. Good for cash-flow-constrained businesses.'
-  },
-  {
-    id:'tneb', icon:'⚡', title:'TNEB Tariff & Rules',
-    subtitle:'Understanding your electricity bill',
-    chips:['What is fixed charge in TNEB bill?','Difference between LT and HT connection','What is EB demand charge?','TNEB net metering rules 2024','How is bi-monthly bill calculated?','ToD tariff peak hours Tamil Nadu'],
-    context:'Expert in TNEB tariff structure: LT-I residential slabs, LT-III commercial ₹8.75/kWh, HT rates, fixed charges, demand charges, net metering TNERC regulations, ToD tariff T.O. No.6 of 2025.'
-  },
-  {
-    id:'general', icon:'🌞', title:'General Solar',
-    subtitle:'Learn solar basics',
-    chips:['How does solar work?','What is kWp vs kWh?','How many panels in 5 kWp system?','Solar panel lifespan','Effect of Chennai heat on solar output','Monsoon impact on solar generation'],
-    context:'Expert in rooftop solar PV technology, panel types (monocrystalline, polycrystalline), inverter types, system components, Chennai irradiance ~5.2 peak sun hours average.'
-  }
-];
-
-function renderAIAssist(){
-  var el=document.getElementById('aiassist-body');
-  if(!el) return;
-
-  var h='';
-  // Header
-  h+='<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);padding:20px 16px 24px;">'
-    +'<div style="font-family:Rajdhani,sans-serif;font-size:26px;font-weight:700;color:#fff;margin-bottom:4px;">✨ AI Solar Advisor</div>'
-    +'<div style="font-size:13px;color:#a5b4fc;font-weight:600;">Your expert guide — ask anything about solar</div>'
-    +'<div style="margin-top:12px;background:rgba(255,255,255,0.08);border-radius:12px;padding:10px 14px;">'
-    +'<div style="font-size:11px;color:#c7d2fe;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Quick Ask</div>'
-    +'<div style="display:flex;gap:8px;">'
-    +'<input id="ai-global-inp" style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.4);border-radius:10px;padding:9px 12px;color:#fff;font-size:13px;outline:none;" placeholder="Type any solar question..." onkeydown="if(event.key===\'Enter\')aiGlobalAsk()">'
-    +'<button onclick="aiGlobalAsk()" style="background:#6366f1;border:none;border-radius:10px;padding:9px 14px;color:#fff;font-size:16px;cursor:pointer;">➤</button>'
-    +'</div>'
-    +'<div id="ai-global-resp" style="display:none;margin-top:10px;color:#e0e7ff;font-size:13px;line-height:1.7;"></div>'
-    +'</div></div>';
-
-  // Topic cards
-  AI_TOPICS.forEach(function(topic){
-    var panelId='ai-topic-'+topic.id;
-    h+='<div style="margin:10px 12px 0;">'
-      +'<div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">'
-        // Card header — tappable
-        +'<div onclick="aiTopicToggle(\''+panelId+'\')" style="padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;">'
-          +'<span style="font-size:28px;">'+topic.icon+'</span>'
-          +'<div style="flex:1;">'
-            +'<div style="font-size:15px;font-weight:800;color:#0f172a;">'+topic.title+'</div>'
-            +'<div style="font-size:12px;color:#64748b;font-weight:600;">'+topic.subtitle+'</div>'
-          +'</div>'
-          +'<span id="'+panelId+'-arr" style="font-size:18px;color:#6366f1;transition:transform 0.2s;">›</span>'
-        +'</div>'
-        // Expandable panel
-        +'<div id="'+panelId+'" style="display:none;border-top:1px solid #f1f5f9;background:linear-gradient(135deg,#1e1b4b,#312e81);padding:14px;">'
-          +'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">'
-          +topic.chips.map(function(c){
-            return '<span style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);color:#c7d2fe;border-radius:12px;padding:6px 12px;font-size:12px;cursor:pointer;" onclick="aiTopicAsk(\''+panelId+'\',this.textContent,this,\''+escAttr(topic.context)+'\')">'+c+'</span>';
-          }).join('')
-          +'</div>'
-          +'<div id="'+panelId+'-resp" style="color:#e0e7ff;font-size:13px;line-height:1.7;min-height:0;padding:2px 0;"></div>'
-          +'<div style="display:flex;gap:6px;margin-top:10px;">'
-            +'<input id="'+panelId+'-inp" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);border-radius:10px;padding:8px 12px;color:#e0e7ff;font-size:12px;outline:none;" placeholder="Ask anything about '+topic.title.toLowerCase()+'..." onkeydown="if(event.key===\'Enter\')aiTopicAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+escAttr(topic.context)+'\')">'
-            +'<button onclick="aiTopicAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+escAttr(topic.context)+'\')" style="background:#6366f1;border:none;border-radius:10px;padding:8px 12px;color:#fff;font-size:14px;cursor:pointer;">➤</button>'
-          +'</div>'
-        +'</div>'
-      +'</div>'
-    +'</div>';
-  });
-
-  // Footer note
-  h+='<div style="text-align:center;padding:20px 16px;font-size:11px;color:#94a3b8;">'
-    +'Powered by Claude AI · EIL Solar · Kaveri Power Solutions, Chennai</div>';
-
-  el.innerHTML=h;
-}
-
-function aiTopicToggle(panelId){
-  var panel=document.getElementById(panelId);
-  var arr=document.getElementById(panelId+'-arr');
-  if(!panel) return;
-  var open=panel.style.display==='block';
-  // Close all first — clear responses
-  AI_TOPICS.forEach(function(t){
-    var p=document.getElementById('ai-topic-'+t.id);
-    var a=document.getElementById('ai-topic-'+t.id+'-arr');
-    var r=document.getElementById('ai-topic-'+t.id+'-resp');
-    var i=document.getElementById('ai-topic-'+t.id+'-inp');
-    if(p){p.style.display='none';}
-    if(a){a.style.transform='rotate(0deg)';}
-    if(r){r.innerHTML='';}
-    if(i){i.value='';}
-  });
-  if(!open){
-    panel.style.display='block';
-    if(arr){arr.style.transform='rotate(90deg)';}
-  }
-}
-
-function aiTopicAsk(panelId, question, chipEl, context){
-  if(!question||!question.trim()) return;
-  var resp=document.getElementById(panelId+'-resp');
-  var inp=document.getElementById(panelId+'-inp');
-  if(!resp) return;
-  if(chipEl) chipEl.style.opacity='0.5';
-  resp.innerHTML='<span style="color:#818cf8;">Thinking<span style="animation:dots 1.2s steps(4,end) infinite">...</span></span>';
-
-  var systemPrompt='You are an expert solar energy advisor for EIL Solar (Kaveri Power Solutions), Chennai. '+
-    context+' '+
-    'Plant owner context: 6 kWp rooftop at Chennai, generating ~700 kWh/month. '+
-    'Always use ₹ for currency. Indian number format. Max 150 words. Bold key numbers with **n**. '+
-    'Give practical, actionable advice relevant to Tamil Nadu and TNEB regulations.';
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':secGet('apiKey')||'',
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-calls':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:250,
-      messages:[{role:'user',content:question}],
-      system:systemPrompt
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Unable to get response.';
-    var formatted=txt.replace(/\*\*(.*?)\*\*/g,'<b style="color:#a5b4fc">$1</b>').replace(/\n/g,'<br>');
-    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
-    resp.innerHTML=formatted
-      +'<div style="display:flex;gap:8px;margin-top:10px;">'
-        +'<button onclick="aiShareWA(\''+encodeURIComponent('Q: '+question+'\n\nA: '+plain)+'\',this)" style="display:flex;align-items:center;gap:5px;background:#25D366;border:none;border-radius:10px;padding:6px 12px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">📱 Share on WhatsApp</button>'
-        +'<button onclick="aiClearResp(\''+panelId+'\')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:10px;padding:6px 12px;color:#c7d2fe;font-size:12px;cursor:pointer;">✕ Clear</button>'
-      +'</div>';
-    if(inp) inp.value='';
-    if(chipEl) chipEl.style.opacity='1';
-  })
-  .catch(function(e){
-    resp.innerHTML='<span style="color:#f87171">AI unavailable. Set API key in ⚙ Settings.</span>';
-    if(chipEl) chipEl.style.opacity='1';
-  });
-}
-
-function aiGlobalAsk(){
-  var inp=document.getElementById('ai-global-inp');
-  var resp=document.getElementById('ai-global-resp');
-  if(!inp||!inp.value.trim()) return;
-  resp.style.display='block';
-  resp.innerHTML='<span style="color:#818cf8;">Thinking...</span>';
-  var q=inp.value.trim();
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':secGet('apiKey')||'',
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-calls':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:250,
-      messages:[{role:'user',content:q}],
-      system:'You are an expert solar energy advisor for EIL Solar (Kaveri Power Solutions), Chennai. '+
-        'Expert in TNEB tariff, Tamil Nadu solar policy, rooftop solar sizing, battery storage, EPC vs Developer models. '+
-        'Use ₹ for currency. Indian number format. Max 150 words. Bold key numbers with **n**.'
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Unable to get response.';
-    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
-    resp.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b style="color:#a5b4fc">$1</b>').replace(/\n/g,'<br>')
-      +'<div style="display:flex;gap:8px;margin-top:10px;">'
-        +'<button onclick="aiShareWA(\''+encodeURIComponent('Q: '+q+'\n\nA: '+plain)+'\',this)" style="display:flex;align-items:center;gap:4px;background:#25D366;border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">📱 Share on WhatsApp</button>'
-        +'<button onclick="var r=document.getElementById(\'ai-global-resp\');r.innerHTML=\'\';r.style.display=\'none\';document.getElementById(\'ai-global-inp\').value=\'\';" style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:8px;padding:5px 10px;color:#c7d2fe;font-size:11px;cursor:pointer;">✕ Clear</button>'
-      +'</div>';
-    inp.value='';
-  })
-  .catch(function(){
-    resp.innerHTML='<span style="color:#f87171">AI unavailable. Set API key in ⚙ Settings.</span>';
-  });
-}
-
-function escAttr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
-
-// ── CONTEXTUAL AI BUTTONS IN FORM ───────────────────────────
-// Called from renderForm() to return AI assist HTML for each section
-function formAI(section){
-  var chips={
-    category:['What is LT Commercial?','Residential slab rates explained','Is my business HT or LT?','Which category saves most with solar?'],
-    sizing:['Minimum kWp for my consumption?','Can I oversize my system?','What affects system size?','Optimal size for ₹10,000 bill?'],
-    model:['EPC vs Developer — which is better?','How does zero upfront work?','Can company claim depreciation?','Is Developer model good for shop?'],
-    battery:['When does battery make sense?','Cost of adding battery?','Battery ROI for commercial?','How many hours backup?'],
-    estimate:['Is this a good deal?','How was payback calculated?','Why is my savings lower than expected?','What is the best ROI scenario?']
-  };
-  var c=chips[section]||chips.general||[];
-  var panelId='form-ai-'+section;
-  return '<div style="padding:10px 16px 14px">'
-    +'<button onclick="formAIToggle(\''+panelId+'\')" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:14px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;width:100%;">'
-    +'<span style="font-size:15px">✨</span> Ask AI about this section</button>'
-    +'<div id="'+panelId+'" style="display:none;margin-top:8px;background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:14px;padding:14px;">'
-      +'<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">'
-      +c.map(function(q){return '<span style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);color:#c7d2fe;border-radius:10px;padding:5px 10px;font-size:11px;cursor:pointer;" onclick="formAIAsk(\''+panelId+'\',this.textContent,this,\''+section+'\')">'+q+'</span>';}).join('')
-      +'</div>'
-      +'<div id="'+panelId+'-resp" style="color:#e0e7ff;font-size:12px;line-height:1.6;"></div>'
-      +'<div style="display:flex;gap:6px;margin-top:8px;">'
-        +'<input id="'+panelId+'-inp" style="flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);border-radius:10px;padding:7px 10px;color:#e0e7ff;font-size:12px;outline:none;" placeholder="Ask about '+section+'..." onkeydown="if(event.key===\'Enter\')formAIAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+section+'\')">'
-        +'<button onclick="formAIAsk(\''+panelId+'\',document.getElementById(\''+panelId+'-inp\').value,null,\''+section+'\')" style="background:#6366f1;border:none;border-radius:10px;padding:7px 12px;color:#fff;font-size:13px;cursor:pointer;">➤</button>'
-      +'</div>'
-    +'</div>'
-  +'</div>';
-}
-
-function aiShareWA(encodedText, btn){
-  var text=decodeURIComponent(encodedText);
-  var waText='*EIL Solar AI Advisor*\n\n'+text+'\n\n_Powered by EIL Solar · Kaveri Power Solutions, Chennai_';
-  window.open('https://wa.me/?text='+encodeURIComponent(waText),'_blank');
-}
-
-function aiClearResp(panelId){
-  var resp=document.getElementById(panelId+'-resp');
-  var inp=document.getElementById(panelId+'-inp');
-  if(resp) resp.innerHTML='';
-  if(inp) inp.value='';
-}
-
-function formAIToggle(id){
-  var p=document.getElementById(id);
-  if(p){
-    var closing=p.style.display==='block';
-    p.style.display=closing?'none':'block';
-    // Clear on close
-    if(closing){
-      var r=document.getElementById(id+'-resp');
-      var i=document.getElementById(id+'-inp');
-      if(r) r.innerHTML='';
-      if(i) i.value='';
-    }
-  }
-}
-
-function formAIAsk(panelId,question,chipEl,section){
-  if(!question||!question.trim()) return;
-  var resp=document.getElementById(panelId+'-resp');
-  var inp=document.getElementById(panelId+'-inp');
-  if(!resp) return;
-  if(chipEl) chipEl.style.opacity='0.5';
-  resp.innerHTML='<span style="color:#818cf8;">Thinking...</span>';
-
-  var ctxMap={
-    category:'TNEB tariff categories: LT-I Residential slab (₹0-₹11.55/kWh), LT-III Commercial (₹8.75/kWh + fixed ₹100/month), HT (₹7.45-₹8.25/kWh + demand charges). Explain clearly.',
-    sizing:'Solar sizing: 1 kWp = 130 kWh/month in Chennai. Formula: monthly units ÷ 130 = kWp needed. Max residential 10 kWp, commercial up to 500 kWp. PM Surya Ghar subsidy capped at 3 kWp.',
-    model:'EPC model: customer pays one-time, owns system Day 1, can claim 40% depreciation. Developer model: zero upfront, fixed monthly charge 5 years, plant transfers free after. Suit different cash flow needs.',
-    battery:'CRITICAL — Battery guidance must distinguish by customer type: '+
-      'COMMERCIAL/INDUSTRIAL: Battery makes strong financial sense. TNEB ToD peak hours 6–10 AM and 6–10 PM carry +25% surcharge. Battery stores daytime solar and discharges during peak, saving ₹2–3/unit. HT demand charge reduction adds ₹500–2,000/month savings. Commercial customers should seriously consider battery. '+
-      'RESIDENTIAL: Battery has LIMITED financial justification in Tamil Nadu currently. Net metering allows residential consumers to export surplus solar to TNEB at full tariff rate — this already neutralises the financial case for storage. Residential TNEB tariff has NO ToD peak surcharge as of 2025. So battery for home = backup power during outages ONLY, not financial ROI. '+
-      'Current customer category is '+F.cat+'. Tailor your answer strictly to this category.',
-    estimate:'Solar savings = units generated × tariff rate. Payback = system cost ÷ annual savings. Chennai: 5-7 year payback typical. 25-year system life.'
-  };
-
-  var ctx=ctxMap[section]||'Expert solar advisor for Tamil Nadu.';
-  // Add live form context
-  var liveCtx='Current customer: '+F.cat+' category, '+F.kwp+' kWp, '+F.bm+' units/month, '+F.model+' model.';
-
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':secGet('apiKey')||'',
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-calls':'true'
-    },
-    body:JSON.stringify({
-      model:'claude-haiku-4-5-20251001',
-      max_tokens:200,
-      messages:[{role:'user',content:question}],
-      system:'You are an expert solar advisor for EIL Solar, Chennai. '+ctx+' '+liveCtx+' Use ₹. Max 120 words. Bold key figures with **n**.'
-    })
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    var txt=(d.content&&d.content[0]&&d.content[0].text)||'No response.';
-    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
-    resp.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b style="color:#a5b4fc">$1</b>').replace(/\n/g,'<br>')
-      +'<div style="display:flex;gap:8px;margin-top:8px;">'
-        +'<button onclick="aiShareWA(\''+encodeURIComponent('Q: '+question+'\n\nA: '+plain)+'\',this)" style="display:flex;align-items:center;gap:4px;background:#25D366;border:none;border-radius:8px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">📱 WhatsApp</button>'
-        +'<button onclick="aiClearResp(\''+panelId+'\')" style="background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:8px;padding:5px 10px;color:#c7d2fe;font-size:11px;cursor:pointer;">✕ Clear</button>'
-      +'</div>';
-    if(inp) inp.value='';
-    if(chipEl) chipEl.style.opacity='1';
-  })
-  .catch(function(){
-    resp.innerHTML='<span style="color:#f87171">Set API key in ⚙ Settings to use AI.</span>';
-    if(chipEl) chipEl.style.opacity='1';
-  });
 }
 // ═══════════════════════════════════════════════════════════
 </script>
