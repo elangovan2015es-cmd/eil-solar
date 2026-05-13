@@ -3485,6 +3485,8 @@ function renderSettings(){
 
   h+='<div class="sp-note">⚠ All values from <strong>Excel App_Config & Tariff_Lookup sheets</strong>. Edit and tap Save to update all calculations.</div>';
 
+  h+='<div class="sp-note">⚠ All values from <strong>Excel App_Config & Tariff_Lookup sheets</strong>. Edit and tap Save to update all calculations.</div>';
+
   // Apps Script config
   h+='<div class="sp-install">'
     +'<div class="sp-install-title">📁 Google Sheets — Save My Copy</div>'
@@ -5571,7 +5573,7 @@ function lmRenderS4() {
 (function injectStyles(){
   if(document.getElementById('permit-css')) return;
   var s=document.createElement('style'); s.id='permit-css';
-  s.textContent='.pg-card{background:#fff;border-radius:14px;margin:10px 12px 0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07);}.pg-card-hdr{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}.pg-card-title{font-size:15px;font-weight:800;color:#0f172a;}.pg-card-sub{font-size:11px;color:#64748b;font-weight:600;margin-top:2px;}.pg-card-arr{font-size:20px;color:#6366f1;transition:transform 0.2s;}.pg-card-body{display:none;border-top:1px solid #f1f5f9;}.pg-step{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #f8fafc;}.pg-step:last-child{border-bottom:none;}.pg-step-no{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;}.pg-step-title{font-size:13px;font-weight:800;color:#0f172a;}.pg-step-days{font-size:11px;font-weight:700;margin-top:2px;}.pg-step-detail{font-size:12px;color:#475569;line-height:1.6;margin-top:5px;}.pg-step-detail a{color:#6366f1;font-weight:700;}.hb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;}.hb-drawer{display:none;position:fixed;bottom:0;right:0;width:260px;background:#fff;border-radius:20px 0 0 0;box-shadow:-4px -4px 24px rgba(0,0,0,0.18);z-index:9999;padding:0 0 88px;max-height:90vh;overflow-y:auto;animation:slideUp 0.2s ease-out;}@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}.hb-head{padding:12px 16px 10px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}.hb-item{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid #f8fafc;}.hb-item:active{background:#f8fafc;}.hb-ico{font-size:22px;width:28px;text-align:center;flex-shrink:0;}.hb-lbl{font-size:14px;font-weight:700;color:#0f172a;}.hb-sub{font-size:11px;color:#94a3b8;margin-top:1px;}.ai-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;}.ai-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(170deg,#1e1b4b,#312e81);border-radius:20px 20px 0 0;z-index:10001;padding:0 0 20px;max-height:85vh;overflow-y:auto;}.ai-sheet-head{padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:linear-gradient(170deg,#1e1b4b,#312e81);}.ai-chip{background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.4);color:#c7d2fe;border-radius:20px;padding:7px 13px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}.ai-chip:active{background:rgba(165,180,252,0.25);}.ai-resp{color:#e0e7ff;font-size:13px;line-height:1.7;padding:12px 16px;min-height:50px;}.ai-resp b,.ai-resp strong{color:#a5b4fc;}.ai-act-btn{display:flex;align-items:center;gap:5px;border:none;border-radius:10px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;}';
+  s.textContent='.pg-card{background:#fff;border-radius:14px;margin:10px 12px 0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07);}.pg-card-hdr{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}.pg-card-title{font-size:15px;font-weight:800;color:#0f172a;}.pg-card-sub{font-size:11px;color:#64748b;font-weight:600;margin-top:2px;}.pg-card-arr{font-size:20px;color:#6366f1;transition:transform 0.2s;}.pg-card-body{display:none;border-top:1px solid #f1f5f9;}.pg-step{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #f8fafc;}.pg-step:last-child{border-bottom:none;}.pg-step-no{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;}.pg-step-title{font-size:13px;font-weight:800;color:#0f172a;}.pg-step-days{font-size:11px;font-weight:700;margin-top:2px;}.pg-step-detail{font-size:12px;color:#475569;line-height:1.6;margin-top:5px;}.pg-step-detail a{color:#6366f1;font-weight:700;}.hb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;}.hb-drawer{display:none;position:fixed;bottom:0;right:0;width:260px;background:#fff;border-radius:20px 0 0 0;box-shadow:-4px -4px 24px rgba(0,0,0,0.18);z-index:9999;padding:0 0 88px;max-height:90vh;overflow-y:auto;animation:slideUp 0.2s ease-out;}@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}.hb-head{padding:12px 16px 10px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}.hb-item{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid #f8fafc;}.hb-item:active{background:#f8fafc;}.hb-ico{font-size:22px;width:28px;text-align:center;flex-shrink:0;}.hb-lbl{font-size:14px;font-weight:700;color:#0f172a;}.hb-sub{font-size:11px;color:#94a3b8;margin-top:1px;}.ai-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;}.ai-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(170deg,#1e1b4b,#312e81);border-radius:20px 20px 0 0;z-index:10001;padding:0 0 20px;max-height:85vh;overflow-y:auto;}.ai-sheet-head{padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:linear-gradient(170deg,#1e1b4b,#312e81);}.ai-chip{display:block;width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(165,180,252,0.3);color:#c7d2fe;border-radius:12px;padding:10px 14px;font-size:13px;cursor:pointer;text-align:left;box-sizing:border-box;}.ai-chip:active{background:rgba(165,180,252,0.2);}.ai-resp{color:#e0e7ff;font-size:13px;line-height:1.7;padding:12px 16px;min-height:50px;}.ai-resp b,.ai-resp strong{color:#a5b4fc;}.ai-act-btn{display:flex;align-items:center;gap:5px;border:none;border-radius:10px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;}';
   document.head.appendChild(s);
 })();
 
@@ -5626,48 +5628,78 @@ function aiClear(){
   if(r)r.innerHTML='<span style="color:#818cf8;font-style:italic">Tap a question or type your own ↓</span>';
   if(a)a.innerHTML=''; if(inp)inp.value='';
 }
+// ── BUILT-IN SOLAR Q&A ENGINE — no API key, works offline ───
+var QA_DB = [
+  { k:['minimum','min','viable','small','1kw','2kw','1 kw','2 kw','how small','below 3'],
+    a:'<b>Minimum viable size is 3 kWp</b> for residential. Below 3 kWp, investment is too high and payback too long — not recommended. 3 kWp generates ~390 units/month and gets full PM Surya Ghar subsidy of <b>₹78,000</b>.' },
+  { k:['how many kwp','what size','size for','kwp for','kw for','recommend','right size','sizing','calculate'],
+    a:'Formula: <b>monthly units ÷ 130 = kWp needed</b>. Example: 300 units/month → 2.3 kWp → round up to 3 kWp (residential minimum). Commercial: size to cover 70–80% of consumption. Use the New form to get your exact proposal.' },
+  { k:['rooftop area','roof area','space','sq ft','sqft','how much space','area needed'],
+    a:'Approximately <b>100 sq ft per kWp</b> of shadow-free roof area needed. 3 kWp = ~300 sq ft. 10 kWp = ~1,000 sq ft. High-efficiency bifacial panels reduce this to ~80 sq ft/kWp.' },
+  { k:['subsidy','surya ghar','pm surya','muft bijli','government','govt','central'],
+    a:'<b>PM Surya Ghar subsidy</b>: ₹30,000 for 1 kWp · ₹60,000 for 2 kWp · <b>₹78,000 for 3 kWp (maximum)</b>. Residential LT-I consumers only. Apply at <b>pmsuryaghar.gov.in</b> BEFORE installation. Commercial customers: no subsidy — use 40% accelerated depreciation instead.' },
+  { k:['dcr','domestic content','made in india','indian panel','panel type','which panel'],
+    a:'<b>DCR panels</b> (Made in India) are mandatory for PM Surya Ghar subsidy. Top brands: Waaree, Adani Solar, Vikram Solar, Premier Energies. Non-DCR (imported) panels forfeit the subsidy. For commercial (no subsidy), any panel can be used — imported bifacial panels give higher efficiency.' },
+  { k:['net meter','net metering','export','surplus','credit','banking','lapse','march 31'],
+    a:'Under <b>net metering</b>, every exported unit offsets one imported unit — 1:1 credit in your TNEB account. <b>Unused credits lapse on March 31</b> every year — no cash payout. Size your system so you consume 80–90% of what you generate to avoid wasting credits.' },
+  { k:['network charge','wheeling','0.318','normative'],
+    a:'TNEB levies a <b>network charge of ₹0.318/kWh</b> on residential solar (on normative generation). Commercial: ₹1.75/kWh. This charge is unavoidable — even if you export everything. It is a grid access fee under TNERC regulations.' },
+  { k:['tneb tariff','slab','rate per unit','lt1','lt-1','domestic rate','residential rate','regime'],
+    a:'TNEB residential uses <b>two regimes</b>: Regime A (≤500 units bi-monthly): 1–100 free, 101–200 at ₹2.35, 201–400 at ₹4.70, 401–500 at ₹6.30. Regime B (>500 units): ₹2.35 slab drops out — 101–400 becomes flat ₹4.70. Max rate: <b>₹11.55/unit</b>.' },
+  { k:['commercial rate','lm51','commercial tariff','shop rate','office rate'],
+    a:'TNEB Commercial (LM51): <b>₹10.45/kWh</b> + ₹110 fixed/month + 5% electricity tax. Exports paid at <b>₹3.61/kWh</b> (feed-in tariff). Network charge: ₹1.75/kWh on solar generated. Strong ROI — payback typically <b>4–6 years</b>.' },
+  { k:['epc','own','purchase','buy','upfront','one time','one-time','depreciation'],
+    a:'<b>EPC model</b>: Pay ₹60,000/kWp once — own system from Day 1. Companies can claim <b>40% accelerated depreciation</b> (Section 32, IT Act) in Year 1, reducing effective cost by 30–35%. Best for businesses with capital and taxable profit.' },
+  { k:['developer','zero upfront','monthly charge','no upfront','free install','5 year'],
+    a:'<b>Developer model</b>: EIL installs at <b>zero upfront cost</b>. Pay a fixed monthly charge for 5 years. After 5 years, the plant transfers to you <b>FREE</b>. Ideal for businesses wanting solar savings without capital investment.' },
+  { k:['battery','storage','backup','peak shaving','tod','time of day','lfp'],
+    a:'<b>Battery makes financial sense for commercial/industrial</b> — TNEB ToD peak hours (6–10 AM, 6–10 PM) have +25% surcharge. Battery stores solar and discharges at peak, saving ₹2–3/unit. <b>For residential</b>: net metering already banks surplus — battery needed only for power-cut backup, not financial ROI.' },
+  { k:['payback','roi','return','how long','years','recover','break even','breakeven','profit'],
+    a:'Typical payback: <b>Residential 3 kWp with subsidy: 5–7 years</b>. Commercial 10 kWp: <b>4–6 years</b>. Industrial 30 kWp: 6–9 years. After payback, the system generates free electricity for 15–20 more years. Panel life: 25 years, degrading 0.5%/year.' },
+  { k:['approval','permission','timeline','process','permit','days','how long tneb','tneb approval','register'],
+    a:'TNEB net metering timeline: <b>75–100 days total</b>. Day 1: Register at pmsuryaghar.gov.in → Days 5–15: TNEB feasibility → Days 15–20: Documents → Days 20–30: <b>EIL installs in 10 days</b> → Days 30–60: TNEB net meter → Days 60–90: Subsidy credited. EIL handles all paperwork.' },
+  { k:['cost','price','how much','invest','expensive','total cost','system cost'],
+    a:'EIL Solar: <b>₹60,000 per kWp</b>. 3 kWp = ₹1,80,000. After PM Surya Ghar subsidy ₹78,000: <b>net ₹1,02,000</b>. Commercial 10 kWp: ₹6,00,000 (no subsidy, but 40% depreciation). Includes installation, inverter, net metering coordination.' },
+  { k:['generate','generation','units per month','produce','output','yield','kwh per'],
+    a:'Chennai solar yield: <b>4.3 kWh/kWp/day</b> = ~<b>1,570 kWh/kWp/year</b>. 3 kWp generates ~470 kWh/month. 10 kWp generates ~1,300 kWh/month. Drops 15–20% during monsoon. Degrades ~0.5%/year. Benchmark: 1,400 kWh/kWp/year = good performance.' },
+  { k:['gross meter','gross metering','feed in','feed-in','sell all','ht meter'],
+    a:'<b>Gross metering</b>: all solar exported to TNEB, paid at <b>₹3.61/kWh</b>. You buy back all consumption at full tariff. Less favourable than net metering. Applicable to older HT consumers. New connections default to net metering.' }
+];
+
+function qaFind(q){
+  var ql=q.toLowerCase().replace(/[?!.,]/g,'');
+  var best=null,bestScore=0;
+  QA_DB.forEach(function(item){
+    var score=0;
+    item.k.forEach(function(kw){if(ql.indexOf(kw)>-1)score+=kw.split(' ').length;});
+    if(score>bestScore){bestScore=score;best=item;}
+  });
+  return (bestScore>0&&best)?best.a:null;
+}
+
 function aiAsk(question,chipEl){
   var r=document.getElementById('ai-resp-text'),a=document.getElementById('ai-actions-row'),inp=document.getElementById('ai-inp');
-  if(!r) return;
+  if(!r)return;
   if(chipEl){chipEl.style.opacity='0.5';chipEl.style.pointerEvents='none';}
-  r.innerHTML='<span style="color:#818cf8">Thinking...</span>';
+  r.innerHTML='<span style="color:#818cf8">Finding answer...</span>';
   if(a)a.innerHTML='';
-  var key=(function(){try{return secGet('apiKey');}catch(e){return '';}})();
-  fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
-    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,
-      system:'You are a concise solar expert for EIL Solar (Kaveri Power Solutions, Chennai). '
-        +'CRITICAL RESIDENTIAL SIZING RULE: For residential homes in Tamil Nadu, a rooftop solar plant is financially viable ONLY if the system is 3 kWp or above. '
-        +'Below 3 kWp for a home: investment is too high and payback period is too long — NOT recommended. '
-        +'The minimum viable residential system is 3 kWp — this also happens to be the cap for PM Surya Ghar subsidy (₹78,000 max). '
-        +'If a residential customer asks about 1 kWp or 2 kWp, tell them clearly it is not viable — recommend 3 kWp as the minimum. '
-        +'COMMERCIAL rule: No minimum restriction — size based on consumption and roof area. 10 kWp and above typical. '
-        +'Battery: financially viable only for commercial (TNEB ToD peak shaving). NOT for residential. '
-        +'Specialise in TNEB tariffs, DCR panels, EPC/Developer models, net metering Tamil Nadu. '
-        +'Answer in ≤100 words. Use ₹. Bold key figures with **n**. Be direct and practical.',
-      messages:[{role:'user',content:question}]})
-  })
-  .then(function(res){return res.json();})
-  .then(function(d){
-    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Sorry, no answer.';
-    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
-    r.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  setTimeout(function(){
+    var ans=qaFind(question);
+    if(!ans) ans='For this specific question, please contact EIL Solar directly — our team will give you a personalised answer.<br><br><b>📞 Kaveri Power Solutions, Chennai</b>';
+    r.innerHTML=ans;
     if(inp)inp.value='';
     if(chipEl){chipEl.style.opacity='1';chipEl.style.pointerEvents='';}
-    var eq=encodeURIComponent(question.substring(0,150)),ep=encodeURIComponent(plain.substring(0,400));
-    if(a)a.innerHTML='<div style="display:flex;gap:8px;padding-top:4px;flex-wrap:wrap">'
-      +'<button class="ai-act-btn" style="background:#25D366;color:#fff" onclick="window.open(\'https://wa.me/?text=\'+encodeURIComponent(\'*EIL Solar AI Advisor*\\n\\n❓ '+question.replace(/'/g,"\\'")+'\\n\\n💡 \'+decodeURIComponent(\''+ep+'\')+\'\\n\\n_Kaveri Power Solutions · Chennai_\'),\'_blank\')">📱 WhatsApp</button>'
+    var plain=(r.textContent||r.innerText||'').substring(0,400);
+    var ep=encodeURIComponent(plain),qq=question.replace(/['"\\]/g,' ');
+    if(a)a.innerHTML='<div style="display:flex;gap:8px;padding-top:8px;flex-wrap:wrap">'
+      +'<button class="ai-act-btn" style="background:#25D366;color:#fff" onclick="window.open(\'https://wa.me/?text=\'+encodeURIComponent(\'*EIL Solar Advisor*\\n\\n❓ '+qq+'\\n\\n💡 \'+decodeURIComponent(\''+ep+'\')+\'\\n\\n_Kaveri Power Solutions · Chennai_\'),\'_blank\')">📱 WhatsApp</button>'
       +'<button class="ai-act-btn" style="background:rgba(255,255,255,0.12);color:#c7d2fe;border:1px solid rgba(165,180,252,0.3)" onclick="aiCopyText(\''+ep+'\')">📋 Copy</button>'
       +'<button class="ai-act-btn" style="background:rgba(255,255,255,0.08);color:#c7d2fe;border:1px solid rgba(165,180,252,0.2)" onclick="aiClear()">✕ Clear</button>'
       +'</div>';
-  })
-  .catch(function(){
-    r.innerHTML='<span style="color:#f87171">⚠ Set API key in ⚙ Settings to use AI Assist.</span>';
-    if(chipEl){chipEl.style.opacity='1';chipEl.style.pointerEvents='';}
-  });
+  },300);
 }
 function aiSend(){var inp=document.getElementById('ai-inp');if(inp&&inp.value.trim())aiAsk(inp.value.trim(),null);}
+
 function aiCopyText(ep){
   var txt=decodeURIComponent(ep);
   if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){alert('Copied!');});}
@@ -5681,7 +5713,7 @@ function injectAISheet(){
   var ash=document.createElement('div'); ash.id='ai-sheet'; ash.className='ai-sheet';
   ash.innerHTML='<div class="ai-sheet-head"><div><div style="font-size:16px;font-weight:800;color:#fff">✨ AI Solar Advisor</div><div style="font-size:11px;color:#a5b4fc;margin-top:1px">EIL Solar · Kaveri Power Solutions</div></div><button onclick="aiClose()" style="background:rgba(255,255,255,0.1);border:none;color:#c7d2fe;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px">✕</button></div>'
     +'<div style="padding:10px 16px 6px;font-size:11px;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:1px">Quick Questions</div>'
-    +'<div style="display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+chips+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;padding:0 16px 12px;">'+chips+'</div>'
     +'<div class="ai-resp" id="ai-resp-text"><span style="color:#818cf8;font-style:italic">Tap a question or type your own ↓</span></div>'
     +'<div id="ai-actions-row" style="padding:0 16px 8px"></div>'
     +'<div style="display:flex;gap:8px;padding:4px 16px 4px">'
