@@ -655,7 +655,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 <div class="app">
   <div class="topbar">
     <div class="brand" id="logo-wrap"></div>
-    <button class="nav-pill" onclick="goPage('settings')" style="opacity:0.4;font-size:10px;padding:3px 8px;">⚙</button>
+    <button onclick="hbOpen()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1;opacity:0.9" title="Menu">☰</button>
   </div>
   <!-- USAGE BAR — hidden, tracked silently -->
   <div id="usage-bar" style="display:none;">
@@ -960,6 +960,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
     </div>
   </div>
 
+  <!-- SOLAR PERMIT GUIDE PAGE -->
+  <div class="page" id="pg-permit">
+    <div id="permit-body" style="padding-bottom:90px;background:#f8fafc;min-height:100vh"></div>
+  </div>
+
   <div class="bottomnav">
     <button class="bnav act" id="bn-form" onclick="goPage('form')">
       <span class="bnav-icon">📋</span>
@@ -973,17 +978,13 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
       <div class="bnav-fab" onclick="doGenerate()">⚡</div>
       <span class="bnav-lbl" style="color:var(--amber);font-size:11px;font-weight:700;">Generate</span>
     </div>
-    <button class="bnav" id="bn-settings" onclick="goPage('settings')">
-      <span class="bnav-icon">⚙</span>
-      <span class="bnav-lbl">Settings</span>
-    </button>
     <button class="bnav" id="bn-monitor" onclick="goPage('monitor')">
       <span class="bnav-icon">&#9728;</span>
       <span class="bnav-lbl">Live</span>
     </button>
-    <button class="bnav" onclick="sendWA()">
-      <span class="bnav-icon">💬</span>
-      <span class="bnav-lbl">Send</span>
+    <button class="bnav" id="bn-settings" onclick="goPage('settings')">
+      <span class="bnav-icon">⚙</span>
+      <span class="bnav-lbl">Settings</span>
     </button>
   </div>
 </div>
@@ -1785,7 +1786,7 @@ function goPage(p){
     showPinScreen("admin", function(){ goPage("settings"); });
     return;
   }
-  ["welcome","form","proposal","settings","voice","customer","monitor"].forEach(function(id){
+  ["welcome","form","proposal","settings","voice","customer","monitor","permit"].forEach(function(id){
     var el=document.getElementById("pg-"+id);
     if(el) el.className="page"+(p===id?" active":"");
     var bn=document.getElementById("bn-"+id);
@@ -1808,6 +1809,7 @@ function goPage(p){
   if(p==="monitor") { setTimeout(function(){ lmRestore(); }, 100); }
   if(p==="monitor") { lmRestore(); }
   if(p==="settings") renderSettings();
+  if(p==="permit") renderPermitGuide();
   window.scrollTo(0,0);
 }
 
@@ -5561,6 +5563,279 @@ function lmRenderS4() {
   }
 }
 // ═══════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════
+// SOLAR PERMIT GUIDE + AI ASSIST HAMBURGER  (v48)
+// ════════════════════════════════════════════════════════════
+
+(function injectStyles(){
+  if(document.getElementById('permit-css')) return;
+  var s=document.createElement('style'); s.id='permit-css';
+  s.textContent='.pg-card{background:#fff;border-radius:14px;margin:10px 12px 0;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07);}.pg-card-hdr{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}.pg-card-title{font-size:15px;font-weight:800;color:#0f172a;}.pg-card-sub{font-size:11px;color:#64748b;font-weight:600;margin-top:2px;}.pg-card-arr{font-size:20px;color:#6366f1;transition:transform 0.2s;}.pg-card-body{display:none;border-top:1px solid #f1f5f9;}.pg-step{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #f8fafc;}.pg-step:last-child{border-bottom:none;}.pg-step-no{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;}.pg-step-title{font-size:13px;font-weight:800;color:#0f172a;}.pg-step-days{font-size:11px;font-weight:700;margin-top:2px;}.pg-step-detail{font-size:12px;color:#475569;line-height:1.6;margin-top:5px;}.pg-step-detail a{color:#6366f1;font-weight:700;}.hb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;}.hb-drawer{display:none;position:fixed;bottom:0;right:0;width:260px;background:#fff;border-radius:20px 0 0 0;box-shadow:-4px -4px 24px rgba(0,0,0,0.18);z-index:9999;padding:0 0 88px;max-height:90vh;overflow-y:auto;animation:slideUp 0.2s ease-out;}@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}.hb-head{padding:12px 16px 10px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;}.hb-item{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;border-bottom:1px solid #f8fafc;}.hb-item:active{background:#f8fafc;}.hb-ico{font-size:22px;width:28px;text-align:center;flex-shrink:0;}.hb-lbl{font-size:14px;font-weight:700;color:#0f172a;}.hb-sub{font-size:11px;color:#94a3b8;margin-top:1px;}.ai-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;}.ai-sheet{display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(170deg,#1e1b4b,#312e81);border-radius:20px 20px 0 0;z-index:10001;padding:0 0 20px;max-height:85vh;overflow-y:auto;}.ai-sheet-head{padding:14px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:linear-gradient(170deg,#1e1b4b,#312e81);}.ai-chip{background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.4);color:#c7d2fe;border-radius:20px;padding:7px 13px;font-size:12px;cursor:pointer;white-space:nowrap;flex-shrink:0;}.ai-chip:active{background:rgba(165,180,252,0.25);}.ai-resp{color:#e0e7ff;font-size:13px;line-height:1.7;padding:12px 16px;min-height:50px;}.ai-resp b,.ai-resp strong{color:#a5b4fc;}.ai-act-btn{display:flex;align-items:center;gap:5px;border:none;border-radius:10px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;}';
+  document.head.appendChild(s);
+})();
+
+// ── HAMBURGER ────────────────────────────────────────────────
+function hbOpen(){
+  injectHamburger();
+  document.getElementById('hb-overlay').style.display='block';
+  document.getElementById('hb-drawer').style.display='block';
+}
+function hbClose(){
+  var ov=document.getElementById('hb-overlay'),dr=document.getElementById('hb-drawer');
+  if(ov)ov.style.display='none'; if(dr)dr.style.display='none';
+}
+function hbGo(page){ hbClose(); goPage(page); }
+
+function injectHamburger(){
+  if(document.getElementById('hb-drawer')) return;
+  var ov=document.createElement('div'); ov.id='hb-overlay'; ov.className='hb-overlay'; ov.onclick=hbClose; document.body.appendChild(ov);
+  var dr=document.createElement('div'); dr.id='hb-drawer'; dr.className='hb-drawer';
+  dr.innerHTML='<div class="hb-head"><span style="font-size:13px;font-weight:800;color:#0f172a">More Options</span><button onclick="hbClose()" style="background:none;border:none;font-size:20px;color:#94a3b8;cursor:pointer">✕</button></div>'
+    +'<div class="hb-item" onclick="aiOpen()"><span class="hb-ico">✨</span><div><div class="hb-lbl">AI Solar Advisor</div><div class="hb-sub">Ask anything about solar</div></div></div>'
+    +'<div class="hb-item" onclick="hbGo(\'permit\')"><span class="hb-ico">🏛️</span><div><div class="hb-lbl">Solar Permit Guide</div><div class="hb-sub">PM Surya Ghar · TNEB process</div></div></div>'
+    +'<div class="hb-item" onclick="sendWA()"><span class="hb-ico">💬</span><div><div class="hb-lbl">Send WhatsApp</div><div class="hb-sub">Share proposal text</div></div></div>'
+    +'<div class="hb-item" onclick="sendEmail()"><span class="hb-ico">✉️</span><div><div class="hb-lbl">Send Email</div><div class="hb-sub">Email proposal report</div></div></div>'
+    +'<div class="hb-item" onclick="downloadExcel()"><span class="hb-ico">📊</span><div><div class="hb-lbl">Export CSV</div><div class="hb-sub">Excel-ready data</div></div></div>'
+    +'<div class="hb-item" onclick="hbGo(\'settings\')"><span class="hb-ico">⚙️</span><div><div class="hb-lbl">Settings</div><div class="hb-sub">Tariff · API key · Admin</div></div></div>';
+  document.body.appendChild(dr);
+}
+
+// ── AI ASSIST SHEET ──────────────────────────────────────────
+var AI_QS=[
+  'Minimum kWp for my home?','PM Surya Ghar subsidy amount?','DCR vs Non-DCR panels?',
+  'When does battery make sense?','EPC vs Developer model?','TNEB net meter process?',
+  'How long for TNEB approval?','Commercial solar ROI?','40% depreciation for solar?',
+  'Monsoon impact on generation?','What is gross metering?','Max residential system size?'
+];
+
+function aiOpen(){
+  hbClose(); injectAISheet();
+  document.getElementById('ai-overlay').style.display='block';
+  document.getElementById('ai-sheet').style.display='block';
+  aiClear();
+}
+function aiClose(){
+  var ov=document.getElementById('ai-overlay'),sh=document.getElementById('ai-sheet');
+  if(ov)ov.style.display='none'; if(sh)sh.style.display='none';
+}
+function aiClear(){
+  var r=document.getElementById('ai-resp-text');
+  var a=document.getElementById('ai-actions-row');
+  var inp=document.getElementById('ai-inp');
+  if(r)r.innerHTML='<span style="color:#818cf8;font-style:italic">Tap a question or type your own ↓</span>';
+  if(a)a.innerHTML=''; if(inp)inp.value='';
+}
+function aiAsk(question,chipEl){
+  var r=document.getElementById('ai-resp-text'),a=document.getElementById('ai-actions-row'),inp=document.getElementById('ai-inp');
+  if(!r) return;
+  if(chipEl){chipEl.style.opacity='0.5';chipEl.style.pointerEvents='none';}
+  r.innerHTML='<span style="color:#818cf8">Thinking...</span>';
+  if(a)a.innerHTML='';
+  var key=(function(){try{return secGet('apiKey');}catch(e){return '';}})();
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true'},
+    body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:200,
+      system:'You are a concise solar expert for EIL Solar (Kaveri Power Solutions, Chennai). '
+        +'CRITICAL RESIDENTIAL SIZING RULE: For residential homes in Tamil Nadu, a rooftop solar plant is financially viable ONLY if the system is 3 kWp or above. '
+        +'Below 3 kWp for a home: investment is too high and payback period is too long — NOT recommended. '
+        +'The minimum viable residential system is 3 kWp — this also happens to be the cap for PM Surya Ghar subsidy (₹78,000 max). '
+        +'If a residential customer asks about 1 kWp or 2 kWp, tell them clearly it is not viable — recommend 3 kWp as the minimum. '
+        +'COMMERCIAL rule: No minimum restriction — size based on consumption and roof area. 10 kWp and above typical. '
+        +'Battery: financially viable only for commercial (TNEB ToD peak shaving). NOT for residential. '
+        +'Specialise in TNEB tariffs, DCR panels, EPC/Developer models, net metering Tamil Nadu. '
+        +'Answer in ≤100 words. Use ₹. Bold key figures with **n**. Be direct and practical.',
+      messages:[{role:'user',content:question}]})
+  })
+  .then(function(res){return res.json();})
+  .then(function(d){
+    var txt=(d.content&&d.content[0]&&d.content[0].text)||'Sorry, no answer.';
+    var plain=txt.replace(/\*\*(.*?)\*\*/g,'$1');
+    r.innerHTML=txt.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+    if(inp)inp.value='';
+    if(chipEl){chipEl.style.opacity='1';chipEl.style.pointerEvents='';}
+    var eq=encodeURIComponent(question.substring(0,150)),ep=encodeURIComponent(plain.substring(0,400));
+    if(a)a.innerHTML='<div style="display:flex;gap:8px;padding-top:4px;flex-wrap:wrap">'
+      +'<button class="ai-act-btn" style="background:#25D366;color:#fff" onclick="window.open(\'https://wa.me/?text=\'+encodeURIComponent(\'*EIL Solar AI Advisor*\\n\\n❓ '+question.replace(/'/g,"\\'")+'\\n\\n💡 \'+decodeURIComponent(\''+ep+'\')+\'\\n\\n_Kaveri Power Solutions · Chennai_\'),\'_blank\')">📱 WhatsApp</button>'
+      +'<button class="ai-act-btn" style="background:rgba(255,255,255,0.12);color:#c7d2fe;border:1px solid rgba(165,180,252,0.3)" onclick="aiCopyText(\''+ep+'\')">📋 Copy</button>'
+      +'<button class="ai-act-btn" style="background:rgba(255,255,255,0.08);color:#c7d2fe;border:1px solid rgba(165,180,252,0.2)" onclick="aiClear()">✕ Clear</button>'
+      +'</div>';
+  })
+  .catch(function(){
+    r.innerHTML='<span style="color:#f87171">⚠ Set API key in ⚙ Settings to use AI Assist.</span>';
+    if(chipEl){chipEl.style.opacity='1';chipEl.style.pointerEvents='';}
+  });
+}
+function aiSend(){var inp=document.getElementById('ai-inp');if(inp&&inp.value.trim())aiAsk(inp.value.trim(),null);}
+function aiCopyText(ep){
+  var txt=decodeURIComponent(ep);
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){alert('Copied!');});}
+  else{var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('Copied!');}
+}
+
+function injectAISheet(){
+  if(document.getElementById('ai-sheet')) return;
+  var aov=document.createElement('div'); aov.id='ai-overlay'; aov.className='ai-overlay'; aov.onclick=aiClose; document.body.appendChild(aov);
+  var chips=AI_QS.map(function(q){return '<span class="ai-chip" onclick="aiAsk(this.textContent,this)">'+q+'</span>';}).join('');
+  var ash=document.createElement('div'); ash.id='ai-sheet'; ash.className='ai-sheet';
+  ash.innerHTML='<div class="ai-sheet-head"><div><div style="font-size:16px;font-weight:800;color:#fff">✨ AI Solar Advisor</div><div style="font-size:11px;color:#a5b4fc;margin-top:1px">EIL Solar · Kaveri Power Solutions</div></div><button onclick="aiClose()" style="background:rgba(255,255,255,0.1);border:none;color:#c7d2fe;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px">✕</button></div>'
+    +'<div style="padding:10px 16px 6px;font-size:11px;font-weight:700;color:#a5b4fc;text-transform:uppercase;letter-spacing:1px">Quick Questions</div>'
+    +'<div style="display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+chips+'</div>'
+    +'<div class="ai-resp" id="ai-resp-text"><span style="color:#818cf8;font-style:italic">Tap a question or type your own ↓</span></div>'
+    +'<div id="ai-actions-row" style="padding:0 16px 8px"></div>'
+    +'<div style="display:flex;gap:8px;padding:4px 16px 4px">'
+      +'<input id="ai-inp" type="text" placeholder="Ask your own solar question..." style="flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(165,180,252,0.3);border-radius:12px;padding:10px 14px;color:#e0e7ff;font-size:13px;outline:none" onkeydown="if(event.key===\'Enter\')aiSend()">'
+      +'<button onclick="aiSend()" style="background:#6366f1;border:none;border-radius:12px;padding:10px 16px;color:#fff;font-size:15px;cursor:pointer;flex-shrink:0">➤</button>'
+    +'</div>'
+    +'<div style="text-align:center;font-size:10px;color:#6366f1;padding:6px 0 0">Powered by Claude AI · Set API key in ⚙ Settings</div>';
+  document.body.appendChild(ash);
+}
+
+// ── PERMIT GUIDE ─────────────────────────────────────────────
+function renderPermitGuide(){
+  injectHamburger(); injectAISheet();
+  var el=document.getElementById('permit-body'); if(!el) return;
+
+  function card(id,emoji,title,sub){
+    return '<div class="pg-card"><div class="pg-card-hdr" onclick="pgToggle(\''+id+'\')"><div><div class="pg-card-title">'+emoji+' '+title+'</div><div class="pg-card-sub">'+sub+'</div></div><span class="pg-card-arr" id="'+id+'-arr">›</span></div><div class="pg-card-body" id="'+id+'">';
+  }
+  function step(no,col,title,days,html){
+    return '<div class="pg-step"><div class="pg-step-no" style="background:'+col+'">'+no+'</div><div style="flex:1"><div class="pg-step-title">'+title+'</div><div class="pg-step-days" style="color:'+col+'">'+days+'</div><div class="pg-step-detail">'+html+'</div></div></div>';
+  }
+  function kpi(val,lbl,col){ return '<div style="background:#f8fafc;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:900;color:'+col+'">'+val+'</div><div style="font-size:11px;color:#64748b">'+lbl+'</div></div>'; }
+
+  var h='';
+  // Header
+  h+='<div style="background:linear-gradient(135deg,#1a237e,#283593);padding:20px 16px 24px">'
+    +'<div style="font-family:Rajdhani,sans-serif;font-size:26px;font-weight:700;color:#fff;margin-bottom:4px">🏛️ Solar Permit Guide</div>'
+    +'<div style="font-size:13px;color:#c5cae9;font-weight:600;margin-bottom:12px">Apply for rooftop solar in Tamil Nadu — step by step</div>'
+    +'<div style="background:rgba(255,255,255,0.1);border-radius:12px;padding:10px 14px;font-size:12px;color:#e8eaf6">Tap any section to expand. Covers PM Surya Ghar subsidy, DCR vs Non-DCR panels, TNEB net metering and official links.</div>'
+    +'</div>';
+
+  // Card 1 — PM Surya Ghar
+  h+=card('c-psg','☀️','PM Surya Ghar — Muft Bijli Yojana','Govt subsidy up to ₹78,000 · Residential only');
+  h+='<div style="padding:12px 16px">'
+    +'<div style="font-size:12px;color:#374151;line-height:1.7;margin-bottom:10px">Central Govt scheme (Feb 2024). Provides cash subsidy + free electricity for residential rooftop solar. Only for <b>LT-I residential</b> TNEB consumers. Commercial customers NOT eligible.</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+    +kpi('₹30,000','for 1 kWp','#16a34a')+kpi('₹60,000','for 2 kWp','#16a34a')
+    +kpi('₹78,000','for 3 kWp (max)','#16a34a')+'<div style="background:#fef9c3;border-radius:10px;padding:10px;text-align:center"><div style="font-size:14px;font-weight:900;color:#854d0e">CAPPED</div><div style="font-size:11px;color:#64748b">above 3 kWp</div></div>'
+    +'</div>'
+    +'<div style="background:#eff6ff;border-radius:10px;padding:10px 12px;font-size:12px;color:#1e40af;font-weight:600;margin-bottom:10px">'
+    +'✅ Eligible if: Own house · Residential TNEB connection · Aadhaar-linked bank account · No prior solar subsidy availed<br><br>'
+    +'⚠ <b>For residential: minimum viable system size is 3 kWp.</b> Below 3 kWp, investment is too high and payback is too long — not recommended. 3 kWp also gives maximum PM Surya Ghar subsidy of ₹78,000.</div>'
+    +'<a href="https://pmsuryaghar.gov.in" target="_blank" style="display:flex;align-items:center;gap:10px;background:#1a237e;border-radius:10px;padding:10px 14px;text-decoration:none">'
+    +'<span style="font-size:22px">🔗</span><div><div style="font-size:13px;font-weight:800;color:#fff">pmsuryaghar.gov.in</div><div style="font-size:11px;color:#c5cae9">Official portal — apply directly, no agents needed</div></div></a>'
+    +'</div></div></div>';
+
+  // Card 2 — DCR Panels
+  h+=card('c-dcr','🇮🇳','DCR Panels — Subsidy Eligible','Made in India panels — required for PM Surya Ghar');
+  h+='<div style="padding:12px 16px">'
+    +'<div style="background:#fef3c7;border-radius:10px;padding:10px 12px;font-size:12px;color:#92400e;font-weight:600;margin-bottom:10px">⚠ To get PM Surya Ghar subsidy, panels MUST be DCR-certified (Indian-made cells). Imported panels = <b>no subsidy</b>.</div>'
+    +'<div style="font-size:13px;font-weight:800;color:#0f172a;margin-bottom:6px">Approved DCR Manufacturers:</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">'
+    +['Waaree Energies','Adani Solar','Vikram Solar','Premier Energies','RenewSys India','Websol Energy'].map(function(b){
+      return '<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;color:#166534">✓ '+b+'</div>';
+    }).join('')
+    +'</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px">'
+    +'<tr style="background:#f1f5f9"><th style="padding:7px 10px;text-align:left">Factor</th><th style="padding:7px 10px;text-align:center">DCR 🇮🇳</th><th style="padding:7px 10px;text-align:center">Non-DCR</th></tr>'
+    +'<tr><td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">Subsidy</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f1f5f9;color:#16a34a;font-weight:700">✅ Yes</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f1f5f9;color:#dc2626;font-weight:700">❌ No</td></tr>'
+    +'<tr><td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">Origin</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f1f5f9">India</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f1f5f9">Imported</td></tr>'
+    +'<tr><td style="padding:7px 10px;border-bottom:1px solid #f1f5f9">Extra cost</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f1f5f9">+₹3–5/Wp</td><td style="padding:7px 10px;text-align:center;border-bottom:1px solid #f1f5f9">Lower</td></tr>'
+    +'<tr><td style="padding:7px 10px">Best for</td><td style="padding:7px 10px;text-align:center">Residential</td><td style="padding:7px 10px;text-align:center">Commercial</td></tr>'
+    +'</table>'
+    +'<div style="background:#eff6ff;border-radius:10px;padding:10px 12px;font-size:12px;color:#1e40af;font-weight:600">💡 For 3 kWp: DCR extra cost ~₹12,000. Subsidy ₹78,000. Net benefit = <b>₹66,000</b>. Always choose DCR for residential.<br>⚠ <b>3 kWp is the minimum viable residential size</b> — below this, payback is too long and investment is not justified.</div>'
+    +'</div></div></div>';
+
+  // Card 3 — TNEB Steps
+  h+=card('c-tneb','⚡','TNEB Net Metering — Step by Step','Full process: Application → Grid connection (45–90 days)');
+  h+=step('1','#6366f1','Register on PM Surya Ghar Portal','Day 1 — Before installation',
+    '• Visit <a href="https://pmsuryaghar.gov.in" target="_blank">pmsuryaghar.gov.in</a> → Register<br>• Enter TNEB Consumer Number + Aadhaar<br>• Select Tamil Nadu → TANGEDCO<br>• Receive Application Reference Number<br>• <b>Do this BEFORE installation starts</b>');
+  h+=step('2','#f59e0b','TNEB Feasibility Assessment','Days 5–15',
+    '• TANGEDCO checks: sanctioned load, transformer, feeder capacity<br>• Field officer may visit premises<br>• Approval or rejection within 15 working days<br>• Track at <a href="https://tnebnet.org" target="_blank">tnebnet.org</a>');
+  h+=step('3','#16a34a','Submit Documents','Days 15–20',
+    '<b>Required:</b><br>• Ownership proof (Sale deed)<br>• Latest 3 months TNEB bills<br>• Aadhaar card<br>• Roof photograph<br>• Technical proposal from EIL Solar (MNRE empanelled)<br>• Consent letter if rented property');
+  h+=step('4','#0369a1','EIL Solar Installs System','Days 20–30 (10 days by EIL Solar)',
+    '• EIL Solar installs panels, mounting, inverter, wiring in <b>10 days</b><br>• Grid-tied inverter only (not off-grid)<br>• EIL uploads Commissioning Report to portal<br>• System ready for TNEB inspection<br>• <b>EIL Solar fast-tracks installation</b> — no delays on our side');
+  h+=step('5','#7c3aed','TNEB Net Meter Installation','Days 30–60',
+    '• TNEB inspects installed system<br>• Existing meter replaced with <b>bidirectional net meter</b><br>• Net meter fee: ~₹5,000–8,000 (paid by consumer)<br>• Follow up with local TANGEDCO AEE/ADE office<br>• This step often causes most delay — be proactive');
+  h+=step('6','#16a34a','Claim PM Surya Ghar Subsidy','Days 60–90',
+    '• Log into <a href="https://pmsuryaghar.gov.in" target="_blank">pmsuryaghar.gov.in</a><br>• Upload: Commissioning cert + net meter photo + bank details<br>• TANGEDCO verifies → MNRE credits subsidy to Aadhaar-linked bank<br>• Processing: 30–90 days after submission<br>• <b>Total timeline: ~75–100 days</b> (EIL installs in 10 days)');
+  h+=step('7','#cc0000','Ongoing Net Metering Bill','Every 2 months',
+    '• Bill = Units consumed − Units exported<br>• Excess export → credit carried forward (no cash payout)<br>• <b>Credits lapse on March 31</b> each year<br>• Size system to consume 80–90% of generation<br>• Gross metering: sell all at ₹2.25/unit (HT older consumers only)');
+  h+='</div></div>';
+
+  // Card 4 — Commercial
+  h+=card('c-com','🏢','Commercial Solar — No Subsidy Route','Use 40% accelerated depreciation instead');
+  h+='<div style="padding:12px 16px">'
+    +'<div style="background:#f3e8ff;border-radius:10px;padding:10px 12px;font-size:12px;color:#6b21a8;font-weight:600;margin-bottom:10px">Commercial/Industrial consumers are NOT eligible for PM Surya Ghar. Use <b>40% accelerated depreciation</b> under Section 32 IT Act instead.</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+    +kpi('40%','Depreciation Year 1','#7c3aed')+kpi('30–35%','Effective cost reduction','#7c3aed')
+    +kpi('₹8.75','LT Commercial /unit','#7c3aed')+kpi('4–6 yrs','Typical payback','#7c3aed')
+    +'</div>'
+    +'<div style="font-size:12px;color:#374151;line-height:1.8;margin-bottom:8px">'
+    +'<b>Steps:</b><br>'
+    +'1. EIL provides technical proposal + cost quote<br>'
+    +'2. Apply at <a href="https://tnebnet.org" target="_blank" style="color:#6366f1;font-weight:700">tnebnet.org</a> → Solar Net Metering<br>'
+    +'3. Submit: CA certificate, ownership proof, consent<br>'
+    +'4. TNEB inspects, issues demand note for meter<br>'
+    +'5. EIL installs → TNEB commissions net meter<br>'
+    +'6. Claim 40% depreciation in IT return for Year 1'
+    +'</div>'
+    +'<a href="https://tnebnet.org" target="_blank" style="display:flex;align-items:center;gap:10px;background:#4a148c;border-radius:10px;padding:10px 14px;text-decoration:none">'
+    +'<span style="font-size:22px">🔗</span><div><div style="font-size:13px;font-weight:800;color:#fff">tnebnet.org</div><div style="font-size:11px;color:#ce93d8">TNEB online services · Solar net metering application</div></div></a>'
+    +'</div></div></div>';
+
+  // Card 5 — Documents
+  h+=card('c-docs','📋','Documents Checklist','Everything you need before applying');
+  h+='<div style="padding:12px 16px">';
+  [
+    {cat:'Residential (PM Surya Ghar)',col:'#16a34a',docs:['Aadhaar card (applicant)','Latest TNEB electricity bill (3 months)','Proof of ownership (Sale deed)','Bank passbook (Aadhaar-linked)','Roof photograph','Mobile number linked to Aadhaar']},
+    {cat:'Commercial / Industrial',col:'#7c3aed',docs:['GST registration certificate','Proof of ownership / lease deed','Latest TNEB bill (all connections)','CA certificate (for depreciation)','MSME/Factory license if applicable','Authorised signatory letter']},
+    {cat:'Common for All',col:'#0369a1',docs:['Technical proposal from EIL Solar (MNRE empanelled)','Site photograph (roof area clearly visible)','Electrical single-line diagram','CEIG approval (HT connections only)','NOC from apartment association if applicable']}
+  ].forEach(function(sec){
+    h+='<div style="font-size:12px;font-weight:800;color:'+sec.col+';margin:8px 0 4px">'+sec.cat+'</div>';
+    sec.docs.forEach(function(d){
+      h+='<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f8fafc;font-size:12px;color:#374151"><span style="color:'+sec.col+';font-weight:700;flex-shrink:0">✓</span>'+d+'</div>';
+    });
+  });
+  h+='</div></div></div>';
+
+  // Card 6 — Links
+  h+=card('c-links','🔗','Official Websites & Helplines','Apply and track online');
+  h+='<div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">';
+  [
+    {ico:'☀️',name:'PM Surya Ghar Portal',url:'https://pmsuryaghar.gov.in',sub:'Apply for subsidy, upload docs, track status'},
+    {ico:'⚡',name:'TANGEDCO / TNEB Online',url:'https://tnebnet.org',sub:'Solar net metering, bill payment, complaints'},
+    {ico:'🏛️',name:'MNRE — Solar Energy',url:'https://mnre.gov.in/solar',sub:'Policy, DCR list, scheme guidelines'},
+    {ico:'📋',name:'TNERC',url:'https://tnerc.gov.in',sub:'Tamil Nadu Electricity Regulatory Commission'},
+    {ico:'📞',name:'TNEB Solar Helpline',url:'tel:18004253030',sub:'1800 425 3030 — Toll free'},
+    {ico:'📞',name:'PM Surya Ghar Helpline',url:'tel:18001803333',sub:'1800 180 3333 — MNRE'}
+  ].forEach(function(l){
+    h+='<a href="'+l.url+'" target="_blank" style="display:flex;align-items:center;gap:12px;background:#f8fafc;border-radius:12px;padding:11px 14px;text-decoration:none;border:1px solid #e2e8f0">'
+      +'<span style="font-size:22px;flex-shrink:0">'+l.ico+'</span>'
+      +'<div><div style="font-size:13px;font-weight:700;color:#0f172a">'+l.name+'</div>'
+      +'<div style="font-size:11px;color:#64748b;margin-top:1px">'+l.sub+'</div></div></a>';
+  });
+  h+='</div></div></div>';
+
+  h+='<div style="text-align:center;padding:20px 16px 8px;font-size:11px;color:#94a3b8">EIL Solar is an MNRE-empanelled installer · We handle all TNEB paperwork on your behalf</div>';
+
+  el.innerHTML=h;
+}
+
+function pgToggle(id){
+  var body=document.getElementById(id),arr=document.getElementById(id+'-arr');
+  if(!body) return;
+  var open=body.style.display==='block';
+  ['c-psg','c-dcr','c-tneb','c-com','c-docs','c-links'].forEach(function(x){
+    var b=document.getElementById(x),a=document.getElementById(x+'-arr');
+    if(b)b.style.display='none'; if(a)a.style.transform='rotate(0deg)';
+  });
+  if(!open){body.style.display='block';if(arr)arr.style.transform='rotate(90deg)';}
+}
+// ════════════════════════════════════════════════════════════
 </script>
 </body>
 </html>
