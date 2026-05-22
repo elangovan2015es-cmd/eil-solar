@@ -806,13 +806,24 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
           <div style="padding:8px 16px 14px">
             <div id="sc-confidence" style="background:#f8fafc;border-radius:8px;padding:10px;font-size:12px;color:#475569"></div>
           </div>
-          <!-- Auto-fetch message -->
-          <div style="padding:0 16px 14px">
-            <div style="background:#f0fdf4;border-radius:8px;padding:10px;font-size:12px;color:#166534;font-weight:600;text-align:center">
-              &#9889; Forecast fetches automatically when you tap Load Live Data
-            </div>
+          <!-- Status + debug -->
+          <div style="padding:0 16px 10px">
+            <div id="sc-updated" style="font-size:12px;color:#64748b;background:#f8fafc;border-radius:8px;padding:10px;text-align:center;word-break:break-word">Tap ⚡ Load Live Data to fetch forecast</div>
           </div>
-          <div style="padding:0 16px 10px;font-size:11px;color:#94a3b8;text-align:center" id="sc-updated">—</div>
+          <!-- Manual paste fallback -->
+          <div style="padding:0 16px 14px">
+            <details style="font-size:12px;color:#64748b">
+              <summary style="cursor:pointer;font-weight:700;color:#475569;padding:4px 0">&#128203; Manual paste fallback (if GAS Solcast fails)</summary>
+              <div style="margin-top:8px">
+                <div style="font-size:11px;color:#94a3b8;margin-bottom:6px">Go to solcast.com → your site → Forecasts → copy JSON → paste here:</div>
+                <textarea id="sc-paste" rows="4" placeholder='{"forecasts":[{"period_end":"2026-05-22T05:00:00Z","pv_estimate":1.23,...}]}'
+                  style="width:100%;font-size:11px;border:1px solid #e2e8f0;border-radius:6px;padding:8px;box-sizing:border-box;resize:vertical;font-family:monospace;color:#0f172a;background:#f8fafc"></textarea>
+                <button onclick="scLoadPaste()" style="margin-top:6px;width:100%;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer">
+                  &#9889; Load Forecast from Paste
+                </button>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
 
@@ -4732,19 +4743,29 @@ function scLoadPaste() {
 }
 
 function scRender() {
+  var upd = document.getElementById('sc-updated');
   // Load from storage if not in memory
   if(!SC_DATA) {
     var saved = localStorage.getItem(SC_KEY);
     if(saved) {
-      try { SC_DATA = JSON.parse(saved); } catch(e){ return; }
-    } else { return; }
+      try { SC_DATA = JSON.parse(saved); } catch(e){
+        if(upd) upd.textContent = '⚠ Cached data corrupt — please Load Live Data again';
+        return;
+      }
+    } else {
+      if(upd) upd.textContent = '⏳ No forecast yet — tap ⚡ Load Live Data (GAS must have Solcast key set)';
+      return;
+    }
   }
 
   var sc = document.getElementById('lm-sc');
   if(sc) sc.style.display = 'block';
 
   var forecasts = SC_DATA.forecasts || [];
-  if(!forecasts.length) return;
+  if(!forecasts.length) {
+    if(upd) upd.textContent = '⚠ Forecast data empty (0 periods) — check Solcast API key in GAS';
+    return;
+  }
 
   // Convert UTC to IST and group by IST date
   var byDate = {};
@@ -4834,10 +4855,9 @@ function scRender() {
 
   // Updated time
   var ts = localStorage.getItem('lm_solcast_data_ts') || localStorage.getItem(SC_KEY+'_ts');
-  var upd = document.getElementById('sc-updated');
   if(upd) upd.textContent = ts
-    ? 'Auto-fetched: '+new Date(ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST (via GAS)'
-    : 'Paste JSON below or add Solcast API key to GAS script';
+    ? '✅ Forecast loaded: '+new Date(ts).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'})+' IST · '+forecasts.length+' periods · via GAS'
+    : '✅ Forecast loaded (manual paste)';
 }
 
 // ═══════════════════════════════════════════════════════════
