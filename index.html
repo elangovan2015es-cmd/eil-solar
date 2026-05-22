@@ -5258,6 +5258,8 @@ async function lmLoad() {
     lmSt('ok','Live — '+ts+' IST');
 
   } catch(e) {
+    // Always render Solcast from localStorage regardless of GAS fetch failure
+    scRender();
     // Show last saved data automatically
     var last = localStorage.getItem('lm_last');
     if(last) {
@@ -5265,9 +5267,9 @@ async function lmLoad() {
         LM.data = JSON.parse(last);
         lmRender();
         var ts = new Date(LM.data.timestamp).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'});
-        lmSt('error','Using saved data from '+ts+' — open app from GitHub Pages for live fetch');
+        lmSt('error','GAS fetch failed — showing saved data from '+ts+'. Solcast forecast from localStorage.');
       } catch(pe) {
-        lmSt('error','Fetch failed. Open from GitHub Pages for live data.');
+        lmSt('error','Fetch failed. Solcast shown from localStorage if available.');
       }
     } else {
       // No saved data — still show sections with seeded values
@@ -5315,9 +5317,9 @@ function lmShowMsg(el, txt, clr) {
 
 // ─── MAIN RENDER ───────────────────────────────────────────
 function lmRender() {
-  if(!LM.data) return;
-  // Always try to render Solcast — call directly (SC_DATA already set before lmRender)
+  // Always render Solcast regardless of LM.data — SC_DATA is independent
   scRender();
+  if(!LM.data) return;
   ['lm-s1','lm-s2','lm-s3','lm-s4'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'block';
