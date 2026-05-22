@@ -1040,7 +1040,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "48";
+var APP_VERSION = "49";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -4841,7 +4841,7 @@ function scRender() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EIL Solar — Live Monitor v4 (Clean Build 09-May-2026) — v45 Sheet History Import
+// EIL Solar — Live Monitor v4 (Clean Build 09-May-2026) — v49 Solcast+Sheet fixes
 // All 6 features built correctly from scratch
 // ═══════════════════════════════════════════════════════════
 var LM = {
@@ -5066,7 +5066,7 @@ var SOLAR_HISTORY_DATA = {
 
 // Seeds all verified ShinePhone data into localStorage on first run
 function seedShinePhoneHistory() {
-  var flag = 'lm_shineph_v48';
+  var flag = 'lm_shineph_v49';
   if(localStorage.getItem(flag)) return;
   var count = 0;
   Object.keys(SOLAR_HISTORY_DATA).forEach(function(ym) {
@@ -5083,7 +5083,7 @@ function seedShinePhoneHistory() {
     });
   });
   localStorage.setItem(flag, '1');
-  console.log('EIL Solar v48: seeded ' + count + ' days of ShinePhone history');
+  console.log('EIL Solar v49: seeded ' + count + ' days of ShinePhone history');
 }
 
 // Bulk-import ALL historical daily data from Google Sheet via GAS
@@ -5136,8 +5136,8 @@ function lmRestore() {
   seedShinePhoneHistory();
   // Step 2: Try to pull latest from Google Sheet (fills any gaps / recent days)
   setTimeout(lmBulkImportHistory, 1200);
-  // Load Solcast forecast from storage
-  setTimeout(scRender, 300);
+  // Load Solcast forecast from storage (no delay needed — SC_DATA loaded from localStorage)
+  scRender();
   // Auto-load if we have a saved GAS URL — fetch live data on page open
   if(localStorage.getItem('lm_gas_url')) {
     setTimeout(function(){ lmLoad(); }, 500);
@@ -5196,7 +5196,16 @@ async function lmLoad() {
       SC_DATA = d.solcast;
       localStorage.setItem('lm_solcast_data', JSON.stringify(d.solcast));
       localStorage.setItem('lm_solcast_data_ts', new Date().toISOString());
-      setTimeout(scRender, 200);
+      scRender(); // call directly — SC_DATA is set now, no race
+    } else if(d.solcast && d.solcast.error) {
+      // Solcast returned an error — show it in the forecast card
+      var upd = document.getElementById('sc-updated');
+      if(upd) upd.textContent = '⚠ Solcast error: ' + d.solcast.error;
+      // Still try to render from cached data
+      scRender();
+    } else {
+      // No solcast in response — try cached data
+      scRender();
     }
     // Store first reading of day for subtraction calculation
     var firstKey = 'lm_first_'+today;
@@ -5287,8 +5296,8 @@ function lmShowMsg(el, txt, clr) {
 // ─── MAIN RENDER ───────────────────────────────────────────
 function lmRender() {
   if(!LM.data) return;
-  // Always try to render Solcast (shows paste box if no data)
-  setTimeout(scRender, 100);
+  // Always try to render Solcast — call directly (SC_DATA already set before lmRender)
+  scRender();
   ['lm-s1','lm-s2','lm-s3','lm-s4'].forEach(function(id){
     var el = document.getElementById(id);
     if(el) el.style.display = 'block';
@@ -5567,7 +5576,7 @@ function lmRenderS4() {
 // ═══════════════════════════════════════════════════════════
 
 // ════════════════════════════════════════════════════════════
-// SOLAR PERMIT GUIDE + AI ASSIST HAMBURGER  (v48)
+// SOLAR PERMIT GUIDE + AI ASSIST HAMBURGER  (v49)
 // ════════════════════════════════════════════════════════════
 
 (function injectStyles(){
