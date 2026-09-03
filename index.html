@@ -715,6 +715,17 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
             style="width:100%;background:var(--amber);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;font-family:Rajdhani,sans-serif;letter-spacing:.5px">
             &#9889; LOAD LIVE DATA
           </button>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button onclick="lmTest()" id="lm-test-btn"
+              style="flex:1;background:#fff;color:#0f172a;border:1.5px solid #cbd5e1;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+              &#128295; TEST CONNECTION
+            </button>
+            <button onclick="lmImportHistory(true)" id="lm-hist-btn"
+              style="flex:1;background:#fff;color:#0f172a;border:1.5px solid #cbd5e1;border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif">
+              &#11015; IMPORT PAST DATA
+            </button>
+          </div>
+          <div id="lm-diag" style="display:none;margin-top:8px;font-size:11px;line-height:1.5;color:#334155;background:#f8fafc;border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-word"></div>
         </div>
       </div>
 
@@ -771,7 +782,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
             <div style="font-size:11px;color:#64748b;background:#f1f5f9;padding:3px 8px;border-radius:6px">Solcast AI</div>
           </div>
           <div style="padding:10px 16px 4px;font-size:11px;color:#64748b">
-            Elango Home · 6 kWp · Chennai · 30-min intervals
+            EIL Rooftop · 6 kWp · Chennai · 30-min intervals
           </div>
           <!-- Day summary cards -->
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 16px 12px">
@@ -1051,7 +1062,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "49";
+var APP_VERSION = "51";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -1546,7 +1557,7 @@ var BATT = [
 //   DUF does not adjust commercial — FiT penalty is structural, not time-based
 //
 // Example — Bill #46: connLoad=7kW, recDemand=1kW → DUF=14.3% → SC=MIN(0.93,0.98)=92.9%
-// Example — Elango:   connLoad=7kW, recDemand=3kW → DUF=42.9% → SC=MIN(2.79,0.98)=98%
+// Example:   connLoad=7kW, recDemand=3kW → DUF=42.9% → SC=MIN(2.79,0.98)=98%
 function getSelfConsumption(cat, connLoad, recDemand) {
   var t = TARIFFS[cat] || TARIFFS.Commercial;
   if (t.mechanism === "Net Metering") {
@@ -1590,7 +1601,7 @@ var RPT = {
 };
 
 // ── SLAB-BASED RESIDENTIAL TARIFF CALCULATOR ──────────────────────────────────
-// TNEB LT I-A / LA1A DOMESTIC — from actual TNEB bill (Praseeda Elangovan)
+// TNEB LT I-A / LA1A DOMESTIC — from an actual TNEB domestic bill
 //
 // REGIME A: bi-monthly consumption 1–500 units (Max Unit = 500)
 //   1–100:   ₹0.00/unit  (FREE)
@@ -4850,7 +4861,7 @@ function scRender() {
     confEl.innerHTML =
       '<b>Today forecast:</b> '+d0kwh.toFixed(1)+' kWh central · '
       +d0best.toFixed(1)+' kWh best · '+d0worst.toFixed(1)+' kWh worst<br>'
-      +'<span style="color:#94a3b8;font-size:11px">Source: Solcast · Elango Home · Resource: 40fa-27fa-524d-2f08</span>';
+      +'<span style="color:#94a3b8;font-size:11px">Source: Solcast · EIL Rooftop · Resource: 40fa-27fa-524d-2f08</span>';
   }
 
   // Updated time
@@ -4861,7 +4872,7 @@ function scRender() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EIL Solar — Live Monitor v4 (Clean Build 09-May-2026) — v49 Solcast+Sheet fixes
+// EIL Solar — Live Monitor v4 — v51: simple loader, test + import buttons, GAS v3
 // All 6 features built correctly from scratch
 // ═══════════════════════════════════════════════════════════
 var LM = {
@@ -5103,59 +5114,97 @@ function seedShinePhoneHistory() {
     });
   });
   localStorage.setItem(flag, '1');
-  console.log('EIL Solar v49: seeded ' + count + ' days of ShinePhone history');
+  console.log('EIL Solar v51: seeded ' + count + ' days of ShinePhone history');
 }
 
-// Bulk-import ALL historical daily data from Google Sheet via GAS
-// Runs once per session (flag: lm_hist_imported_YYYY-MM-DD)
-// After backfill script is run, GAS returns full history in monthly.daily_log
-async function lmBulkImportHistory() {
-  var today   = lmIST();
-  var flag    = 'lm_hist_' + today;
-  if(localStorage.getItem(flag)) return; // already done today
+// ─── IMPORT PAST DATA FROM SHEET (via GAS ?action=history) ───────
+// Auto-runs once per day on open; the button calls it with force=true.
+function lmGasUrl() {
+  var el = document.getElementById('lm-url');
+  var u = (el && el.value.trim()) || localStorage.getItem('lm_gas_url') || LM.gasUrl;
+  return u.replace(/\/+$/,'');
+}
+function lmDiag(txt) {
+  var d = document.getElementById('lm-diag');
+  if(!d) return;
+  if(!txt) { d.style.display='none'; d.textContent=''; return; }
+  d.style.display='block'; d.textContent = txt;
+}
+async function lmGet(action, timeoutMs) {
+  var url = lmGasUrl() + '?action=' + action + '&ts=' + Date.now();
+  var ms  = timeoutMs || 45000;
+  // Timeout via Promise.race (no AbortSignal — not cloneable in sandboxed previews)
+  var timeout = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('GAS did not answer within '+Math.round(ms/1000)+'s (script too slow — paste GAS v3)')); }, ms); });
+  var resp = await Promise.race([fetch(url, {redirect:'follow', cache:'no-store'}), timeout]);
+  var text = await resp.text();
+  if(!text) throw new Error('Empty reply from GAS (HTTP '+resp.status+')');
+  if(text.trim().charAt(0)==='<') {
+    if(/accounts\.google|Sign in/i.test(text)) throw new Error('GAS asks for Google sign-in → redeploy with "Who has access: Anyone"');
+    throw new Error('GAS returned a web page, not JSON → Deploy → Manage deployments → New version');
+  }
+  return JSON.parse(text);
+}
 
-  var url = localStorage.getItem('lm_gas_url') || LM.gasUrl;
-  if(!url) return;
-
+async function lmImportHistory(force) {
+  var today = lmIST();
+  var flag  = 'lm_hist_' + today;
+  if(!force && localStorage.getItem(flag)) return;
+  var btn = document.getElementById('lm-hist-btn');
+  if(force) { if(btn) btn.disabled = true; lmSt('loading','Downloading past data from Google Sheet...'); }
   try {
-    var resp = await fetch(url + (url.includes('?')?'&':'?') + 'action=history&ts=' + Date.now(), {redirect:'follow'});
-    var text = await resp.text();
-    if(!text || text.trim().startsWith('<')) return;
-    var d = JSON.parse(text);
-
-    var rows = null;
-    // Support both: direct {result:'ok',data:[...]} or wrapped in monthly.daily_log
-    if(d.result === 'ok' && Array.isArray(d.data))        rows = d.data;
-    else if(Array.isArray(d.daily_log))                   rows = d.daily_log;
-    else if(d.monthly && Array.isArray(d.monthly.daily_log)) rows = d.monthly.daily_log;
-
-    if(!rows || !rows.length) return;
-
+    var d = await lmGet('history', 60000);
+    if(d.status==='error' || d.result==='error') throw new Error(d.message || d.error || 'GAS error');
+    var rows = Array.isArray(d.data) ? d.data : (Array.isArray(d.daily_log) ? d.daily_log : (d.monthly && d.monthly.daily_log) || []);
     var imported = 0;
-    rows.forEach(function(r) {
-      var date = r.date || r[0];
-      var kwh  = parseFloat(r.kwh  || r[1]);
-      if(date && !isNaN(kwh) && kwh > 0) {
-        lmSaveDate(date, kwh);
-        imported++;
-      }
+    rows.forEach(function(r){
+      var date = r.date || r[0]; var kwh = parseFloat(r.kwh != null ? r.kwh : r[1]);
+      if(date && !isNaN(kwh) && kwh > 0) { lmSaveDate(String(date).slice(0,10), kwh); imported++; }
     });
-
     localStorage.setItem(flag, '1');
-    console.log('EIL Solar: bulk-imported ' + imported + ' historical days from Sheet');
-    // Re-render charts now that log is populated
-    lmRenderS2(); lmRenderS3(); lmRenderS4();
-
+    console.log('EIL Solar: imported ' + imported + ' days from Sheet');
+    if(LM.data) { lmRenderS2(); lmRenderS3(); lmRenderS4(); }
+    if(force) lmSt('ok','Imported '+imported+' days from Sheet ('+Object.keys(lmGetLog()).length+' days now stored)');
   } catch(e) {
     console.warn('EIL Solar: history import failed —', e.message);
+    if(force) { lmSt('error','Past data import failed: '+e.message); lmDiag('History error: '+e.message); }
   }
+  if(btn) btn.disabled = false;
+}
+// kept for older callers
+function lmBulkImportHistory(){ return lmImportHistory(false); }
+
+// ─── TEST CONNECTION (GAS ?action=test) ─────────────────────────
+async function lmTest() {
+  var btn = document.getElementById('lm-test-btn');
+  if(btn) btn.disabled = true;
+  lmSt('loading','Testing GAS → Growatt → Sheet → Solcast...');
+  localStorage.setItem('lm_gas_url', lmGasUrl());
+  try {
+    var d = await lmGet('test', 60000);
+    var lines = ['GAS URL: '+lmGasUrl().slice(0,60)+'…', 'Time (IST): '+(d.time_ist||'—')];
+    var ok = true;
+    if(d.checks) {
+      Object.keys(d.checks).forEach(function(k){ lines.push(k.toUpperCase()+': '+d.checks[k]); if(String(d.checks[k]).indexOf('FAIL')===0) ok=false; });
+    } else if(d.status==='ok' && d.plant) {
+      lines.push('GAS is OLD version (no ?action=test). Live reply OK: '+(d.plant.name||'')+' '+(d.live?d.live.power_w+' W':''));
+      lines.push('→ Paste Growatt_GAS_v3_simple.gs and deploy a New version for faster, reliable loads.');
+    } else {
+      lines.push('Reply: '+JSON.stringify(d).slice(0,300)); ok = d.status!=='error';
+    }
+    lmDiag(lines.join('\n'));
+    lmSt(ok?'ok':'error', ok?'Connection test passed':'Connection test found problems — see details below');
+  } catch(e) {
+    lmDiag('TEST FAILED: '+e.message+'\n\nChecklist:\n1. GAS → Deploy → Manage deployments → Edit → New version → Deploy\n2. Execute as: Me · Who has access: Anyone\n3. Run setup() once in the editor and allow permissions\n4. URL must end with /exec');
+    lmSt('error','Test failed: '+e.message);
+  }
+  if(btn) btn.disabled = false;
 }
 
 function lmRestore() {
   // Step 1: Seed verified ShinePhone history into localStorage (once only)
   seedShinePhoneHistory();
   // Step 2: Try to pull latest from Google Sheet (fills any gaps / recent days)
-  setTimeout(lmBulkImportHistory, 1200);
+  setTimeout(function(){ lmImportHistory(false); }, 1200);
   // Load Solcast forecast from storage (no delay needed — SC_DATA loaded from localStorage)
   scRender();
   // Auto-load if we have a saved GAS URL — fetch live data on page open
@@ -5183,110 +5232,68 @@ function lmRestore() {
   LM.timer = setInterval(lmCheckAutoRec, 60000);
 }
 
-// ─── MAIN LOAD ─────────────────────────────────────────────
+// ─── MAIN LOAD (v50 — simple) ───────────────────────────────
 async function lmLoad() {
-  var url = (document.getElementById('lm-url')||{}).value || '';
-  url = url.trim() || LM.gasUrl;
+  var url = lmGasUrl();
   localStorage.setItem('lm_gas_url', url);
   var el = document.getElementById('lm-url');
   if(el) el.value = url;
+  lmDiag('');
 
-  lmSt('loading','Connecting to Growatt...');
+  lmSt('loading','Connecting to Growatt via GAS...');
   var btn = document.getElementById('lm-btn');
   if(btn) btn.disabled = true;
 
   try {
-    var full = url + (url.includes('?')?'&':'?') + 'force=true&ts='+Date.now();
-    var resp = await fetch(full, {redirect:'follow'});
-    var text = await resp.text();
-
-    if(!text || text.trim().startsWith('<'))
-      throw new Error('GAS returned HTML — redeploy as New Version in GAS editor');
-
-    var d = JSON.parse(text);
-    if(d.status === 'error') throw new Error(d.message);
+    var d = await lmGet('live', 45000);
+    if(d.status === 'error') throw new Error(d.message || 'GAS reported an error');
+    if(!d.live) throw new Error('Unexpected reply (no live block) — GAS may be the Proposals script, not the Growatt script');
 
     LM.data = d;
-    localStorage.setItem('lm_last', text);
-
-    // Import ALL data from sheet into localStorage log
+    localStorage.setItem('lm_last', JSON.stringify(d));
     var today = lmIST();
-    // Auto-process Solcast if returned in GAS response
+
+    // Solcast (GAS returns it; cached 3h server-side)
     if(d.solcast && d.solcast.forecasts && d.solcast.forecasts.length) {
       SC_DATA = d.solcast;
       localStorage.setItem('lm_solcast_data', JSON.stringify(d.solcast));
       localStorage.setItem('lm_solcast_data_ts', new Date().toISOString());
-      scRender(); // call directly — SC_DATA is set now, no race
     } else if(d.solcast && d.solcast.error) {
-      // Solcast returned an error — show it in the forecast card
       var upd = document.getElementById('sc-updated');
-      if(upd) upd.textContent = '⚠ Solcast error: ' + d.solcast.error;
-      // Still try to render from cached data
-      scRender();
-    } else {
-      // No solcast in response — try cached data
-      scRender();
+      if(upd) upd.textContent = '⚠ Solcast: ' + d.solcast.error;
     }
-    // Store first reading of day for subtraction calculation
-    var firstKey = 'lm_first_'+today;
-    if(!localStorage.getItem(firstKey) && d.energy && d.energy.total_kwh) {
-      localStorage.setItem(firstKey, d.energy.total_kwh);
-    }
-    // Today's kWh
+    scRender();
+
+    // Save today / yesterday / recent days into local log
     if(d.daily) {
-      if(d.daily.today_kwh != null && d.daily.today_kwh > 0)
-        lmSaveDate(today, d.daily.today_kwh);
+      if(d.daily.today_kwh != null && d.daily.today_kwh > 0) lmSaveDate(today, d.daily.today_kwh);
       if(d.daily.yesterday_kwh != null && d.daily.yesterday_kwh > 0) {
         var pd2 = new Date(); pd2.setDate(pd2.getDate()-1);
-        var yd2 = pd2.toLocaleString('en-CA',{timeZone:'Asia/Kolkata'}).split(',')[0];
-        lmSaveDate(yd2, d.daily.yesterday_kwh);
+        lmSaveDate(pd2.toLocaleString('en-CA',{timeZone:'Asia/Kolkata'}).split(',')[0], d.daily.yesterday_kwh);
       }
     }
-    // Import all historical daily readings from sheet
-    if(d.monthly && d.monthly.daily_log) {
-      d.monthly.daily_log.forEach(function(r){
-        if(r.date && r.kwh != null && r.kwh > 0) lmSaveDate(r.date, r.kwh);
-      });
-    }
-    // Import yearly log entries
-    if(d.yearly_log) {
-      // yearly_log has totals, we use recentDays for individual dates
+    if(d.monthly && Array.isArray(d.monthly.daily_log)) {
+      d.monthly.daily_log.forEach(function(r){ if(r.date && r.kwh > 0) lmSaveDate(r.date, r.kwh); });
     }
 
     lmRender();
     var ts = new Date(d.timestamp).toLocaleTimeString('en-IN',{timeZone:'Asia/Kolkata'});
-    lmSt('ok','Live — '+ts+' IST');
+    lmSt('ok','Live — '+ts+' IST'+(d.served_from_cache?' (5-min cache)':''));
 
   } catch(e) {
-    // Always render Solcast from localStorage regardless of GAS fetch failure
-    scRender();
-    // Show last saved data automatically
+    scRender();   // forecast from cache if any
     var last = localStorage.getItem('lm_last');
     if(last) {
       try {
         LM.data = JSON.parse(last);
         lmRender();
-        var ts = new Date(LM.data.timestamp).toLocaleDateString('en-IN',{timeZone:'Asia/Kolkata'});
-        lmSt('error','GAS fetch failed — showing saved data from '+ts+'. Solcast forecast from localStorage.');
-      } catch(pe) {
-        lmSt('error','Fetch failed. Solcast shown from localStorage if available.');
-      }
+        var lts = new Date(LM.data.timestamp).toLocaleString('en-IN',{timeZone:'Asia/Kolkata'});
+        lmSt('error','Live fetch failed — showing data saved '+lts);
+      } catch(pe) { lmSt('error','Live fetch failed'); }
     } else {
-      // No saved data — still show sections with seeded values
-      LM.data = {
-        status:'ok', api_version:'Seeded', timestamp:new Date().toISOString(),
-        served_from_cache:true,
-        plant:{id:'1404013',name:'Elangovan s',city:'Chennai',country:'India',peak_power_kw:6,install_date:'2022-08-05',status_code:1,status_text:'Normal'},
-        live:{power_w:0,power_kw:'0.00',is_generating:false,status:'Load data for live reading'},
-        daily:{today_date:lmIST(),today_kwh:null,yesterday_kwh:null,target_kwh:25.8,source:'Fetch failed',first_reading:null,readings_today:0,current_total:null},
-        monthly:{this_month_kwh:null,this_month_days:0,target_month:700,daily_log:[]},
-        energy:{total_kwh:'30089',total_mwh:'30.09',avg_month_kwh:666.7,months_operating:45},
-        promise_vs_performance:{capacity_kwp:6,target_year_kwh:8400,target_month_kwh:700,target_day_kwh:23,actual_avg_month:666.7,actual_total_kwh:'30089',expected_total_kwh:31500,performance_pct:95,verdict:'On Track'},
-        yearly_log:{},inverter_sn:'NXD6BK7086',datalogger_sn:'JPC6A2847C'
-      };
-      lmRender();
-      lmSt('error','Live fetch failed — showing estimated data. Host on GitHub Pages for live feed.');
+      lmSt('error','Live fetch failed');
     }
+    lmDiag('Error: '+e.message+'\n\nTap TEST CONNECTION to see which step fails (GAS / Growatt / Sheet / Solcast).');
   }
 
   if(btn) btn.disabled = false;
