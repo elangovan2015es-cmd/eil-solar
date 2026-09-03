@@ -464,8 +464,9 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
   font-size:13px;color:#fff;cursor:pointer;white-space:nowrap;}
 
 /* ── WELCOME PAGE ── */
-.welcome-wrap{min-height:100vh;min-height:100dvh;background:linear-gradient(160deg,#0f172a 0%,#1a1a2e 50%,#1e3a5f 100%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;text-align:center;}
+.welcome-wrap{background:linear-gradient(160deg,#0f172a 0%,#1a1a2e 50%,#1e3a5f 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:26px 20px 90px;text-align:center;}
+#pg-welcome{background:#1e3a5f;}
 .welcome-logo{margin-bottom:24px;}
 .welcome-title{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.1;}
 .welcome-title em{color:var(--amber);font-style:normal;}
@@ -482,7 +483,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 .wb-text{}
 .wb-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:3px;}
 .wb-desc{font-size:12px;color:#94a3b8;font-weight:600;line-height:1.5;}
-.welcome-footer{margin-top:36px;font-size:11px;color:#334155;font-weight:600;letter-spacing:0.5px;}
+.welcome-footer{margin-top:20px;font-size:11px;color:#334155;font-weight:600;letter-spacing:0.5px;}
 
 /* ── REPORT SELECTOR ── */
 .rpt-wrap{background:#fff;border-radius:14px;margin:0 12px 12px;padding:14px;
@@ -700,7 +701,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 
   <!-- LIVE MONITOR PAGE v4 -->
   <div class="page" id="pg-monitor">
-    <div style="padding:0 0 80px;background:#f1f5f9;min-height:100vh">
+    <div style="padding:0 0 80px;background:#f1f5f9">
 
       <!-- GAS URL + Load button -->
       <span class="slbl" style="padding-top:14px;display:block">Growatt Connection</span>
@@ -984,7 +985,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 
   <!-- SOLAR PERMIT GUIDE PAGE -->
   <div class="page" id="pg-permit">
-    <div id="permit-body" style="padding-bottom:90px;background:#f8fafc;min-height:100vh"></div>
+    <div id="permit-body" style="padding-bottom:90px;background:#f8fafc"></div>
   </div>
 
   <div class="bottomnav">
@@ -1040,18 +1041,16 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
   document.body.style.userSelect="none";
   document.body.style.webkitTouchCallout="none";
 
-  // Detect devtools open (width trick) — show warning
-  var devOpen=false;
+  // Devtools notice — one plain line, once per page load, not inside preview iframes
+  var noticeShown=false;
   setInterval(function(){
+    if(noticeShown||window.self!==window.top) return;
     var w=window.outerWidth-window.innerWidth>100;
     var h=window.outerHeight-window.innerHeight>100;
-    if((w||h)&&!devOpen){
-      devOpen=true;
-      try{console.clear();}catch(e){}
-      try{console.log("%cEIL Solar — Proprietary Software","color:red;font-size:20px;font-weight:bold;");}catch(e){}
-      try{console.log("%cThis application belongs to EIL Solar / Kaveri Power Solutions.","font-size:14px;");}catch(e){}
-      try{console.log("%cUnauthorised copying or redistribution is prohibited.","font-size:14px;");}catch(e){}
-    } else if(!w&&!h) devOpen=false;
+    if(w||h){
+      noticeShown=true;
+      try{console.log("EIL Solar — proprietary software of Kaveri Power Solutions. Unauthorised copying or redistribution is prohibited.");}catch(e){}
+    }
   },1000);
 
   // Watermark overlay — updated dynamically when proposal is generated
@@ -1062,7 +1061,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 })();
 
 // ── VERSION & AUTO-UPDATE ────────────────────────────────────────────────────
-var APP_VERSION = "51";
+var APP_VERSION = "53";
 
 // ══════════════════════════════════════════════════════════════════════════════
 // SECURITY SYSTEM v24
@@ -4872,7 +4871,7 @@ function scRender() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// EIL Solar — Live Monitor v4 — v51: simple loader, test + import buttons, GAS v3
+// EIL Solar — Live Monitor v4 — v53: simple loader, test + import buttons, GAS v3
 // All 6 features built correctly from scratch
 // ═══════════════════════════════════════════════════════════
 var LM = {
@@ -5114,7 +5113,7 @@ function seedShinePhoneHistory() {
     });
   });
   localStorage.setItem(flag, '1');
-  console.log('EIL Solar v51: seeded ' + count + ' days of ShinePhone history');
+  console.log('EIL Solar v53: seeded ' + count + ' days of ShinePhone history');
 }
 
 // ─── IMPORT PAST DATA FROM SHEET (via GAS ?action=history) ───────
